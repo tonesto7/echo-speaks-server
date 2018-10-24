@@ -47,7 +47,7 @@ function loadConfig() {
     if (!configData.settings) {
         configData.settings = {};
     }
-    configFile.set('settings.serverPort', configData.settings.serverPort || 8091);
+    configFile.set('settings.serverPort', PORT || (configData.settings.serverPort || 8091));
     configFile.set('settings.proxyPort', configData.settings.proxyPort || 8092);
     configFile.set('settings.refreshSeconds', configData.settings.refreshSeconds || 60);
     if (!configData.state) {
