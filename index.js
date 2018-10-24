@@ -48,7 +48,7 @@ function loadConfig() {
         configData.settings = {};
     }
     configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
-    configFile.set('settings.proxyPort', process.env.PORT || (configData.settings.proxyPort || 8092));
+    configFile.set('settings.proxyPort', configData.settings.proxyPort || 8092);
     configFile.set('settings.refreshSeconds', configData.settings.refreshSeconds || 60);
     if (!configData.state) {
         configData.state = {};
@@ -65,9 +65,11 @@ function startWebConfig() {
             webApp.listen(configData.settings.serverPort, function() {
                 logger.info('** Echo Speaks Config Service (v' + appVer + ') is Running at (IP: ' + getIPAddress() + ' | Port: ' + configData.settings.serverPort + ') | ProcessId: ' + process.pid + ' **');
                 if (!configCheckOk()) {
-                    logger.warn('** Configurations Settings Missing... Please visit http://' + getIPAddress() + ':' + configData.settings.serverPort + '/config to configure settings...');
+                    // logger.warn('** Configurations Settings Missing... Please visit http://' + getIPAddress() + ':' + configData.settings.serverPort + '/config to configure settings...');
+                    logger.warn('** Configurations Settings Missing... Please visit http://localhost:' + configData.settings.serverPort + '/config to configure settings...');
                 } else {
-                    logger.info('** Configurations Page available at (http://' + getIPAddress() + ':' + configData.settings.serverPort + '/config)');
+                    // logger.info('** Configurations Page available at (http://' + getIPAddress() + ':' + configData.settings.serverPort + '/config)');
+                    logger.info('** Configurations Page available at (http://localhost:' + configData.settings.serverPort + '/config)');
                 }
             });
             webApp.use(function(req, res, next) {
