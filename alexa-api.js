@@ -18,7 +18,7 @@ var clearSession = function() {
     sessionFile.save();
 };
 
-var alexaLogin = function(username, password, alexaOptions, callback) {
+var alexaLogin = function(username, password, alexaOptions, webapp, callback) {
     var devicesArray = [];
     var deviceSerialNumber;
     var deviceType;
@@ -35,7 +35,7 @@ var alexaLogin = function(username, password, alexaOptions, callback) {
         config.alexaURL = alexaOptions.amazonPage;
         callback(null, 'Login Successful (Stored Session)', config);
     } else {
-        alexaCookie.generateAlexaCookie(username, password, alexaOptions, function(err, result) {
+        alexaCookie.generateAlexaCookie(username, password, alexaOptions, webapp, function(err, result) {
             if (err && (err.message.startsWith('Login unsuccessful') || err.message.startsWith('Amazon-Login-Error:'))) {
                 logger.debug('Please complete Amazon login by going here: (http://' + alexaOptions.proxyOwnIp + ':' + alexaOptions.serverPort + '/config)');
             } else if (err && !result) {

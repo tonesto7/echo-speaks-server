@@ -5,6 +5,7 @@ const alexa_api = require('./alexa-api');
 const reqPromise = require("request-promise");
 const logger = require('./logger');
 const express = require('express');
+// const io = socketIO(express);
 const bodyParser = require('body-parser');
 const os = require('os');
 const alexaCookie = require('./alexa-cookie/alexa-cookie');
@@ -48,7 +49,6 @@ function loadConfig() {
         configData.settings = {};
     }
     configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
-    configFile.set('settings.proxyPort', configData.settings.proxyPort || 8092);
     configFile.set('settings.refreshSeconds', configData.settings.refreshSeconds || 60);
     if (!configData.state) {
         configData.state = {};
@@ -120,14 +120,11 @@ function startWebConfig() {
                 if (req.headers.serverport) {
                     configFile.set('settings.serverPort', req.headers.serverport);
                 };
-                if (req.headers.proxyport) {
-                    configFile.set('settings.proxyPort', req.headers.proxyport);
-                };
                 if (req.headers.weburl) {
                     configFile.set('settings.webUrl', req.headers.weburl);
                 };
                 // console.log('configData(set): ', configData);
-                if (((req.headers.smartthingsurl.length && req.headers.smartthingstoken.length) || req.headers.smartthingshubip.length) && req.headers.url.length && req.headers.refreshseconds.length && req.headers.serverport.length && req.headers.proxyport.length) {
+                if (((req.headers.smartthingsurl.length && req.headers.smartthingstoken.length) || req.headers.smartthingshubip.length) && req.headers.url.length && req.headers.refreshseconds.length && req.headers.serverport.length) {
                     configFile.save();
                     loadConfig();
                     res.send('done');
@@ -190,7 +187,7 @@ function startWebServer() {
         amazonPage: configData.settings.url, // optional: possible to use with different countries, default is 'amazon.de'
         setupProxy: true, // optional: should the library setup a proxy to get cookie when automatic way did not worked? Default false!
         proxyOwnIp: getIPAddress(), // required if proxy enabled: provide own IP or hostname to later access the proxy. needed to setup all rewriting and proxy stuff internally
-        proxyPort: configData.settings.proxyPort, // optional: use this port for the proxy, default is 0 means random port is selected
+        proxyPort: configData.settings.serverPort, // optional: use this port for the proxy, default is 0 means random port is selected
         proxyListenBind: '0.0.0.0', // optional: set this to bind the proxy to a special IP, default is '0.0.0.0'
         proxyLogLevel: 'warn', // optional: Loglevel of Proxy, default 'warn'
         successHtml: loginSuccessHtml()
@@ -202,7 +199,7 @@ function startWebServer() {
     configData.state.loginComplete = false;
     configFile.save();
 
-    alexa_api.alexaLogin(configData.settings.user, configData.settings.password, alexaOptions, function(error, response, config) {
+    alexa_api.alexaLogin(configData.settings.user, configData.settings.password, alexaOptions, webApp, function(error, response, config) {
         alexaUrl = 'https://alexa.' + configData.settings.url;
         savedConfig = config;
         // console.log('error:', error);
@@ -578,6 +575,7 @@ function configCheckOk() {
 
 startWebConfig()
     .then(function(res) {
+        logger.debug("localhost: " + process.env.LOCALHOST);
         if (configCheckOk()) {
             logger.info('-- Echo Speaks Web Service Starting Up! Takes about 10 seconds before it\'s available... --');
             startWebServer();

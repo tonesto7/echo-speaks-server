@@ -29,6 +29,7 @@ const defaultUserAgentLinux = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.3
 const defaultAcceptLanguage = 'en-US';
 
 let proxyServer;
+var webApp;
 var successHtml = '<b>Amazon Alexa Cookie successfully retrieved.You can close the browser.</b>';
 
 function customStringify(v, func, intent) {
@@ -59,10 +60,11 @@ function addCookies(Cookie, headers) {
     return Cookie;
 }
 
-function generateAlexaCookie(email, password, _options, callback) {
+function generateAlexaCookie(email, password, _options, webapp, callback) {
     if (_options.successHtml) {
         successHtml = _options.successHtml;
     }
+    if (webapp) { webApp = webApp; }
 
     function request(options, info, callback) {
         _options.logger && _options.logger('Alexa-Cookie: Sending Request with ' + JSON.stringify(options));
@@ -494,25 +496,36 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
     const myProxy = proxy('!/cookie-success', optionsAlexa);
 
     // mount `exampleProxy` in web server
-    const app = express();
+    const app = webApp || express();
 
     app.use(myProxy);
     app.get('/cookie-success', function(req, res) {
         res.send(_options.successHtml);
     });
-    let server = app.listen(_options.proxyPort, _options.proxyListenBind, function() {
-        _options.logger && _options.logger('Alexa-Cookie: Proxy-Server listening on port ' + server.address().port);
+    let server;
+    if (webApp) {
+        server = webApp;
         callbackListening(server);
-    });
+    } else {
+        server = app.listen(_options.proxyPort, _options.proxyListenBind, function() {
+            _options.logger && _options.logger('Alexa-Cookie: Proxy-Server listening on port ' + server.address().port);
+            callbackListening(server);
+        });
+    }
 }
 
 function stopProxyServer(callback) {
     if (proxyServer) {
-        proxyServer.close(() => {
-            callback && callback();
-        });
+        if (webApp) {
+            proxyServer.removeListener('');
+        } else {
+            proxyServer.close(() => {
+                callback && callback();
+            });
+            proxyServer = null;
+        }
     }
-    proxyServer = null;
+
 }
 
 module.exports.generateAlexaCookie = generateAlexaCookie;

@@ -122,14 +122,7 @@
                             Enter the port for the Echo Speaks Server.  Default: 8091
                         </small>
                     </div>
-                    <div class="md-form mt-0">
-                        <i class="fa fa-info prefix"></i>
-                        <input type="text" id="proxyPort" name="proxyPort" class="form-control" aria-describedby="proxyPortHelpBlockMD">
-                        <label for="proxyPort" data-error="wrong" data-success="right">Login Proxy Port</label>
-                        <small id="proxyPortHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
-                            Enter the port for the Echo Speaks Login Proxy. Default: 8092
-                        </small>
-                    </div>
+
                     <div class="md-form mb-0">
                         <i class="fa fa-refresh prefix"></i>
                         <input type="number" id="refreshSeconds" name="refreshSeconds" class="form-control" aria-describedby="refreshSecondsHelpBlockMD">
@@ -190,7 +183,7 @@
         });
 
         $("#proxyLoginLink").click(function() {
-            window.location.href = 'http://' + rootHost + ':' + configData.settings.proxyPort;
+            window.location.href = 'http://' + rootHost + ':' + configData.settings.serverPort;
         });
         $("#clearLoginBtn").click(function() {
             let url = rootOrigin + '/clearAuth';
