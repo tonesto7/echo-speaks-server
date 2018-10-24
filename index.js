@@ -105,6 +105,12 @@ function startWebConfig() {
                 if (req.headers.smartthingshubip) {
                     configFile.set('settings.smartThingsHubIP', req.headers.smartthingshubip);
                 };
+                if (req.headers.smartthingsurl) {
+                    configFile.set('settings.smartThingsUrl', req.headers.smartthingsurl);
+                };
+                if (req.headers.smartthingstoken) {
+                    configFile.set('settings.smartThingsToken', req.headers.smartthingstoken);
+                };
                 if (req.headers.url) {
                     configFile.set('settings.url', req.headers.url);
                 };
@@ -117,8 +123,11 @@ function startWebConfig() {
                 if (req.headers.proxyport) {
                     configFile.set('settings.proxyPort', req.headers.proxyport);
                 };
+                if (req.headers.weburl) {
+                    configFile.set('settings.webUrl', req.headers.weburl);
+                };
                 // console.log('configData(set): ', configData);
-                if (req.headers.smartthingshubip.length && req.headers.url.length && req.headers.refreshseconds.length && req.headers.serverport.length && req.headers.proxyport.length) {
+                if (((req.headers.smartthingsurl.length && req.headers.smartthingstoken.length) || req.headers.smartthingshubip.length) && req.headers.url.length && req.headers.refreshseconds.length && req.headers.serverport.length && req.headers.proxyport.length) {
                     configFile.save();
                     loadConfig();
                     res.send('done');
@@ -452,18 +461,22 @@ function getNotificationInfo() {
 
 function sendDeviceDataToST(eDevData) {
     try {
-        if (configData.settings && configData.settings.smartThingsHubIP !== "" && configData.settings.smartThingsHubIP !== undefined) {
+        let url = (configData.settings.smartThingsUrl && configData.settings.smartThingsToken) ?
+            `https://${configData.settings.smartThingsUrl}/receiveData?access_token=${configData.settings.smartThingsToken}` :
+            `http://${configData.settings.smartThingsHubIP}:39500/event`;
+        if (configData.settings && ((configData.settings.smartThingsHubIP !== "" && configData.settings.smartThingsHubIP !== undefined) || (configData.settings.smartThingsUrl && configData.settings.smartThingsToken))) {
             buildEchoDeviceMap(eDevData)
                 .then(function(devOk) {
                     let options = {
                         method: 'POST',
-                        uri: 'http://' + configData.settings.smartThingsHubIP + ':39500/event',
+                        uri: url,
                         headers: {
                             'evtSource': 'Echo_Speaks',
                             'evtType': 'sendStatusData'
                         },
                         body: {
                             'echoDevices': echoDevices,
+                            'webUrl': configData.settings.webUrl || null,
                             'timestamp': Date.now(),
                             'serviceInfo': {
                                 'version': appVer,
@@ -482,7 +495,7 @@ function sendDeviceDataToST(eDevData) {
                     reqPromise(options)
                         .then(function() {
                             eventCount++;
-                            logger.info('** Sent Echo Speaks Data to SmartThings Hub Successfully! | Hub: (http://' + configData.settings.smartThingsHubIP + ':39500/event) **');
+                            logger.info(`** Sent Echo Speaks Data to SmartThings Hub Successfully! | Hub: (${url}) **`);
                         })
                         .catch(function(err) {
                             logger.error("ERROR: Unable to connect to SmartThings Hub: " + err.message);
@@ -502,18 +515,22 @@ function sendDeviceDataToST(eDevData) {
 function sendStatusUpdateToST(self) {
     self.getDevices(savedConfig, function(error, response) {
         try {
-            if (configData.settings && configData.settings.smartThingsHubIP !== "" && configData.settings.smartThingsHubIP !== undefined) {
+            let url = (configData.settings.smartThingsUrl && configData.settings.smartThingsToken) ?
+                `https://${configData.settings.smartThingsUrl}/receiveData?access_token=${configData.settings.smartThingsToken}` :
+                `http://${configData.settings.smartThingsHubIP}:39500/event`;
+            if (configData.settings && ((configData.settings.smartThingsHubIP !== "" && configData.settings.smartThingsHubIP !== undefined) || (configData.settings.smartThingsUrl && configData.settings.smartThingsToken))) {
                 buildEchoDeviceMap(response.devices)
                     .then(function(devOk) {
                         let options = {
                             method: 'POST',
-                            uri: 'http://' + configData.settings.smartThingsHubIP + ':39500/event',
+                            uri: url,
                             headers: {
                                 'evtSource': 'Echo_Speaks',
                                 'evtType': 'sendStatusData'
                             },
                             body: {
                                 'echoDevices': echoDevices,
+                                'webUrl': configData.settings.webUrl || null,
                                 'timestamp': Date.now(),
                                 'serviceInfo': {
                                     'version': appVer,
@@ -533,7 +550,7 @@ function sendStatusUpdateToST(self) {
                         reqPromise(options)
                             .then(function() {
                                 eventCount++;
-                                logger.info('** Sent Echo Speaks Data to SmartThings Hub Successfully! | Hub: (http://' + configData.settings.smartThingsHubIP + ':39500/event) **');
+                                logger.info(`** Sent Echo Speaks Data to SmartThings Hub Successfully! | Hub: (${url}) **`);
                             })
                             .catch(function(err) {
                                 logger.error("ERROR: Unable to connect to SmartThings Hub: " + err.message);

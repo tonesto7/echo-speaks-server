@@ -96,6 +96,24 @@
                             Enter the IP Address xxx.xxx.xxx.xxx
                         </small>
                     </div>
+
+                    <div class="md-form">
+                        <i class="fa fa-microchip prefix"></i>
+                        <input type="text" id="smartThingsUrl" name="smartThingsUrl" class="form-control" aria-describedby="ssmartThingsUrlHelpBlockMD">
+                        <label for="smartThingsUrl" data-error="wrong" data-success="right">SmartThings Cloud Url</label>
+                        <small id="smartThingsUrlHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
+                            Enter the IP Address xxx.xxx.xxx.xxx
+                        </small>
+                    </div>
+
+                    <div class="md-form">
+                        <i class="fa fa-microchip prefix"></i>
+                        <input type="text" id="smartThingsToken" name="smartThingsToken" class="form-control" aria-describedby="smartThingsTokenHelpBlockMD">
+                        <label for="smartThingsToken" data-error="wrong" data-success="right">SmartThings Access Token</label>
+                        <small id="smartThingsTokenHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
+                            Enter the IP Address xxx.xxx.xxx.xxx
+                        </small>
+                    </div>
                     <div class="md-form mt-0">
                         <i class="fa fa-info prefix"></i>
                         <input type="text" id="serverPort" name="serverPort" class="form-control" aria-describedby="serverPortHelpBlockMD">
@@ -172,7 +190,6 @@
         });
 
         $("#proxyLoginLink").click(function() {
-            // window.location.href = 'http://localhost:' + configData.settings.proxyPort;
             window.location.href = 'http://' + rootHost + ':' + configData.settings.proxyPort;
         });
         $("#clearLoginBtn").click(function() {
@@ -229,6 +246,7 @@
                     delete configData.settings.user;
                     delete configData.settings.password;
                 }
+                configData.settings.webUrl = rootHost;
                 // $.post(url, {
                 //     "clientId": "1",
                 //     "sensor": "Temp",
