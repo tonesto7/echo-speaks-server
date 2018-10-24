@@ -457,8 +457,8 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
 
         if (
             (proxyRes.socket && proxyRes.socket._host === `alexa.${_options.amazonPage}` && proxyRes.socket.parser.outgoing && proxyRes.socket.parser.outgoing.method === 'GET' && proxyRes.socket.parser.outgoing.path === '/spa/index.html') ||
-            (proxyRes.socket && proxyRes.socket.parser.outgoing && proxyRes.socket.parser.outgoing._headers.location && proxyRes.socket.parser.outgoing._headers.location === `https://alexa.${_options.amazonPage}/spa/index.html`) ||
-            (proxyRes.headers.location && proxyRes.headers.location === `https://alexa.${_options.amazonPage}/spa/index.html`)
+            (proxyRes.socket && proxyRes.socket.parser.outgoing && proxyRes.socket.parser.outgoing._headers.location && proxyRes.socket.parser.outgoing._headers.location === 'https://alexa.' + _options.amazonPage + '/spa/index.html') ||
+            (proxyRes.headers.location && proxyRes.headers.location === 'https://alexa.' + _options.amazonPage + '/spa/index.html')
         ) {
             _options.logger && _options.logger('Alexa-Cookie: Proxy detected SUCCESS!!');
             proxyRes.statusCode = 302;
