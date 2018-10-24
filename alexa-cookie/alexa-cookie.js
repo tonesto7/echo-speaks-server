@@ -202,7 +202,7 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
         }
         if (_options.setupProxy) {
             _options.setupProxy = true;
-            _options.proxyPort = _options.proxyPort || 0;
+            _options.proxyPort = _options.serverPort || 0;
             _options.proxyListenBind = _options.proxyListenBind || '0.0.0.0';
             _options.logger && _options.logger('Alexa-Cookie: Proxy-Mode enabled if needed: ' + _options.proxyOwnIp + ':' + _options.proxyPort + ' to listen on ' + _options.proxyListenBind);
         } else {
@@ -517,15 +517,14 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
 function stopProxyServer(callback) {
     if (proxyServer) {
         if (webApp) {
-            proxyServer.removeListener('');
+            // webApp = null;
         } else {
             proxyServer.close(() => {
                 callback && callback();
             });
-            proxyServer = null;
         }
+        proxyServer = null;
     }
-
 }
 
 module.exports.generateAlexaCookie = generateAlexaCookie;

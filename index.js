@@ -76,6 +76,7 @@ function startWebConfig() {
                 next();
             });
             webApp.get('/config', function(req, res) {
+                logger.debug('config page requested');
                 res.sendFile(__dirname + '/public/index.html');
             });
             webApp.get('/clearAuth', urlencodedParser, function(req, res) {
@@ -187,7 +188,6 @@ function startWebServer() {
         amazonPage: configData.settings.url, // optional: possible to use with different countries, default is 'amazon.de'
         setupProxy: true, // optional: should the library setup a proxy to get cookie when automatic way did not worked? Default false!
         proxyOwnIp: getIPAddress(), // required if proxy enabled: provide own IP or hostname to later access the proxy. needed to setup all rewriting and proxy stuff internally
-        proxyPort: configData.settings.serverPort, // optional: use this port for the proxy, default is 0 means random port is selected
         proxyListenBind: '0.0.0.0', // optional: set this to bind the proxy to a special IP, default is '0.0.0.0'
         proxyLogLevel: 'warn', // optional: Loglevel of Proxy, default 'warn'
         successHtml: loginSuccessHtml()

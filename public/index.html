@@ -183,7 +183,7 @@
         });
 
         $("#proxyLoginLink").click(function() {
-            window.location.href = 'http://' + rootHost + ':' + configData.settings.serverPort;
+            window.location.href = 'http://' + rootHost + ':' + configData.settings.serverPort + '/';
         });
         $("#clearLoginBtn").click(function() {
             let url = rootOrigin + '/clearAuth';

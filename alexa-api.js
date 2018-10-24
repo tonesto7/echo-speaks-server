@@ -253,13 +253,15 @@ var getDevices = function(config, callback) {
 
 var getState = function(deviceSerialNumber, config, callback) {
     var device = {};
-    config.devicesArray.devices.forEach(function(dev) {
-        if (dev.serialNumber === deviceSerialNumber) {
-            device.deviceSerialNumber = dev.serialNumber;
-            device.deviceType = dev.deviceType;
-            device.deviceOwnerCustomerId = dev.deviceOwnerCustomerId;
-        }
-    });
+    // if (config.devicesArray && config.devicesArray instanceof Array) {
+    //     config.devicesArray.devices.forEach(function(dev) {
+    //         if (dev.serialNumber === deviceSerialNumber) {
+    //             device.deviceSerialNumber = dev.serialNumber;
+    //             device.deviceType = dev.deviceType;
+    //             device.deviceOwnerCustomerId = dev.deviceOwnerCustomerId;
+    //         }
+    //     });
+    // }
     request({
         method: 'GET',
         url: alexaUrl + '/api/np/player?deviceSerialNumber=' + device.deviceSerialNumber + '&deviceType=' + device.deviceType + '&screenWidth=2560',
