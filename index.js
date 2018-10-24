@@ -65,11 +65,9 @@ function startWebConfig() {
             webApp.listen(configData.settings.serverPort, function() {
                 logger.info('** Echo Speaks Config Service (v' + appVer + ') is Running at (IP: ' + getIPAddress() + ' | Port: ' + configData.settings.serverPort + ') | ProcessId: ' + process.pid + ' **');
                 if (!configCheckOk()) {
-                    // logger.warn('** Configurations Settings Missing... Please visit http://' + getIPAddress() + ':' + configData.settings.serverPort + '/config to configure settings...');
-                    logger.warn('** Configurations Settings Missing... Please visit http://localhost:' + configData.settings.serverPort + '/config to configure settings...');
+                    logger.warn('** Configurations Settings Missing... Please visit https://' + getIPAddress() + ':' + configData.settings.serverPort + '/config to configure settings...');
                 } else {
-                    // logger.info('** Configurations Page available at (http://' + getIPAddress() + ':' + configData.settings.serverPort + '/config)');
-                    logger.info('** Configurations Page available at (http://localhost:' + configData.settings.serverPort + '/config)');
+                    logger.info('** Configurations Page available at (https://' + getIPAddress() + ':' + configData.settings.serverPort + '/config)');
                 }
             });
             webApp.use(function(req, res, next) {
