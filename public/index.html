@@ -172,7 +172,8 @@
         });
 
         $("#proxyLoginLink").click(function() {
-            window.location.href = 'http://' + rootHost + ':' + configData.settings.proxyPort;
+            window.location.href = 'http://localhost:' + configData.settings.proxyPort;
+            // window.location.href = 'http://' + rootHost + ':' + configData.settings.proxyPort;
         });
         $("#clearLoginBtn").click(function() {
             let url = rootOrigin + '/clearAuth';
