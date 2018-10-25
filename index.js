@@ -19,6 +19,7 @@ const webApp = express();
 const urlencodedParser = bodyParser.urlencoded({
     extended: false
 });
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 // These the config variables
 var configData = {};
@@ -144,41 +145,6 @@ function startWebConfig() {
             reject(ex)
         }
     });
-}
-
-const loginSuccessHtml = function() {
-    let html = '';
-    let redirUrl = 'http://' + getIPAddress() + ':' + configData.settings.serverPort + '/config';
-    html += '<!DOCTYPE html>'
-    html += '<html>'
-    html += '   <head>'
-    html += '       <meta name="viewport" content="width=640">'
-    html += '       <title>Hubitat & Nest connection</title>'
-    html += '       <style type="text/css">'
-    html += '           body { background-color: slategray; text-align: center; }'
-    html += '           .container {'
-    html += '               width: 90%;'
-    html += '               padding: 4%;'
-    html += '               text-align: center;'
-    html += '               color: white;'
-    html += '           }'
-    html += '           p {'
-    html += '               font-size: 2.2em;'
-    html += '               text-align: center;'
-    html += '               padding: 0 40px;'
-    html += '               margin-bottom: 0;'
-    html += '           }'
-    html += '       </style>'
-    html += '   </head>'
-    html += '   <body>'
-    html += '       <div class="container">'
-    html += '           <h3>Amazon Alexa Cookie Retrieved Successfully</h3>'
-    html += '           <h5>You will be redirected back to the config page in 5 seconds.</h5>';
-    html += '       </div>';
-    html += "       <script>setTimeout( function(){ window.location.href = '" + redirUrl + "'; }, 5000 );</script>";
-    html += '   </body>'
-    html += '</html>';
-    return html;
 }
 
 function startWebServer() {
@@ -637,6 +603,42 @@ function getHostUptimeStr(time) {
         's': seconds
     };
 }
+
+const loginSuccessHtml = function() {
+    let html = '';
+    let redirUrl = 'http://' + getIPAddress() + ':' + configData.settings.serverPort + '/config';
+    html += '<!DOCTYPE html>'
+    html += '<html>'
+    html += '   <head>'
+    html += '       <meta name="viewport" content="width=640">'
+    html += '       <title>Hubitat & Nest connection</title>'
+    html += '       <style type="text/css">'
+    html += '           body { background-color: slategray; text-align: center; }'
+    html += '           .container {'
+    html += '               width: 90%;'
+    html += '               padding: 4%;'
+    html += '               text-align: center;'
+    html += '               color: white;'
+    html += '           }'
+    html += '           p {'
+    html += '               font-size: 2.2em;'
+    html += '               text-align: center;'
+    html += '               padding: 0 40px;'
+    html += '               margin-bottom: 0;'
+    html += '           }'
+    html += '       </style>'
+    html += '   </head>'
+    html += '   <body>'
+    html += '       <div class="container">'
+    html += '           <h3>Amazon Alexa Cookie Retrieved Successfully</h3>'
+    html += '           <h5>You will be redirected back to the config page in 5 seconds.</h5>';
+    html += '       </div>';
+    html += "       <script>setTimeout( function(){ window.location.href = '" + redirUrl + "'; }, 5000 );</script>";
+    html += '   </body>'
+    html += '</html>';
+    return html;
+}
+
 
 /*******************************************************************************
                             PROCESS EXIT FUNCTIONS

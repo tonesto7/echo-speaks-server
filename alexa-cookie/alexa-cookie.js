@@ -29,8 +29,8 @@ const defaultUserAgentLinux = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.3
 const defaultAcceptLanguage = 'en-US';
 
 let proxyServer;
-var webApp;
-var successHtml = '<b>Amazon Alexa Cookie successfully retrieved.You can close the browser.</b>';
+let webApp;
+let successHtml = '<b>Amazon Alexa Cookie successfully retrieved.You can close the browser.</b>';
 
 function customStringify(v, func, intent) {
     const cache = new Map();
@@ -64,7 +64,9 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
     if (_options.successHtml) {
         successHtml = _options.successHtml;
     }
-    if (webapp) { webApp = webApp; }
+    if (webapp) {
+        webApp = webapp;
+    }
 
     function request(options, info, callback) {
         _options.logger && _options.logger('Alexa-Cookie: Sending Request with ' + JSON.stringify(options));
@@ -443,8 +445,10 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
 
     function onProxyRes(proxyRes, req, res) {
         const url = req.originalUrl || req.url;
-        if (url.endsWith('.ico') || url.endsWith('.js') || url.endsWith('.ttf') || url.endsWith('.svg') || url.endsWith('.png') || url.endsWith('.appcache')) return;
-        if (url.startsWith('/ap/uedata')) return;
+        if (url.endsWith('.ico') || url.endsWith('.js') || url.endsWith('.ttf') || url.endsWith('.svg') || url.endsWith('.png') || url.endsWith('.appcache')) { return; }
+        if (url.startsWith('/ap/uedata')) {
+            return;
+        }
         //_options.logger && _options.logger('Proxy-Response: ' + customStringify(proxyRes, null, 2));
         _options.proxyLogLevel === 'debug' && _options.logger && _options.logger('Alexa-Cookie: Proxy-Response Headers: ' + customStringify(proxyRes._headers, null, 2));
         _options.proxyLogLevel === 'debug' && _options.logger && _options.logger('Alexa-Cookie: Proxy-Response Outgoing: ' + customStringify(proxyRes.socket.parser.outgoing, null, 2));
