@@ -1,6 +1,6 @@
 "use strict";
 
-const appVer = '0.7.0';
+const appVer = require('./package.json').version;
 const alexa_api = require('./alexa-api');
 const reqPromise = require("request-promise");
 const logger = require('./logger');
@@ -68,7 +68,7 @@ function startWebConfig() {
                 if (!configCheckOk()) {
                     logger.warn('** Configurations Settings Missing... Please visit https://' + getIPAddress() + ':' + configData.settings.serverPort + '/config to configure settings...');
                 } else {
-                    logger.info('** Configurations Page available at (https://' + getIPAddress() + ':' + configData.settings.serverPort + '/config)');
+                    // logger.info('** Configurations Page available at (https://' + getIPAddress() + ':' + configData.settings.serverPort + '/config)');
                 }
             });
             webApp.use(function(req, res, next) {
@@ -77,6 +77,18 @@ function startWebConfig() {
                 next();
             });
             webApp.get('/config', function(req, res) {
+                if (req.hostname) {
+                    if (configData.settings.hostUrl === undefined || configData.settings.hostUrl !== req.hostname) {
+                        logger.debug(`set host url: ${req.hostname}`);
+                        configFile.set('settings.hostUrl', req.hostname);
+                        configFile.save();
+                        configData.settings.hostUrl = req.hostname;
+
+                    }
+                }
+                if (!configData.state.loginComplete) {
+                    startWebServer();
+                }
                 logger.debug('config page requested');
                 res.sendFile(__dirname + '/public/index.html');
             });
@@ -122,9 +134,9 @@ function startWebConfig() {
                 if (req.headers.serverport) {
                     configFile.set('settings.serverPort', req.headers.serverport);
                 };
-                if (req.headers.weburl) {
-                    configFile.set('settings.webUrl', req.headers.weburl);
-                };
+                // if (req.headers.hosturl) {
+                //     configFile.set('settings.hostUrl', req.headers.hosturl);
+                // };
                 // console.log('configData(set): ', configData);
                 if (((req.headers.smartthingsurl.length && req.headers.smartthingstoken.length) || req.headers.smartthingshubip.length) && req.headers.url.length && req.headers.refreshseconds.length && req.headers.serverport.length) {
                     configFile.save();
@@ -139,6 +151,9 @@ function startWebConfig() {
                 } else {
                     res.send('failed');
                 }
+            });
+            webApp.get('/cookie-success', function(req, res) {
+                res.send(loginSuccessHtml());
             });
             resolve(true)
         } catch (ex) {
@@ -156,7 +171,8 @@ function startWebServer() {
         proxyOwnIp: getIPAddress(), // required if proxy enabled: provide own IP or hostname to later access the proxy. needed to setup all rewriting and proxy stuff internally
         proxyListenBind: '0.0.0.0', // optional: set this to bind the proxy to a special IP, default is '0.0.0.0'
         proxyLogLevel: 'warn', // optional: Loglevel of Proxy, default 'warn'
-        successHtml: loginSuccessHtml()
+        successHtml: loginSuccessHtml(),
+        proxyHost: configData.settings.hostUrl
     };
 
     configFile.set('state.loginProxyActive', true);
@@ -439,7 +455,7 @@ function sendDeviceDataToST(eDevData) {
                         },
                         body: {
                             'echoDevices': echoDevices,
-                            'webUrl': configData.settings.webUrl || null,
+                            'hostUrl': configData.settings.hostUrl || null,
                             'timestamp': Date.now(),
                             'serviceInfo': {
                                 'version': appVer,
@@ -493,7 +509,7 @@ function sendStatusUpdateToST(self) {
                             },
                             body: {
                                 'echoDevices': echoDevices,
-                                'webUrl': configData.settings.webUrl || null,
+                                'hostUrl': configData.settings.hostUrl || null,
                                 'timestamp': Date.now(),
                                 'serviceInfo': {
                                     'version': appVer,
@@ -541,10 +557,11 @@ function configCheckOk() {
 
 startWebConfig()
     .then(function(res) {
-        logger.debug("localhost: " + process.env.LOCALHOST);
         if (configCheckOk()) {
             logger.info('-- Echo Speaks Web Service Starting Up! Takes about 10 seconds before it\'s available... --');
-            startWebServer();
+            if (configData.state.loginComplete === true) {
+                startWebServer();
+            }
         }
     })
     .catch(function(err) {
@@ -611,7 +628,7 @@ const loginSuccessHtml = function() {
     html += '<html>'
     html += '   <head>'
     html += '       <meta name="viewport" content="width=640">'
-    html += '       <title>Hubitat & Nest connection</title>'
+    html += '       <title>Echo Speaks Amazon Authentication</title>'
     html += '       <style type="text/css">'
     html += '           body { background-color: slategray; text-align: center; }'
     html += '           .container {'
