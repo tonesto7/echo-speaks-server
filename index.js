@@ -634,7 +634,7 @@ function getHostUptimeStr(time) {
 
 const loginSuccessHtml = function() {
     let html = '';
-    let redirUrl = (configData.settings.isHeroku === true) ? 'https://' + configData.settings.hostUrl + ':' + configData.settings.serverPort + '/config' : 'http://' + getIPAddress() + ':' + configData.settings.serverPort + '/config';
+    let redirUrl = (configData.settings.isHeroku) ? 'https://' + configData.settings.hostUrl + '/config' : 'http://' + getIPAddress() + ':' + configData.settings.serverPort + '/config';
     html += '<!DOCTYPE html>'
     html += '<html>'
     html += '   <head>'
