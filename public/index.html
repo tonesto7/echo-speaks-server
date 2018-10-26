@@ -194,8 +194,8 @@
                 $.each(data.settings, function(key, val) {
                     var elem = document.getElementById(key);
                     if ($(elem)) {
-                        if (key === 'url') {
-                            $('#url').val(val);
+                        if (key === 'amazonDomain') {
+                            $('#amazonDomain').val(val);
                         } else if (key === 'isHeroku') {
                             console.log('isHeroku: ' + val);
                             isHeroku = (val === true || val === 'true')
