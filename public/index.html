@@ -77,14 +77,14 @@
             </div>
 
             <div class="card w-100 mb-3">
-                <div class="card-header blue lighten-1 w-100 text-white text-center">Platform Options</div>
+                <div class="card-header blue lighten-1 w-100 text-white text-center">Status Info</div>
                 <div class="card-body w-100">
                     <div class="form-check">
                         <input type="checkbox" class="form-check-input" id="isHeroku" disabled>
                         <label class="form-check-label" for="isHeroku">Running on Heroku?</label>
                         <small id="isHerokuHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
-                                Sets all the appropriate options for the cloud based instance.
-                            </small>
+                            Sets all the appropriate options for the cloud based instance.
+                        </small>
                     </div>
                 </div>
             </div>
@@ -226,7 +226,7 @@
         $("#proxyLoginLink").click(function() {
             let pUrl = 'http://' + rootHost + ':' + configData.settings.serverPort + '/proxy/alexa.' + $('#url').val();
             if (isHeroku) {
-                pUrl = (isHeroku) ? 'https://' + rootHost + '/proxy/alexa.' + $('#amazonDomain').val()
+                pUrl = 'https://' + rootHost + '/proxy/alexa.' + $('#amazonDomain').val()
             }
             console.log('Proxy Url: ' + pUrl)
             window.location.href = pUrl;
