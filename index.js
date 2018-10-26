@@ -110,35 +110,58 @@ function startWebConfig() {
                 res.send(JSON.stringify(configData));
             });
             webApp.post('/configData', function(req, res) {
+                let saveFile = false;
                 if (req.headers.user) {
                     configFile.set('settings.user', req.headers.user);
+                    saveFile = true;
                 };
                 if (req.headers.password) {
                     configFile.set('settings.password', req.headers.password);
+                    saveFile = true;
                 };
                 if (req.headers.smartthingshubip) {
                     configFile.set('settings.smartThingsHubIP', req.headers.smartthingshubip);
+                    saveFile = true;
                 };
                 if (req.headers.smartthingsurl) {
                     configFile.set('settings.smartThingsUrl', req.headers.smartthingsurl);
+                    saveFile = true;
                 };
                 if (req.headers.smartthingstoken) {
                     configFile.set('settings.smartThingsToken', req.headers.smartthingstoken);
+                    saveFile = true;
                 };
                 if (req.headers.url) {
                     configFile.set('settings.url', req.headers.url);
+                    saveFile = true;
                 };
                 if (req.headers.refreshseconds) {
                     configFile.set('settings.refreshSeconds', parseInt(req.headers.refreshseconds));
+                    saveFile = true;
                 };
                 if (req.headers.serverport) {
                     configFile.set('settings.serverPort', req.headers.serverport);
+                    saveFile = true;
                 };
-                // if (req.headers.hosturl) {
-                //     configFile.set('settings.hostUrl', req.headers.hosturl);
-                // };
+                if (req.headers.isheroku) {
+                    configFile.set('settings.isHeroku', req.headers.isheroku);
+                    saveFile = true;
+                };
                 // console.log('configData(set): ', configData);
-                if (((req.headers.smartthingsurl.length && req.headers.smartthingstoken.length) || req.headers.smartthingshubip.length) && req.headers.url.length && req.headers.refreshseconds.length && req.headers.serverport.length) {
+                // if (
+                //     (
+                //         (
+                //             req.headers.isheroku &&
+                //             req.headers.smartthingsurl.length &&
+                //             req.headers.smartthingstoken.length
+                //         ) ||
+                //         (req.headers.isheroku !== true && req.headers.smartthingshubip.length)
+                //     ) &&
+                //     req.headers.url.length &&
+                //     req.headers.refreshseconds.length &&
+                //     (!req.headers.isheroku && req.headers.serverport.length)
+                // ) {
+                if (saveFile) {
                     configFile.save();
                     loadConfig();
                     res.send('done');
@@ -440,10 +463,17 @@ function getNotificationInfo() {
 
 function sendDeviceDataToST(eDevData) {
     try {
-        let url = (configData.settings.smartThingsUrl && configData.settings.smartThingsToken) ?
-            `https://${configData.settings.smartThingsUrl}/receiveData?access_token=${configData.settings.smartThingsToken}` :
+        let url = (configData.settings.isHeroku && configData.settings.url && configData.settings.smartThingsToken) ?
+            `${configData.settings.smartThingsUrl}/receiveData?access_token=${configData.settings.smartThingsToken}` :
             `http://${configData.settings.smartThingsHubIP}:39500/event`;
-        if (configData.settings && ((configData.settings.smartThingsHubIP !== "" && configData.settings.smartThingsHubIP !== undefined) || (configData.settings.smartThingsUrl && configData.settings.smartThingsToken))) {
+        // console.log('url:', url);
+        if (
+            configData.settings &&
+            (
+                (configData.settings.isHeroku && configData.settings.smartThingsUrl && configData.settings.smartThingsToken) ||
+                (configData.settings.smartThingsHubIP !== "" && configData.settings.smartThingsHubIP !== undefined)
+            )
+        ) {
             buildEchoDeviceMap(eDevData)
                 .then(function(devOk) {
                     let options = {
@@ -472,7 +502,8 @@ function sendDeviceDataToST(eDevData) {
                         json: true
                     };
                     reqPromise(options)
-                        .then(function() {
+                        .then(function(resp) {
+                            console.log('resp:', resp);
                             eventCount++;
                             logger.info(`** Sent Echo Speaks Data to SmartThings Hub Successfully! | Hub: (${url}) **`);
                         })
@@ -494,10 +525,17 @@ function sendDeviceDataToST(eDevData) {
 function sendStatusUpdateToST(self) {
     self.getDevices(savedConfig, function(error, response) {
         try {
-            let url = (configData.settings.smartThingsUrl && configData.settings.smartThingsToken) ?
-                `https://${configData.settings.smartThingsUrl}/receiveData?access_token=${configData.settings.smartThingsToken}` :
+            let url = (configData.settings.isHeroku && configData.settings.url && configData.settings.smartThingsToken) ?
+                `${configData.settings.smartThingsUrl}/receiveData?access_token=${configData.settings.smartThingsToken}` :
                 `http://${configData.settings.smartThingsHubIP}:39500/event`;
-            if (configData.settings && ((configData.settings.smartThingsHubIP !== "" && configData.settings.smartThingsHubIP !== undefined) || (configData.settings.smartThingsUrl && configData.settings.smartThingsToken))) {
+            // console.log('url:', url);
+            if (
+                configData.settings &&
+                (
+                    (configData.settings.isHeroku && configData.settings.smartThingsUrl && configData.settings.smartThingsToken) ||
+                    (configData.settings.smartThingsHubIP !== "" && configData.settings.smartThingsHubIP !== undefined)
+                )
+            ) {
                 buildEchoDeviceMap(response.devices)
                     .then(function(devOk) {
                         let options = {
@@ -527,7 +565,8 @@ function sendStatusUpdateToST(self) {
                         }
                         logger.debug('echoDevices (statUpd): ' + Object.keys(echoDevices).length + ' devices');
                         reqPromise(options)
-                            .then(function() {
+                            .then(function(resp) {
+                                console.log('resp:', resp);
                                 eventCount++;
                                 logger.info(`** Sent Echo Speaks Data to SmartThings Hub Successfully! | Hub: (${url}) **`);
                             })

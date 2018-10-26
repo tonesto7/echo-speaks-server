@@ -103,7 +103,7 @@
                             <option value="amazon.de">amazon.de</option>
                         </select>
                         <small id="urlHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
-                            Enter the Alexa URL for login `amazon.com, amazon.de, etc.`
+                            Select the Alexa URL for login `amazon.com, amazon.de, etc.`
                         </small>
                     </div>
                     <div class="md-form" id="localDivHubIp">
@@ -115,21 +115,21 @@
                         </small>
                     </div>
 
-                    <div class="md-form">
+                    <div class="md-form" id="cloudDivUrl">
                         <i class="fa fa-microchip prefix"></i>
                         <input type="text" id="smartThingsUrl" name="smartThingsUrl" class="form-control" aria-describedby="ssmartThingsUrlHelpBlockMD">
                         <label for="smartThingsUrl" data-error="wrong" data-success="right">SmartThings Cloud Url</label>
                         <small id="smartThingsUrlHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
-                            Enter the IP Address xxx.xxx.xxx.xxx
+                            Enter the ST Url: https://graph.api.smartthings.com/api/smartapps/installations/
                         </small>
                     </div>
 
-                    <div class="md-form">
+                    <div class="md-form" id="cloudDivToken">
                         <i class="fa fa-microchip prefix"></i>
                         <input type="text" id="smartThingsToken" name="smartThingsToken" class="form-control" aria-describedby="smartThingsTokenHelpBlockMD">
                         <label for="smartThingsToken" data-error="wrong" data-success="right">SmartThings Access Token</label>
                         <small id="smartThingsTokenHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
-                            Enter the IP Address xxx.xxx.xxx.xxx
+                            Enter the ST Token: 33g98b0e-292s-4e07-b029-ee9649226b00
                         </small>
                     </div>
                     <div class="md-form mt-0" id="localDivHubPort">
@@ -176,11 +176,7 @@
         $('#proxyLoginDiv').hide();
         $('#loginInputDiv').show();
         $('#clearLoginDiv').hide();
-        if (isHeroku) {
-            $('[id^="localDiv"]').hide();
-        } else {
-            $('[id^="localDiv"]').show();
-        }
+
         var configData = {};
         $(document).ready(function() {
             let url = rootOrigin + '/configData';
@@ -200,24 +196,35 @@
                         $('#clearLoginDiv').show();
                     }
                 });
+
                 $.each(data.settings, function(key, val) {
                     var elem = document.getElementById(key);
                     if ($(elem)) {
-                        $(elem).attr('value', val);
-                        $(elem).focus();
+                        if (key === 'url') {
+                            $('#url').val(val);
+                        } else if (key === 'isHeroku') {
+                            $('#isHeroku').prop('checked', true);
+                            (val === true || val === 'true') ? $('[id^="localDiv"]').hide(): $('[id^="localDiv"]').show();
+                            (val === true || val === 'true') ? $('[id^="cloudDiv"]').show(): $('[id^="cloudDiv"]').hide();
+                        } else {
+                            $(elem).attr('value', val);
+                            $(elem).focus();
+                        }
                     }
                 });
             });
         });
 
+        $("#url").change(function() {
+            console.log($(this).val());
+            configData.settings.url = $(this).val();
+        });
         $("#isHeroku").change(function() {
-            isHeroku = getChecked('isHeroku');
+            configData.settings.isHeroku = getChecked('isHeroku');
+            isHeroku = configData.settings.isHeroku;
             console.log(`isHeroku: ${isHeroku}`)
-            if (isHeroku) {
-                $('[id^="localDiv"]').hide();
-            } else {
-                $('[id^="localDiv"]').show();
-            }
+            isHeroku ? $('[id^="localDiv"]').hide() : $('[id^="localDiv"]').show();
+            isHeroku ? $('[id^="cloudDiv"]').show() : $('[id^="cloudDiv"]').hide();
         });
 
         $("#proxyLoginLink").click(function() {
@@ -273,18 +280,16 @@
             var config = $(this).serializeFormJSON();
             var url = rootOrigin + '/configData';
             if (Object.keys(config).length) {
-                console.log(config);
+                // console.log(config);
+                console.log(configData.state.loginComplete);
                 if (configData.state.loginComplete === true) {
                     delete configData.settings.user;
                     delete configData.settings.password;
+                    config.user = "";
+                    config.password = "";
                 }
-                configData.settings.url = $('#url').val();;
-                // $.post(url, {
-                //     "clientId": "1",
-                //     "sensor": "Temp",
-                //     "dateStart": "2016-09-03 00:00:00",
-                //     "dateEnd": "2016-09-03 00:59:59"
-                // })
+                config.url = configData.settings.url;
+                config.isHeroku = configData.settings.isHeroku;
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("POST", rootOrigin + '/configData');
                 xmlhttp.onreadystatechange = function() {
@@ -321,4 +326,4 @@
     </script>
 </body>
 
-</html>
+</html>aZ
