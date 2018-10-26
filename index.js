@@ -83,7 +83,6 @@ function startWebConfig() {
                         configFile.set('settings.hostUrl', req.hostname);
                         configFile.save();
                         configData.settings.hostUrl = req.hostname;
-
                     }
                 }
                 if (!configData.state.loginComplete) {
@@ -467,13 +466,7 @@ function sendDeviceDataToST(eDevData) {
             `${configData.settings.smartThingsUrl}/receiveData?access_token=${configData.settings.smartThingsToken}` :
             `http://${configData.settings.smartThingsHubIP}:39500/event`;
         // console.log('url:', url);
-        if (
-            configData.settings &&
-            (
-                (configData.settings.isHeroku && configData.settings.smartThingsUrl && configData.settings.smartThingsToken) ||
-                (configData.settings.smartThingsHubIP !== "" && configData.settings.smartThingsHubIP !== undefined)
-            )
-        ) {
+        if (configData.settings && ((configData.settings.isHeroku && configData.settings.smartThingsUrl && configData.settings.smartThingsToken) || (configData.settings.smartThingsHubIP !== "" && configData.settings.smartThingsHubIP !== undefined))) {
             buildEchoDeviceMap(eDevData)
                 .then(function(devOk) {
                     let options = {
@@ -529,13 +522,7 @@ function sendStatusUpdateToST(self) {
                 `${configData.settings.smartThingsUrl}/receiveData?access_token=${configData.settings.smartThingsToken}` :
                 `http://${configData.settings.smartThingsHubIP}:39500/event`;
             // console.log('url:', url);
-            if (
-                configData.settings &&
-                (
-                    (configData.settings.isHeroku && configData.settings.smartThingsUrl && configData.settings.smartThingsToken) ||
-                    (configData.settings.smartThingsHubIP !== "" && configData.settings.smartThingsHubIP !== undefined)
-                )
-            ) {
+            if (configData.settings && ((configData.settings.isHeroku && configData.settings.smartThingsUrl && configData.settings.smartThingsToken) || (configData.settings.smartThingsHubIP !== "" && configData.settings.smartThingsHubIP !== undefined))) {
                 buildEchoDeviceMap(response.devices)
                     .then(function(devOk) {
                         let options = {

@@ -170,10 +170,10 @@
             return ($(`#${name}`).prop("checked") === true);
         }
         let isHeroku = getChecked('isHeroku');
-        if (isHeroku) {
-            console.log(rootOrigin)
-            rootOrigin = 'http://' + rootHost;
-        }
+        // if (isHeroku) {
+        //     console.log(rootOrigin)
+        //     rootOrigin = 'http://' + rootHost;
+        // }
         console.log('rootOrigin: ' + rootOrigin);
         console.log('rootHost: ' + rootHost);
 
@@ -232,7 +232,7 @@
         });
 
         $("#proxyLoginLink").click(function() {
-            window.location.href = 'https://' + rootHost + (isHeroku ? ':' + configData.settings.serverPort : '') + '/';
+            window.location.href = 'https://' + rootHost + ':' + configData.settings.serverPort + '/';
         });
 
         $("#clearLoginBtn").click(function() {

@@ -521,9 +521,7 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
         webApp.use(myProxy);
         callbackListening(webApp);
     } else {
-        // mount `exampleProxy` in web server
         const app = express();
-
         app.use(myProxy);
         app.get('/cookie-success', function(req, res) {
             res.send(_options.successHtml);
