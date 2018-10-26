@@ -483,8 +483,8 @@ function getNotificationInfo() {
 
 function handleDataUpload(deviceData, src) {
     try {
-        let url = (configData.settings.isHeroku && configData.settings.amazonDomain && configData.settings.smartThingsToken) ?
-            `${configData.settings.smartThingsUrl}/receiveData?access_token=${configData.settings.smartThingsToken}` :
+        let url = (configData.settings.isHeroku && configData.settings.smartThingsUrl) ?
+            `${configData.settings.smartThingsUrl}` :
             `http://${configData.settings.smartThingsHubIP}:39500/event`;
         logger.info('ST URL: ' + url);
         if (deviceData === undefined) {
