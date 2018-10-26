@@ -233,7 +233,7 @@
         });
 
         $("#proxyLoginLink").click(function() {
-            let pUrl = (isHeroku) ? 'https://' + rootHost + ':' + configData.settings.serverPort : 'https://' + rootHost + ':' + configData.settings.serverPort + '/';
+            let pUrl = (isHeroku) ? 'http://' + rootHost + ':' + configData.settings.serverPort : 'http://' + rootHost + ':' + configData.settings.serverPort + '/';
             console.log('Proxy Url: ' + pUrl)
             window.location.href = pUrl;
         });

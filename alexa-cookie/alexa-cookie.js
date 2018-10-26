@@ -389,14 +389,14 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
     function replaceHosts(data) {
         const amazonRegex = new RegExp(`https?://www.${_options.amazonPage}/`.replace(/\./g, "\\."), 'g');
         const alexaRegex = new RegExp(`https?://alexa.${_options.amazonPage}/`.replace(/\./g, "\\."), 'g');
-        data = data.replace(amazonRegex, `https://${getLocalHost()}:${_options.proxyPort}/www.${_options.amazonPage}/`);
-        data = data.replace(alexaRegex, `https://${getLocalHost()}:${_options.proxyPort}/alexa.${_options.amazonPage}/`);
+        data = data.replace(amazonRegex, `http://${getLocalHost()}:${_options.proxyPort}/www.${_options.amazonPage}/`);
+        data = data.replace(alexaRegex, `http://${getLocalHost()}:${_options.proxyPort}/alexa.${_options.amazonPage}/`);
         return data;
     }
 
     function replaceHostsBack(data) {
-        const amazonRegex = new RegExp(`https://${getLocalHost()}:${_options.proxyPort}/www.${_options.amazonPage}/`.replace(/\./g, "\\."), 'g');
-        const alexaRegex = new RegExp(`https://${getLocalHost()}:${_options.proxyPort}/alexa.${_options.amazonPage}/`.replace(/\./g, "\\."), 'g');
+        const amazonRegex = new RegExp(`http://${getLocalHost()}:${_options.proxyPort}/www.${_options.amazonPage}/`.replace(/\./g, "\\."), 'g');
+        const alexaRegex = new RegExp(`http://${getLocalHost()}:${_options.proxyPort}/alexa.${_options.amazonPage}/`.replace(/\./g, "\\."), 'g');
         data = data.replace(amazonRegex, `https://www.${_options.amazonPage}/`);
         data = data.replace(alexaRegex, `https://alexa.${_options.amazonPage}/`);
         return data;
