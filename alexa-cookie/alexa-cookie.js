@@ -518,6 +518,7 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
     }
 
     // create the proxy (without context)
+    console.log('optionsAlexa:', optionsAlexa);
     const myProxy = proxy('!/cookie-success', optionsAlexa);
     let useWebApp = true;
     if (useWebApp) {
