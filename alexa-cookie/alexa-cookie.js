@@ -465,6 +465,9 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
         let test1 = proxyRes.headers.location;
         let test2 = proxyRes.socket.parser.outgoing.path;
         let test3 = proxyRes.socket.parser.outgoing._headers.location || '';
+        console.log('test1:', test1);
+        console.log('test2:', test2);
+        console.log('test3:', test3);
 
         let chk1 = (
             proxyRes.socket !== undefined &&
