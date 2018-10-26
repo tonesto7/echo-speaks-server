@@ -165,6 +165,7 @@ function startWebConfig() {
                     loadConfig();
                     res.send('done');
                     if (configCheckOk()) {
+                        console.log('configData(set): ', configData);
                         logger.debug('** Settings File Updated via Web Config **');
                         if (!scheduledUpdatesActive) {
                             startWebServer();
