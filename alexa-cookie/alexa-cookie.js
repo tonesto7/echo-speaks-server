@@ -65,6 +65,10 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
     if (webapp) {
         webApp = webapp;
     }
+    console.log('Heroku Var: ' + process.env.isHeroku);
+    let getLocalHost = function() {
+        return (_options.proxyHost || _options.proxyOwnIp) + (_options.isHeroku ? '' : ':' + _options.serverPort);
+    };
 
     function request(options, info, callback) {
         _options.logger && _options.logger('Alexa-Cookie: Sending Request with ' + JSON.stringify(options));
@@ -204,7 +208,7 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
             _options.setupProxy = true;
             _options.proxyPort = _options.serverPort || 0;
             _options.proxyListenBind = _options.proxyListenBind || '0.0.0.0';
-            _options.logger && _options.logger('Alexa-Cookie: Proxy-Mode enabled if needed: ' + _options.proxyHost || _options.proxyOwnIp + ':' + _options.proxyPort + ' to listen on ' + _options.proxyListenBind);
+            _options.logger && _options.logger('Alexa-Cookie: Proxy-Mode enabled if needed: ' + getLocalHost() + ' to listen on ' + _options.proxyListenBind);
         } else {
             _options.setupProxy = false;
             _options.logger && _options.logger('Alexa-Cookie: Proxy mode disabled');
@@ -287,7 +291,7 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
                     }
                     if (_options.setupProxy) {
                         if (proxyServer) {
-                            errMessage += ` You can try to get the cookie manually by opening http://${_options.proxyHost || _options.proxyOwnIp}:${_options.proxyPort}/ with your browser.`;
+                            errMessage += ` You can try to get the cookie manually by opening http://${getLocalHost()}/ with your browser.`;
                         } else {
                             initAmazonProxy(_options, email, password,
                                 (err, cookie) => {
@@ -302,7 +306,7 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
                                     if (_options.proxyPort === 0) {
                                         _options.proxyPort = proxyServer.address().port;
                                     }
-                                    errMessage += ` You can try to get the cookie manually by opening http://${_options.proxyHost || _options.proxyOwnIp}:${_options.proxyPort}/ with your browser.`;
+                                    errMessage += ` You can try to get the cookie manually by opening http://${getLocalHost()}/ with your browser.`;
                                     callback && callback(new Error(errMessage), null);
                                 }
                             );
@@ -322,7 +326,7 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
     // proxy middleware options
 
     let getLocalHost = function() {
-        return _options.proxyHost || _options.proxyOwnIp;
+        return (_options.proxyHost || _options.proxyOwnIp) + (_options.isHeroku ? '' : ':' + _options.serverPort);
     };
 
     const optionsAlexa = {
@@ -367,15 +371,15 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
         // _options.logger && _options.logger(url + ' / ' + req.method + ' / ' + JSON.stringify(req.headers));
         console.log('router(host): ' + req.headers.host);
         let localHost = getLocalHost();
-        if (req.headers.host === `${localHost}:${_options.proxyPort}`) {
+        if (req.headers.host === `${localHost}`) {
             if (url.startsWith(`/proxy/www.${_options.amazonPage}/`)) {
                 return `https://www.${_options.amazonPage}`;
             } else if (url.startsWith(`/proxy/alexa.${_options.amazonPage}/`)) {
                 return `https://alexa.${_options.amazonPage}`;
             } else if (req.headers.referer) {
-                if (req.headers.referer.startsWith(`http://${localHost}:${_options.proxyPort}/proxy/www.${_options.amazonPage}/`) || req.headers.referer.startsWith(`https://${localHost}:${_options.proxyPort}/proxy/www.${_options.amazonPage}/`)) {
+                if (req.headers.referer.startsWith(`http://${localHost}/proxy/www.${_options.amazonPage}/`) || req.headers.referer.startsWith(`https://${localHost}/proxy/www.${_options.amazonPage}/`)) {
                     return `https://www.${_options.amazonPage}`;
-                } else if (req.headers.referer.startsWith(`http://${localHost}:${_options.proxyPort}/proxy/alexa.${_options.amazonPage}/`) || req.headers.referer.startsWith(`https://${localHost}:${_options.proxyPort}/proxy/alexa.${_options.amazonPage}/`)) {
+                } else if (req.headers.referer.startsWith(`http://${localHost}/proxy/alexa.${_options.amazonPage}/`) || req.headers.referer.startsWith(`https://${localHost}/proxy/alexa.${_options.amazonPage}/`)) {
                     return `https://alexa.${_options.amazonPage}`;
                 }
             }
@@ -392,16 +396,18 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
     }
 
     function replaceHosts(data) {
+        let localHost = getLocalHost();
         const amazonRegex = new RegExp(`https?://www.${_options.amazonPage}/`.replace(/\./g, "\\."), 'g');
         const alexaRegex = new RegExp(`https?://alexa.${_options.amazonPage}/`.replace(/\./g, "\\."), 'g');
-        data = data.replace(amazonRegex, `http://${getLocalHost()}:${_options.proxyPort}/proxy/www.${_options.amazonPage}/`);
-        data = data.replace(alexaRegex, `http://${getLocalHost()}:${_options.proxyPort}/proxy/alexa.${_options.amazonPage}/`);
+        data = data.replace(amazonRegex, `http://${localHost}/proxy/www.${_options.amazonPage}/`);
+        data = data.replace(alexaRegex, `http://${localHost}/proxy/alexa.${_options.amazonPage}/`);
         return data;
     }
 
     function replaceHostsBack(data) {
-        const amazonRegex = new RegExp(`http://${getLocalHost()}:${_options.proxyPort}/proxy/www.${_options.amazonPage}/`.replace(/\./g, "\\."), 'g');
-        const alexaRegex = new RegExp(`http://${getLocalHost()}:${_options.proxyPort}/proxy/alexa.${_options.amazonPage}/`.replace(/\./g, "\\."), 'g');
+        let localHost = getLocalHost();
+        const amazonRegex = new RegExp(`http://${localHost}/proxy/www.${_options.amazonPage}/`.replace(/\./g, "\\."), 'g');
+        const alexaRegex = new RegExp(`http://${localHost}/proxy/alexa.${_options.amazonPage}/`.replace(/\./g, "\\."), 'g');
         data = data.replace(amazonRegex, `https://www.${_options.amazonPage}/`);
         data = data.replace(alexaRegex, `https://alexa.${_options.amazonPage}/`);
         return data;
@@ -505,7 +511,7 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
             _options.debug && console.log('Alexa-Cookie: Proxy detected SUCCESS!!');
 
             proxyRes.statusCode = 302;
-            proxyRes.headers.location = `http://${getLocalHost()}:${_options.proxyPort}/cookie-success`;
+            proxyRes.headers.location = `http://${getLocalHost()}/cookie-success`;
             delete proxyRes.headers.referer;
 
             const finalCookie = proxyRes.headers.cookie || proxyRes.socket.parser.outgoing._headers.cookie;
@@ -545,12 +551,12 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
     } else {
         const app = express();
         app.use(myProxy);
-        app.get('/cookie-success', function(req, res) {
-            res.send(_options.successHtml);
-        });
+        // app.get('/cookie-success', function(req, res) {
+        //     res.send(_options.successHtml);
+        // });
         let server = app.listen(_options.serverPort, _options.proxyListenBind, function() {
             // _options.logger && _options.logger('Alexa-Cookie: Proxy-Server listening on port ' + server.address().port);
-            if (_options.debug) { console.log('Alexa-Cookie: Proxy-Server listening on port ' + server.address().port); }
+            _options.debug && console.log('Alexa-Cookie: Proxy-Server listening on port ' + server.address().port);
             callbackListening(server);
         });
     }

@@ -193,12 +193,11 @@ function startWebServer() {
         // logger: logger.debug, // optional: Logger instance to get (debug) logs
         debug: true,
         serverPort: configData.settings.serverPort,
-        amazonPage: configData.settings.url, // optional: possible to use with different countries, default is 'amazon.de'
-        setupProxy: true, // optional: should the library setup a proxy to get cookie when automatic way did not worked? Default false!
-        proxyOwnIp: getIPAddress(), // required if proxy enabled: provide own IP or hostname to later access the proxy. needed to setup all rewriting and proxy stuff internally
-        proxyListenBind: '0.0.0.0', // optional: set this to bind the proxy to a special IP, default is '0.0.0.0'
-        proxyLogLevel: 'warn', // optional: Loglevel of Proxy, default 'warn'
-        successHtml: loginSuccessHtml(),
+        amazonPage: configData.settings.url,
+        setupProxy: true,
+        proxyOwnIp: getIPAddress(),
+        proxyListenBind: '0.0.0.0',
+        isHeroku: configData.settings.isHeroku,
         proxyHost: configData.settings.hostUrl
     };
 
