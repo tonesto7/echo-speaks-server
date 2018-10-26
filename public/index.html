@@ -224,7 +224,10 @@
         });
 
         $("#proxyLoginLink").click(function() {
-            let pUrl = (isHeroku) ? 'https://' + rootHost + ':' + configData.settings.serverPort + '/proxy/alexa.' + $('#amazonDomain').val() : 'http://' + rootHost + ':' + configData.settings.serverPort + '/proxy/alexa.' + $('#url').val();
+            let pUrl = 'http://' + rootHost + ':' + configData.settings.serverPort + '/proxy/alexa.' + $('#url').val();
+            if (isHeroku) {
+                pUrl = (isHeroku) ? 'https://' + rootHost + '/proxy/alexa.' + $('#amazonDomain').val()
+            }
             console.log('Proxy Url: ' + pUrl)
             window.location.href = pUrl;
         });
