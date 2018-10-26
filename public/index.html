@@ -232,7 +232,9 @@
         });
 
         $("#proxyLoginLink").click(function() {
-            window.location.href = (isHeroku) ? 'https://' + rootHost + ':' + configData.settings.serverPort : 'https://' + rootHost + ':' + configData.settings.serverPort + '/';
+            let pUrl = (isHeroku) ? 'https://' + rootHost + ':' + configData.settings.serverPort : 'https://' + rootHost + ':' + configData.settings.serverPort + '/';
+            console.log('Proxy Url: ' + pUrl)
+            window.location.href = pUrl;
         });
 
         $("#clearLoginBtn").click(function() {
