@@ -195,7 +195,7 @@ function startWebConfig() {
 function startWebServer() {
     const alexaOptions = { // options is optional at all
         // logger: logger.debug, // optional: Logger instance to get (debug) logs
-        debug: true,
+        debug: false,
         serverPort: configData.settings.serverPort,
         amazonDomain: configData.settings.amazonDomain,
         setupProxy: true,
