@@ -519,6 +519,7 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
     let useWebApp = true;
     if (useWebApp) {
         webApp.use(myProxy);
+        console.log('starting login proxy on port: ' + _options.serverPort);
         callbackListening(webApp);
     } else {
         const app = express();
@@ -537,6 +538,7 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
 function stopProxyServer(callback) {
     if (proxyServer) {
         if (webApp) {
+            console.log('removing path');
             removeRoute(webApp, '/');
             // webApp = null;
         } else {
