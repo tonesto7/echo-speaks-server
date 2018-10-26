@@ -22,7 +22,7 @@ const modifyResponse = require('http-proxy-response-rewrite');
 const express = require('express');
 const proxy = require('http-proxy-middleware');
 
-const defaultAmazonPage = 'amazon.com';
+const defaultAmazonDomain = 'amazon.com';
 const defaultAlexaServiceHost = 'pitangui.amazon.com';
 const defaultUserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:99.0) Gecko/20100101 Firefox/99.0';
 const defaultUserAgentLinux = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36';
@@ -65,7 +65,6 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
     if (webapp) {
         webApp = webapp;
     }
-    console.log('Heroku Var: ' + process.env.isHeroku);
     let getLocalHost = function() {
         return (_options.proxyHost || _options.proxyOwnIp) + (_options.isHeroku ? '' : ':' + _options.serverPort);
     };
@@ -156,10 +155,10 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
                 'DNT': '1',
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36',
                 'Connection': 'keep-alive',
-                'Referer': 'https://alexa.' + _options.amazonPage + '/spa/index.html',
+                'Referer': 'https://alexa.' + _options.amazonDomain + '/spa/index.html',
                 'Cookie': cookie,
                 'Accept': '*/*',
-                'Origin': 'https://alexa.' + _options.amazonPage
+                'Origin': 'https://alexa.' + _options.amazonDomain
             }
         };
 
@@ -177,8 +176,8 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
     }
 
     function initConfig() {
-        _options.amazonPage = _options.amazonPage || defaultAmazonPage;
-        _options.logger && _options.logger('Alexa-Cookie: Use as Login-Amazon-URL: ' + _options.amazonPage);
+        _options.amazonDomain = _options.amazonDomain || defaultAmazonDomain;
+        _options.logger && _options.logger('Alexa-Cookie: Use as Login-Amazon-URL: ' + _options.amazonDomain);
 
         _options.alexaServiceHost = _options.alexaServiceHost || defaultAlexaServiceHost;
         _options.logger && _options.logger('Alexa-Cookie: Use as Alexa-Service-Host: ' + _options.alexaServiceHost);
@@ -227,7 +226,7 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
 
     // get first cookie and write redirection target into referer
     let options = {
-        host: 'alexa.' + _options.amazonPage,
+        host: 'alexa.' + _options.amazonDomain,
         path: '',
         method: 'GET',
         headers: {
@@ -246,7 +245,7 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
         // login empty to generate session
         Cookie = addCookies(Cookie, response.headers);
         let options = {
-            host: 'www.' + _options.amazonPage,
+            host: 'www.' + _options.amazonDomain,
             path: '/ap/signin',
             method: 'POST',
             headers: {
@@ -267,12 +266,12 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
         request(options, (error, response, body, info) => {
             // login with filled out form
             //  !!! referer now contains session in URL
-            options.host = 'www.' + _options.amazonPage;
+            options.host = 'www.' + _options.amazonDomain;
             options.path = '/ap/signin';
             options.method = 'POST';
             options.headers.Cookie = Cookie = addCookies(Cookie, response.headers);
             let ar = options.headers.Cookie.match(/session-id=([^;]+)/);
-            options.headers.Referer = `https://www.${_options.amazonPage}/ap/signin/${ar[1]}`;
+            options.headers.Referer = `https://www.${_options.amazonDomain}/ap/signin/${ar[1]}`;
             options.body = getFields(body);
             options.body.email = email || '';
             options.body.password = password || '';
@@ -330,7 +329,7 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
     };
 
     const optionsAlexa = {
-        target: `https://alexa.${_options.amazonPage}`,
+        target: `https://alexa.${_options.amazonDomain}`,
         changeOrigin: true,
         ws: false,
         pathRewrite: {
@@ -351,11 +350,11 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
             "*": ""
         }
     };
-    optionsAlexa.pathRewrite[`^/proxy/www.${_options.amazonPage}`] = '';
-    optionsAlexa.pathRewrite[`^/proxy/alexa.${_options.amazonPage}`] = '';
-    optionsAlexa.pathRewrite[`^/alexa.${_options.amazonPage}`] = '';
-    optionsAlexa.cookieDomainRewrite[`.${_options.amazonPage}`] = getLocalHost(); //_options.proxyOwnIp;
-    optionsAlexa.cookieDomainRewrite[_options.amazonPage] = getLocalHost(); //_options.proxyOwnIp;
+    optionsAlexa.pathRewrite[`^/proxy/www.${_options.amazonDomain}`] = '';
+    optionsAlexa.pathRewrite[`^/proxy/alexa.${_options.amazonDomain}`] = '';
+    optionsAlexa.pathRewrite[`^/alexa.${_options.amazonDomain}`] = '';
+    optionsAlexa.cookieDomainRewrite[`.${_options.amazonDomain}`] = getLocalHost(); //_options.proxyOwnIp;
+    optionsAlexa.cookieDomainRewrite[_options.amazonDomain] = getLocalHost(); //_options.proxyOwnIp;
     if (_options.logger) optionsAlexa.logProvider = function logProvider(provider) {
         return {
             log: _options.logger.log || _options.logger,
@@ -372,19 +371,19 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
         console.log('router(host): ' + req.headers.host);
         let localHost = getLocalHost();
         if (req.headers.host === `${localHost}`) {
-            if (url.startsWith(`/proxy/www.${_options.amazonPage}/`)) {
-                return `https://www.${_options.amazonPage}`;
-            } else if (url.startsWith(`/proxy/alexa.${_options.amazonPage}/`)) {
-                return `https://alexa.${_options.amazonPage}`;
+            if (url.startsWith(`/proxy/www.${_options.amazonDomain}/`)) {
+                return `https://www.${_options.amazonDomain}`;
+            } else if (url.startsWith(`/proxy/alexa.${_options.amazonDomain}/`)) {
+                return `https://alexa.${_options.amazonDomain}`;
             } else if (req.headers.referer) {
-                if (req.headers.referer.startsWith(`http://${localHost}/proxy/www.${_options.amazonPage}/`) || req.headers.referer.startsWith(`https://${localHost}/proxy/www.${_options.amazonPage}/`)) {
-                    return `https://www.${_options.amazonPage}`;
-                } else if (req.headers.referer.startsWith(`http://${localHost}/proxy/alexa.${_options.amazonPage}/`) || req.headers.referer.startsWith(`https://${localHost}/proxy/alexa.${_options.amazonPage}/`)) {
-                    return `https://alexa.${_options.amazonPage}`;
+                if (req.headers.referer.startsWith(`http://${localHost}/proxy/www.${_options.amazonDomain}/`) || req.headers.referer.startsWith(`https://${localHost}/proxy/www.${_options.amazonDomain}/`)) {
+                    return `https://www.${_options.amazonDomain}`;
+                } else if (req.headers.referer.startsWith(`http://${localHost}/proxy/alexa.${_options.amazonDomain}/`) || req.headers.referer.startsWith(`https://${localHost}/proxy/alexa.${_options.amazonDomain}/`)) {
+                    return `https://alexa.${_options.amazonDomain}`;
                 }
             }
         }
-        return `https://alexa.${_options.amazonPage}`;
+        return `https://alexa.${_options.amazonDomain}`;
     }
 
     function onError(err, req, res) {
@@ -397,19 +396,19 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
 
     function replaceHosts(data) {
         let localHost = getLocalHost();
-        const amazonRegex = new RegExp(`https?://www.${_options.amazonPage}/`.replace(/\./g, "\\."), 'g');
-        const alexaRegex = new RegExp(`https?://alexa.${_options.amazonPage}/`.replace(/\./g, "\\."), 'g');
-        data = data.replace(amazonRegex, `http://${localHost}/proxy/www.${_options.amazonPage}/`);
-        data = data.replace(alexaRegex, `http://${localHost}/proxy/alexa.${_options.amazonPage}/`);
+        const amazonRegex = new RegExp(`https?://www.${_options.amazonDomain}/`.replace(/\./g, "\\."), 'g');
+        const alexaRegex = new RegExp(`https?://alexa.${_options.amazonDomain}/`.replace(/\./g, "\\."), 'g');
+        data = data.replace(amazonRegex, `http://${localHost}/proxy/www.${_options.amazonDomain}/`);
+        data = data.replace(alexaRegex, `http://${localHost}/proxy/alexa.${_options.amazonDomain}/`);
         return data;
     }
 
     function replaceHostsBack(data) {
         let localHost = getLocalHost();
-        const amazonRegex = new RegExp(`http://${localHost}/proxy/www.${_options.amazonPage}/`.replace(/\./g, "\\."), 'g');
-        const alexaRegex = new RegExp(`http://${localHost}/proxy/alexa.${_options.amazonPage}/`.replace(/\./g, "\\."), 'g');
-        data = data.replace(amazonRegex, `https://www.${_options.amazonPage}/`);
-        data = data.replace(alexaRegex, `https://alexa.${_options.amazonPage}/`);
+        const amazonRegex = new RegExp(`http://${localHost}/proxy/www.${_options.amazonDomain}/`.replace(/\./g, "\\."), 'g');
+        const alexaRegex = new RegExp(`http://${localHost}/proxy/alexa.${_options.amazonDomain}/`.replace(/\./g, "\\."), 'g');
+        data = data.replace(amazonRegex, `https://www.${_options.amazonDomain}/`);
+        data = data.replace(alexaRegex, `https://alexa.${_options.amazonDomain}/`);
         return data;
     }
 
@@ -488,7 +487,7 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
 
         let chk1 = (
             proxyRes.socket !== undefined &&
-            proxyRes.socket._host === 'alexa.' + _options.amazonPage &&
+            proxyRes.socket._host === 'alexa.' + _options.amazonDomain &&
             proxyRes.socket.parser.outgoing &&
             proxyRes.socket.parser.outgoing.method === 'GET' &&
             proxyRes.socket.parser.outgoing.path === '/spa/index.html'
@@ -496,15 +495,15 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
         let chk2 = (
             proxyRes.socket !== undefined && proxyRes.socket.parser.outgoing !== undefined &&
             proxyRes.socket.parser.outgoing._headers.location !== undefined &&
-            proxyRes.socket.parser.outgoing._headers.location === 'https://alexa.' + _options.amazonPage + '/spa/index.html'
+            proxyRes.socket.parser.outgoing._headers.location === 'https://alexa.' + _options.amazonDomain + '/spa/index.html'
         );
         let chk3 = (
             proxyRes.headers !== undefined &&
             proxyRes.headers.location !== undefined &&
             (
-                proxyRes.headers.location === 'https://alexa.' + _options.amazonPage + '/spa/index.html' ||
+                proxyRes.headers.location === 'https://alexa.' + _options.amazonDomain + '/spa/index.html' ||
                 proxyRes.headers.location === 'https:/spa/index.html' ||
-                proxyRes.headers.location === 'https://alexa.' + _options.amazonPage + '/proxy/'
+                proxyRes.headers.location === 'https://alexa.' + _options.amazonDomain + '/proxy/'
             )
         );
         if (chk1 || chk2 || chk3) {

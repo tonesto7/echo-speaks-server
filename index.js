@@ -42,6 +42,7 @@ function initConfig() {
         fs.mkdirSync(dataFolder + '/logs');
     }
     loadConfig();
+    return true
 }
 
 function loadConfig() {
@@ -50,8 +51,11 @@ function loadConfig() {
     if (!configData.settings) {
         configData.settings = {};
     }
+    console.log('isHeroku: ' + (process.env.isHeroku === true || process.env.isHeroku === 'true'));
+    configFile.set('settings.isHeroku', (process.env.isHeroku === true || process.env.isHeroku === 'true'))
+    configFile.set('settings.smartThingsUrl', process.env.smartThingsUrl || configData.settings.smartThingsUrl);
     configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
-    configFile.set('settings.refreshSeconds', configData.settings.refreshSeconds || 60);
+    configFile.set('settings.refreshSeconds', process.env.refreshSeconds || (configData.settings.refreshSeconds || 60));
     if (!configData.state) {
         configData.state = {};
     }
@@ -59,7 +63,7 @@ function loadConfig() {
     configFile.save();
     configData = configFile.get();
 }
-initConfig()
+// initConfig()
 
 function startWebConfig() {
     return new Promise(function(resolve, reject) {
@@ -101,8 +105,7 @@ function startWebConfig() {
                         configData.settings.hostUrl = req.hostname;
                     }
                 }
-                if (!configData.state.loginComplete) { // && !loginProxyActive) {
-                    loginProxyActive = true;
+                if (!configData.state.loginComplete) {
                     startWebServer();
                 }
                 logger.debug('/config page requested');
@@ -123,6 +126,7 @@ function startWebConfig() {
                 res.send({ result: 'Clear Complete' });
             });
             webApp.get('/configData', function(req, res) {
+                // console.log(configData)
                 res.send(JSON.stringify(configData));
             });
             webApp.post('/configData', function(req, res) {
@@ -147,8 +151,8 @@ function startWebConfig() {
                     configFile.set('settings.smartThingsToken', req.headers.smartthingstoken);
                     saveFile = true;
                 };
-                if (req.headers.url) {
-                    configFile.set('settings.url', req.headers.url);
+                if (req.headers.amazondomain) {
+                    configFile.set('settings.amazonDomain', req.headers.amazondomain);
                     saveFile = true;
                 };
                 if (req.headers.refreshseconds) {
@@ -159,16 +163,16 @@ function startWebConfig() {
                     configFile.set('settings.serverPort', req.headers.serverport);
                     saveFile = true;
                 };
-                if (req.headers.isheroku) {
-                    configFile.set('settings.isHeroku', req.headers.isheroku);
-                    saveFile = true;
-                };
+                // if (req.headers.isheroku) {
+                //     configFile.set('settings.isHeroku', req.headers.isheroku);
+                //     saveFile = true;
+                // };
                 if (saveFile) {
                     configFile.save();
                     loadConfig();
                     res.send('done');
                     if (configCheckOk()) {
-                        console.log('configData(set): ', configData);
+                        // console.log('configData(set): ', configData);
                         logger.debug('** Settings File Updated via Web Config **');
                         if (!scheduledUpdatesActive || !loginProxyActive) {
                             startWebServer();
@@ -193,7 +197,7 @@ function startWebServer() {
         // logger: logger.debug, // optional: Logger instance to get (debug) logs
         debug: true,
         serverPort: configData.settings.serverPort,
-        amazonPage: configData.settings.url,
+        amazonDomain: configData.settings.amazonDomain,
         setupProxy: true,
         proxyOwnIp: getIPAddress(),
         proxyListenBind: '0.0.0.0',
@@ -206,9 +210,9 @@ function startWebServer() {
     configFile.set('state.loginComplete', false);
     configData.state.loginComplete = false;
     configFile.save();
-
+    loginProxyActive = true;
     alexa_api.alexaLogin(configData.settings.user, configData.settings.password, alexaOptions, webApp, function(error, response, config) {
-        alexaUrl = 'https://alexa.' + configData.settings.url;
+        alexaUrl = 'https://alexa.' + configData.settings.amazonDomain;
         savedConfig = config;
         // console.log('error:', error);
         if (response !== undefined && response !== "") {
@@ -479,7 +483,7 @@ function getNotificationInfo() {
 
 function handleDataUpload(deviceData, src) {
     try {
-        let url = (configData.settings.isHeroku && configData.settings.url && configData.settings.smartThingsToken) ?
+        let url = (configData.settings.isHeroku && configData.settings.amazonDomain && configData.settings.smartThingsToken) ?
             `${configData.settings.smartThingsUrl}/receiveData?access_token=${configData.settings.smartThingsToken}` :
             `http://${configData.settings.smartThingsHubIP}:39500/event`;
         if (configData.settings && ((configData.settings.isHeroku && configData.settings.smartThingsUrl && configData.settings.smartThingsToken) || (configData.settings.smartThingsHubIP !== "" && configData.settings.smartThingsHubIP !== undefined))) {
@@ -512,7 +516,7 @@ function handleDataUpload(deviceData, src) {
                     };
                     reqPromise(options)
                         .then(function(resp) {
-                            console.log('resp:', resp);
+                            // logger.debug('resp:', resp);
                             eventCount++;
                             if (configData.settings.isHeroku) {
                                 logger.info(`** Sent Echo Speaks Data to SmartThings Cloud Endpoint Successfully! **`);
@@ -556,21 +560,24 @@ function clearDataUpdates() {
 }
 
 function configCheckOk() {
-    return (configData.settings.user === '' || configData.settings.password === '' || configData.settings.url === '') ? false : true
+    return (configData.settings.user === '' || configData.settings.password === '' || configData.settings.amazonDomain === '') ? false : true
 }
 
-startWebConfig()
-    .then(function(res) {
-        if (configCheckOk()) {
-            // logger.info('-- Echo Speaks Web Service Starting Up! Takes about 10 seconds before it\'s available... --');
-            if (configData.state.loginComplete === true) {
-                startWebServer();
+// let load = initConfig()
+if (initConfig()) {
+    startWebConfig()
+        .then(function(res) {
+            if (configCheckOk()) {
+                // logger.info('-- Echo Speaks Web Service Starting Up! Takes about 10 seconds before it\'s available... --');
+                if (configData.state.loginComplete === true) {
+                    startWebServer();
+                }
             }
-        }
-    })
-    .catch(function(err) {
-        logger.error("## Start Web Config Error: " + err.message);
-    });
+        })
+        .catch(function(err) {
+            logger.error("## Start Web Config Error: " + err.message);
+        });
+}
 
 
 /*******************************************************************************
