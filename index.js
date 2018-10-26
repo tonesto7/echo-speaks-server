@@ -486,7 +486,10 @@ function handleDataUpload(deviceData, src) {
         let url = (configData.settings.isHeroku && configData.settings.amazonDomain && configData.settings.smartThingsToken) ?
             `${configData.settings.smartThingsUrl}/receiveData?access_token=${configData.settings.smartThingsToken}` :
             `http://${configData.settings.smartThingsHubIP}:39500/event`;
-        if (configData.settings && ((configData.settings.isHeroku && configData.settings.smartThingsUrl && configData.settings.smartThingsToken) || (configData.settings.smartThingsHubIP !== "" && configData.settings.smartThingsHubIP !== undefined))) {
+        logger.info('ST URL: ' + url);
+        if (deviceData === undefined) {
+            logger.error('device data missing');
+        } else if (configData.settings && ((configData.settings.isHeroku && configData.settings.smartThingsUrl && configData.settings.smartThingsToken) || (configData.settings.smartThingsHubIP !== "" && configData.settings.smartThingsHubIP !== undefined))) {
             buildEchoDeviceMap(deviceData)
                 .then(function(devOk) {
                     let options = {
@@ -508,7 +511,8 @@ function handleDataUpload(deviceData, src) {
                                 'port': configData.settings.serverPort,
                                 'config': {
                                     'refreshSeconds': configData.settings.refreshSeconds,
-                                    'smartThingsHubIP': configData.settings.smartThingsHubIP
+                                    'smartThingsHubIP': configData.settings.smartThingsHubIP,
+                                    'hostUrl': configData.hostUrl
                                 }
                             }
                         },
@@ -532,7 +536,7 @@ function handleDataUpload(deviceData, src) {
                     logger.error('buildEchoDeviceMap error: ' + err.message);
                 });
         } else {
-            logger.silly('SmartThing Hub IP has not been set!!  Please visit http://' + getIPAddress() + ':' + configData.settings.serverPort + '/config to configure settings...');
+            logger.silly('Required Parameters has not been set!!  Please visit http://' + getIPAddress() + ':' + configData.settings.serverPort + '/config to configure settings...');
         }
     } catch (err) {
         logger.error(`${src} Error: ` + err.message);
