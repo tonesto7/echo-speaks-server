@@ -232,7 +232,7 @@
         });
 
         $("#proxyLoginLink").click(function() {
-            window.location.href = 'https://' + rootHost + ':' + configData.settings.serverPort + '/';
+            window.location.href = (isHeroku) ? 'https://' + rootHost + ':8092/' : 'https://' + rootHost + ':' + configData.settings.serverPort + '/';
         });
 
         $("#clearLoginBtn").click(function() {
