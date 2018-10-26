@@ -497,7 +497,6 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
         }
 
         // If we detect a redirect, rewrite the location header
-        let testLocation = proxyRes.headers.location;
         if (proxyRes.headers.location) {
             proxyRes.headers.location = replaceHosts(proxyRes.headers.location);
             _options.logger && _options.logger('Redirect: Location ----> ' + proxyRes.headers.location);
@@ -517,35 +516,37 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
 
     // create the proxy (without context)
     const myProxy = proxy('!/cookie-success', optionsAlexa);
-
-    // mount `exampleProxy` in web server
-    // const app = webApp || express();
-    webApp.use(myProxy);
-    // app.get('/cookie-success', function(req, res) {
-    //     res.send(_options.successHtml);
-    // });
-    // let server;
-    if (webApp) {
+    let useWebApp = false;
+    if (useWebApp) {
+        webApp.use(myProxy);
         callbackListening(webApp);
     } else {
-        // server = app.listen(_options.proxyPort, _options.proxyListenBind, function() {
-        //     _options.logger && _options.logger('Alexa-Cookie: Proxy-Server listening on port ' + server.address().port);
-        //     callbackListening(server);
-        // });
+        // mount `exampleProxy` in web server
+        const app = express();
+
+        app.use(myProxy);
+        app.get('/cookie-success', function(req, res) {
+            res.send(_options.successHtml);
+        });
+        let server = app.listen(_options.proxyPort || 8092, _options.proxyListenBind, function() {
+            _options.logger && _options.logger('Alexa-Cookie: Proxy-Server listening on port ' + server.address().port);
+            callbackListening(server);
+        });
     }
+
 }
 
 function stopProxyServer(callback) {
     if (proxyServer) {
-        if (webApp) {
-            removeRoute(webApp, '/');
-            // webApp = null;
-        } else {
-            proxyServer.close(() => {
-                callback && callback();
-            });
-        }
-        proxyServer = null;
+        // if (webApp) {
+        //     removeRoute(webApp, '/');
+        //     // webApp = null;
+        // } else {
+        proxyServer.close(() => {
+            callback && callback();
+        });
+        // }
+        // proxyServer = null;
     }
 }
 
