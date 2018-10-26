@@ -547,7 +547,11 @@ function sendDeviceDataToST(eDevData) {
 
 function sendStatusUpdateToST(self) {
     self.getDevices(savedConfig, function(error, response) {
-        handleDataUpload(response.devices, 'sendStatusUpdateToST')
+        if (response && response.devices) {
+            handleDataUpload(response.devices, 'sendStatusUpdateToST')
+        } else {
+            logger.error("sendStatusUpdateToST Response was empty... | error: " + error);
+        }
     });
 }
 
