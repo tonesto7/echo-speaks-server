@@ -237,8 +237,10 @@ var getDevices = function(config, callback) {
             'csrf': config.csrf
         }
     }, function(error, response, body) {
+        console.log('getDevices status: ', response, 'Code: (' + response.statusCode + ')');
         if (!error && response.statusCode === 200) {
             try {
+                console.log('getDevices Body: ', body);
                 config.devicesArray = JSON.parse(body);
             } catch (e) {
                 logger.error('getDevices Error: ' + e.message);
