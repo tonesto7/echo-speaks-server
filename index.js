@@ -701,7 +701,7 @@ process.on('uncaughtException', exitHandler.bind(null, {
 }));
 
 function exitHandler(options, exitCode) {
-    alexaCookie.stopProxyServer();
+    // alexaCookie.stopProxyServer();
     if (scheduledUpdatesActive) {
         clearDataUpdates()
     }

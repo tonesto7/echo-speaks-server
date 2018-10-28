@@ -231,6 +231,7 @@ var setMedia = function(command, deviceSerialNumber, config, callback) {
 };
 
 var getDevices = function(config, callback) {
+    console.log('config: ', JSON.stringify(config));
     request({
         method: 'GET',
         url: alexaUrl + '/api/devices-v2/device',
@@ -250,7 +251,7 @@ var getDevices = function(config, callback) {
             }
             callback(null, config.devicesArray);
         } else {
-            console.log('getDevices status: ', response || "", 'Code: (' + response.statusCode + ')');
+            console.log('getDevices status: ', response || "", 'Code: (' + response.statusCode || 'error' + ')');
             callback(error, response);
         }
     });
