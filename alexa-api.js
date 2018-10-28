@@ -36,6 +36,8 @@ var alexaLogin = function(username, password, alexaOptions, webapp, callback) {
         callback(null, 'Login Successful (Stored Session)', config);
     } else {
         alexaCookie.generateAlexaCookie(username, password, alexaOptions, webapp, function(err, result) {
+            // console.log('generateAlexaCookie error: ', err);
+            // console.log('generateAlexaCookie result: ', result);
             if (err && (err.message.startsWith('Login unsuccessful') || err.message.startsWith('Amazon-Login-Error:'))) {
                 logger.debug('Please complete Amazon login by going here: (http://' + alexaOptions.proxyHost + ':' + alexaOptions.serverPort + '/config)');
             } else if (err && !result) {
@@ -47,7 +49,7 @@ var alexaLogin = function(username, password, alexaOptions, webapp, callback) {
                 logger.debug('cookie: ' + result.cookie || undefined);
                 logger.debug('csrf: ' + result.csrf || undefined);
                 if (result && result.csrf && result.cookie) {
-                    alexaCookie.stopProxyServer();
+                    // alexaCookie.stopProxyServer();
                     if (sessionData['csrf'] === undefined || sessionData['csrf'] !== result.csrf) {
                         sessionFile.set('csrf', result.csrf);
                         sessionData['csrf'] = result.csrf;
@@ -255,15 +257,6 @@ var getDevices = function(config, callback) {
 
 var getState = function(deviceSerialNumber, config, callback) {
     var device = {};
-    // if (config.devicesArray && config.devicesArray instanceof Array) {
-    //     config.devicesArray.devices.forEach(function(dev) {
-    //         if (dev.serialNumber === deviceSerialNumber) {
-    //             device.deviceSerialNumber = dev.serialNumber;
-    //             device.deviceType = dev.deviceType;
-    //             device.deviceOwnerCustomerId = dev.deviceOwnerCustomerId;
-    //         }
-    //     });
-    // }
     request({
         method: 'GET',
         url: alexaUrl + '/api/np/player?deviceSerialNumber=' + device.deviceSerialNumber + '&deviceType=' + device.deviceType + '&screenWidth=2560',

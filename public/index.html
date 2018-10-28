@@ -20,6 +20,10 @@
             margin: 0 auto;
         }
         
+        .form-control {
+            font-size: 0.7rem;
+        }
+        
         button.btn.btn-info.btn-block.my-4 {
             max-width: 200px;
             text-align: center;
@@ -77,33 +81,30 @@
             </div>
 
             <div class="card w-100 mb-3">
-                <div class="card-header blue lighten-1 w-100 text-white text-center">Platform Options</div>
+                <div class="card-header blue lighten-1 w-100 text-white text-center">Status Info</div>
                 <div class="card-body w-100">
                     <div class="form-check">
-                        <input type="checkbox" class="form-check-input" id="isHeroku">
+                        <input type="checkbox" class="form-check-input" id="isHeroku" disabled>
                         <label class="form-check-label" for="isHeroku">Running on Heroku?</label>
                         <small id="isHerokuHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
-                                Sets all the appropriate options for the cloud based instance.
-                            </small>
+                            Sets all the appropriate options for the cloud based instance.
+                        </small>
                     </div>
                 </div>
             </div>
 
             <!-- Material input -->
             <div class="card w-100 mb-3">
-                <div class="card-header grey lighten-1 w-100 text-center">Other Settings</div>
+                <div class="card-header grey lighten-1 w-100 text-center">Required Settings</div>
                 <div class="card-body w-100">
                     <div class="md-form mt-0">
-                        <!-- <i class="fa fa-at prefix"></i>
-                        <input type="text" id="url" name="url" class="form-control" aria-describedby="urlHelpBlockMD">
-                        <label for="url" data-error="wrong" data-success="right">Amazon Login domain</label> -->
-                        <select id="url" class="browser-default custom-select">
-                            <option selected>Amazon Url</option>
+                        <select id="amazonDomain" class="browser-default custom-select">
+                            <option selected>Amazon Domain for your region</option>
                             <option value="amazon.com">amazon.com</option>
                             <option value="amazon.de">amazon.de</option>
                         </select>
-                        <small id="urlHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
-                            Select the Alexa URL for login `amazon.com, amazon.de, etc.`
+                        <small id="amazonDomainHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
+                            Select the Alexa Domain for login `amazon.com, amazon.de, etc.`
                         </small>
                     </div>
                     <div class="md-form" id="localDivHubIp">
@@ -116,22 +117,14 @@
                     </div>
 
                     <div class="md-form" id="cloudDivUrl">
-                        <i class="fa fa-microchip prefix"></i>
-                        <input type="text" id="smartThingsUrl" name="smartThingsUrl" class="form-control" aria-describedby="ssmartThingsUrlHelpBlockMD">
+                        <i class="fa fa-at prefix"></i>
+                        <input type="text" id="smartThingsUrl" name="smartThingsUrl" class="form-control" aria-describedby="smartThingsUrlHelpBlockMD">
                         <label for="smartThingsUrl" data-error="wrong" data-success="right">SmartThings Cloud Url</label>
                         <small id="smartThingsUrlHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
-                            Enter the ST Url: https://graph.api.smartthings.com/api/smartapps/installations/
+                            Enter the EchoSpeaks Endpoint Url obtained from the smart app.
                         </small>
                     </div>
 
-                    <div class="md-form" id="cloudDivToken">
-                        <i class="fa fa-microchip prefix"></i>
-                        <input type="text" id="smartThingsToken" name="smartThingsToken" class="form-control" aria-describedby="smartThingsTokenHelpBlockMD">
-                        <label for="smartThingsToken" data-error="wrong" data-success="right">SmartThings Access Token</label>
-                        <small id="smartThingsTokenHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
-                            Enter the ST Token: 33g98b0e-292s-4e07-b029-ee9649226b00
-                        </small>
-                    </div>
                     <div class="md-form mt-0" id="localDivHubPort">
                         <i class="fa fa-info prefix"></i>
                         <input type="text" id="serverPort" name="serverPort" class="form-control" aria-describedby="serverPortHelpBlockMD">
@@ -170,22 +163,23 @@
             return ($(`#${name}`).prop("checked") === true);
         }
         let isHeroku = getChecked('isHeroku');
-        if (isHeroku) {
-            console.log(rootOrigin)
-            rootOrigin = 'http://' + rootHost;
-        }
+        // if (isHeroku) {
+        //     console.log(rootOrigin)
+        //     rootOrigin = 'http://' + rootHost;
+        // }
         console.log('rootOrigin: ' + rootOrigin);
         console.log('rootHost: ' + rootHost);
 
         $('#proxyLoginDiv').hide();
-        $('#loginInputDiv').show();
+        $('#loginInputDiv').hide();
         $('#clearLoginDiv').hide();
+        $('[id^="cloudDiv"]').hide()
 
         var configData = {};
         $(document).ready(function() {
             let url = rootOrigin + '/configData';
             $.getJSON(url, function(data) {
-                // console.log('configData: ', data);
+                console.log('configData: ', data);
                 configData = data;
                 $.each(data.state, function(key, val) {
                     if (key === 'loginProxyActive' && val === true) {
@@ -204,12 +198,14 @@
                 $.each(data.settings, function(key, val) {
                     var elem = document.getElementById(key);
                     if ($(elem)) {
-                        if (key === 'url') {
-                            $('#url').val(val);
+                        if (key === 'amazonDomain') {
+                            $('#amazonDomain').val(val);
                         } else if (key === 'isHeroku') {
-                            $('#isHeroku').prop('checked', true);
-                            (val === true || val === 'true') ? $('[id^="localDiv"]').hide(): $('[id^="localDiv"]').show();
-                            (val === true || val === 'true') ? $('[id^="cloudDiv"]').show(): $('[id^="cloudDiv"]').hide();
+                            console.log('isHeroku: ' + val);
+                            isHeroku = (val === true || val === 'true')
+                            $('#isHeroku').prop('checked', isHeroku);
+                            isHeroku ? $('[id^="localDiv"]').hide() : $('[id^="localDiv"]').show();
+                            isHeroku ? $('[id^="cloudDiv"]').show() : $('[id^="cloudDiv"]').hide();
                         } else {
                             $(elem).attr('value', val);
                             $(elem).focus();
@@ -219,9 +215,9 @@
             });
         });
 
-        $("#url").change(function() {
+        $("#amazonDomain").change(function() {
             console.log($(this).val());
-            configData.settings.url = $(this).val();
+            configData.settings.amazonDomain = $(this).val();
         });
         $("#isHeroku").change(function() {
             configData.settings.isHeroku = getChecked('isHeroku');
@@ -232,7 +228,12 @@
         });
 
         $("#proxyLoginLink").click(function() {
-            window.location.href = 'https://' + rootHost + (isHeroku ? ':' + configData.settings.serverPort : '') + '/';
+            let pUrl = 'http://' + rootHost + ':' + configData.settings.serverPort + '/proxy/alexa.' + $('#url').val();
+            if (isHeroku) {
+                pUrl = 'https://' + rootHost + '/proxy/alexa.' + $('#amazonDomain').val()
+            }
+            console.log('Proxy Url: ' + pUrl)
+            window.location.href = pUrl;
         });
 
         $("#clearLoginBtn").click(function() {
@@ -292,7 +293,7 @@
                     config.user = "";
                     config.password = "";
                 }
-                config.url = configData.settings.url;
+                config.amazonDomain = configData.settings.amazonDomain;
                 config.isHeroku = configData.settings.isHeroku;
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("POST", rootOrigin + '/configData');
@@ -330,4 +331,4 @@
     </script>
 </body>
 
-</html>aZ
+</html>

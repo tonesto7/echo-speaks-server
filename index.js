@@ -22,14 +22,15 @@ const urlencodedParser = bodyParser.urlencoded({
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 // These the config variables
-var configData = {};
-var scheduledUpdatesActive = false;
-var savedConfig = {};
-var command = {};
-var serviceStartTime = Date.now(); //Returns time in millis
-var eventCount = 0;
-var alexaUrl = 'https://alexa.amazon.com';
-var echoDevices = {};
+let configData = {};
+let scheduledUpdatesActive = false;
+let loginProxyActive = false;
+let savedConfig = {};
+let command = {};
+let serviceStartTime = Date.now(); //Returns time in millis
+let eventCount = 0;
+let alexaUrl = 'https://alexa.amazon.com';
+let echoDevices = {};
 
 function initConfig() {
     logger.debug('dataFolder: ' + dataFolder);
@@ -41,6 +42,7 @@ function initConfig() {
         fs.mkdirSync(dataFolder + '/logs');
     }
     loadConfig();
+    return true
 }
 
 function loadConfig() {
@@ -49,8 +51,11 @@ function loadConfig() {
     if (!configData.settings) {
         configData.settings = {};
     }
+    configFile.set('settings.isHeroku', (process.env.isHeroku === true || process.env.isHeroku === 'true'))
+    configFile.set('settings.amazonDomain', process.env.amazonDomain || configData.settings.amazonDomain);
+    configFile.set('settings.smartThingsUrl', process.env.smartThingsUrl || configData.settings.smartThingsUrl);
     configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
-    configFile.set('settings.refreshSeconds', configData.settings.refreshSeconds || 60);
+    configFile.set('settings.refreshSeconds', process.env.refreshSeconds || (configData.settings.refreshSeconds || 60));
     if (!configData.state) {
         configData.state = {};
     }
@@ -58,7 +63,7 @@ function loadConfig() {
     configFile.save();
     configData = configFile.get();
 }
-initConfig()
+// initConfig()
 
 function startWebConfig() {
     return new Promise(function(resolve, reject) {
@@ -76,6 +81,21 @@ function startWebConfig() {
                 res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
                 next();
             });
+            webApp.get('/', function(req, res) {
+                if (req.hostname) {
+                    if (configData.settings.hostUrl === undefined || configData.settings.hostUrl !== req.hostname) {
+                        logger.debug(`set host url: ${req.hostname}`);
+                        configFile.set('settings.hostUrl', req.hostname);
+                        configFile.save();
+                        configData.settings.hostUrl = req.hostname;
+                    }
+                }
+                if (!configData.state.loginComplete) {
+                    startWebServer();
+                }
+                logger.debug('config(/) page requested');
+                res.sendFile(__dirname + '/public/index.html');
+            });
             webApp.get('/config', function(req, res) {
                 if (req.hostname) {
                     if (configData.settings.hostUrl === undefined || configData.settings.hostUrl !== req.hostname) {
@@ -83,13 +103,12 @@ function startWebConfig() {
                         configFile.set('settings.hostUrl', req.hostname);
                         configFile.save();
                         configData.settings.hostUrl = req.hostname;
-
                     }
                 }
                 if (!configData.state.loginComplete) {
                     startWebServer();
                 }
-                logger.debug('config page requested');
+                logger.debug('/config page requested');
                 res.sendFile(__dirname + '/public/index.html');
             });
             webApp.get('/clearAuth', urlencodedParser, function(req, res) {
@@ -101,12 +120,13 @@ function startWebConfig() {
                 configData.state.loginComplete = false;
                 configFile.save();
                 if (scheduledUpdatesActive) {
-                    clearInterval(scheduledDataUpdates);
+                    clearDataUpdates()
                 }
                 startWebServer();
                 res.send({ result: 'Clear Complete' });
             });
             webApp.get('/configData', function(req, res) {
+                // console.log(configData)
                 res.send(JSON.stringify(configData));
             });
             webApp.post('/configData', function(req, res) {
@@ -131,8 +151,8 @@ function startWebConfig() {
                     configFile.set('settings.smartThingsToken', req.headers.smartthingstoken);
                     saveFile = true;
                 };
-                if (req.headers.url) {
-                    configFile.set('settings.url', req.headers.url);
+                if (req.headers.amazondomain) {
+                    configFile.set('settings.amazonDomain', req.headers.amazondomain);
                     saveFile = true;
                 };
                 if (req.headers.refreshseconds) {
@@ -143,31 +163,18 @@ function startWebConfig() {
                     configFile.set('settings.serverPort', req.headers.serverport);
                     saveFile = true;
                 };
-                if (req.headers.isheroku) {
-                    configFile.set('settings.isHeroku', req.headers.isheroku);
-                    saveFile = true;
-                };
-                // console.log('configData(set): ', configData);
-                // if (
-                //     (
-                //         (
-                //             req.headers.isheroku &&
-                //             req.headers.smartthingsurl.length &&
-                //             req.headers.smartthingstoken.length
-                //         ) ||
-                //         (req.headers.isheroku !== true && req.headers.smartthingshubip.length)
-                //     ) &&
-                //     req.headers.url.length &&
-                //     req.headers.refreshseconds.length &&
-                //     (!req.headers.isheroku && req.headers.serverport.length)
-                // ) {
+                // if (req.headers.isheroku) {
+                //     configFile.set('settings.isHeroku', req.headers.isheroku);
+                //     saveFile = true;
+                // };
                 if (saveFile) {
                     configFile.save();
                     loadConfig();
                     res.send('done');
                     if (configCheckOk()) {
+                        // console.log('configData(set): ', configData);
                         logger.debug('** Settings File Updated via Web Config **');
-                        if (!scheduledUpdatesActive) {
+                        if (!scheduledUpdatesActive || !loginProxyActive) {
                             startWebServer();
                         }
                     }
@@ -188,13 +195,13 @@ function startWebConfig() {
 function startWebServer() {
     const alexaOptions = { // options is optional at all
         // logger: logger.debug, // optional: Logger instance to get (debug) logs
+        debug: false,
         serverPort: configData.settings.serverPort,
-        amazonPage: configData.settings.url, // optional: possible to use with different countries, default is 'amazon.de'
-        setupProxy: true, // optional: should the library setup a proxy to get cookie when automatic way did not worked? Default false!
-        proxyOwnIp: getIPAddress(), // required if proxy enabled: provide own IP or hostname to later access the proxy. needed to setup all rewriting and proxy stuff internally
-        proxyListenBind: '0.0.0.0', // optional: set this to bind the proxy to a special IP, default is '0.0.0.0'
-        proxyLogLevel: 'warn', // optional: Loglevel of Proxy, default 'warn'
-        successHtml: loginSuccessHtml(),
+        amazonDomain: configData.settings.amazonDomain,
+        setupProxy: true,
+        proxyOwnIp: getIPAddress(),
+        proxyListenBind: '0.0.0.0',
+        isHeroku: configData.settings.isHeroku,
         proxyHost: configData.settings.hostUrl
     };
 
@@ -203,9 +210,9 @@ function startWebServer() {
     configFile.set('state.loginComplete', false);
     configData.state.loginComplete = false;
     configFile.save();
-
+    loginProxyActive = true;
     alexa_api.alexaLogin(configData.settings.user, configData.settings.password, alexaOptions, webApp, function(error, response, config) {
-        alexaUrl = 'https://alexa.' + configData.settings.url;
+        alexaUrl = 'https://alexa.' + configData.settings.amazonDomain;
         savedConfig = config;
         // console.log('error:', error);
         if (response !== undefined && response !== "") {
@@ -235,6 +242,19 @@ function startWebServer() {
 
                     webApp.post('/alexa-getDevices', urlencodedParser, function(req, res) {
                         logger.verbose('++ Received a getDevices Request... ++');
+                        alexa_api.getDevices(savedConfig, function(error, response) {
+                            buildEchoDeviceMap(response.devices)
+                                .then(function(devOk) {
+                                    res.send(echoDevices);
+                                })
+                                .catch(function(err) {
+                                    res.send(null);
+                                });
+                        });
+                    });
+
+                    webApp.get('/alexa-devices', urlencodedParser, function(req, res) {
+                        logger.verbose('++ Received a alexa-devices Request... ++');
                         alexa_api.getDevices(savedConfig, function(error, response) {
                             buildEchoDeviceMap(response.devices)
                                 .then(function(devOk) {
@@ -380,7 +400,7 @@ function startWebServer() {
                             logger.debug('++ Changed Setting (refreshSeconds) | New Value: (' + req.headers.refreshseconds + ') | Old Value: (' + configData.settings.refreshSeconds + ') ++');
                             configData.settings.refreshSeconds = parseInt(req.headers.refreshseconds);
                             configFile.set('settings.refreshSeconds', parseInt(req.headers.refreshseconds));
-                            clearInterval(scheduledDataUpdates);
+                            clearDataUpdates()
                             logger.debug("** Device Data Refresh Schedule Changed to Every (" + configData.settings.refreshSeconds + ' sec) **');
                             setInterval(scheduledDataUpdates, configData.settings.refreshSeconds * 1000);
                         }
@@ -461,20 +481,14 @@ function getNotificationInfo() {
     });
 }
 
-function sendDeviceDataToST(eDevData) {
+function handleDataUpload(deviceData, src) {
     try {
-        let url = (configData.settings.isHeroku && configData.settings.url && configData.settings.smartThingsToken) ?
-            `${configData.settings.smartThingsUrl}/receiveData?access_token=${configData.settings.smartThingsToken}` :
-            `http://${configData.settings.smartThingsHubIP}:39500/event`;
-        // console.log('url:', url);
-        if (
-            configData.settings &&
-            (
-                (configData.settings.isHeroku && configData.settings.smartThingsUrl && configData.settings.smartThingsToken) ||
-                (configData.settings.smartThingsHubIP !== "" && configData.settings.smartThingsHubIP !== undefined)
-            )
-        ) {
-            buildEchoDeviceMap(eDevData)
+        let url = (configData.settings.isHeroku && configData.settings.smartThingsUrl) ? `${configData.settings.smartThingsUrl}` : `http://${configData.settings.smartThingsHubIP}:39500/event`;
+        logger.info('ST URL: ' + url);
+        if (deviceData === undefined) {
+            logger.error('device data missing');
+        } else if (configData.settings && ((configData.settings.isHeroku && configData.settings.smartThingsUrl) || (configData.settings.smartThingsHubIP !== "" && configData.settings.smartThingsHubIP !== undefined))) {
+            buildEchoDeviceMap(deviceData)
                 .then(function(devOk) {
                     let options = {
                         method: 'POST',
@@ -495,7 +509,8 @@ function sendDeviceDataToST(eDevData) {
                                 'port': configData.settings.serverPort,
                                 'config': {
                                     'refreshSeconds': configData.settings.refreshSeconds,
-                                    'smartThingsHubIP': configData.settings.smartThingsHubIP
+                                    'smartThingsHubIP': configData.settings.smartThingsHubIP,
+                                    'hostUrl': configData.hostUrl
                                 }
                             }
                         },
@@ -503,9 +518,13 @@ function sendDeviceDataToST(eDevData) {
                     };
                     reqPromise(options)
                         .then(function(resp) {
-                            console.log('resp:', resp);
+                            // logger.debug('resp:', resp);
                             eventCount++;
-                            logger.info(`** Sent Echo Speaks Data to SmartThings Hub Successfully! | Hub: (${url}) **`);
+                            if (configData.settings.isHeroku) {
+                                logger.info(`** Sent Echo Speaks Data to SmartThings Cloud Endpoint Successfully! **`);
+                            } else {
+                                logger.info(`** Sent Echo Speaks Data to SmartThings Hub Successfully! | Hub: (${url}) **`);
+                            }
                         })
                         .catch(function(err) {
                             logger.error("ERROR: Unable to connect to SmartThings Hub: " + err.message);
@@ -515,73 +534,23 @@ function sendDeviceDataToST(eDevData) {
                     logger.error('buildEchoDeviceMap error: ' + err.message);
                 });
         } else {
-            logger.silly('SmartThing Hub IP has not been set!!  Please visit http://' + getIPAddress() + ':' + configData.settings.serverPort + '/config to configure settings...');
+            logger.silly('Required Parameters has not been set!!  Please visit http://' + getIPAddress() + ':' + configData.settings.serverPort + '/config to configure settings...');
         }
     } catch (err) {
-        logger.error('sendStatusUpdateToST Error: ' + err.message);
+        logger.error(`${src} Error: ` + err.message);
     }
+}
+
+function sendDeviceDataToST(eDevData) {
+    handleDataUpload(eDevData, 'sendDeviceDataToST')
 }
 
 function sendStatusUpdateToST(self) {
     self.getDevices(savedConfig, function(error, response) {
-        try {
-            let url = (configData.settings.isHeroku && configData.settings.url && configData.settings.smartThingsToken) ?
-                `${configData.settings.smartThingsUrl}/receiveData?access_token=${configData.settings.smartThingsToken}` :
-                `http://${configData.settings.smartThingsHubIP}:39500/event`;
-            // console.log('url:', url);
-            if (
-                configData.settings &&
-                (
-                    (configData.settings.isHeroku && configData.settings.smartThingsUrl && configData.settings.smartThingsToken) ||
-                    (configData.settings.smartThingsHubIP !== "" && configData.settings.smartThingsHubIP !== undefined)
-                )
-            ) {
-                buildEchoDeviceMap(response.devices)
-                    .then(function(devOk) {
-                        let options = {
-                            method: 'POST',
-                            uri: url,
-                            headers: {
-                                'evtSource': 'Echo_Speaks',
-                                'evtType': 'sendStatusData'
-                            },
-                            body: {
-                                'echoDevices': echoDevices,
-                                'hostUrl': configData.settings.hostUrl || null,
-                                'timestamp': Date.now(),
-                                'serviceInfo': {
-                                    'version': appVer,
-                                    'sessionEvts': eventCount,
-                                    'startupDt': getServiceUptime(),
-                                    'ip': getIPAddress(),
-                                    'port': configData.settings.serverPort,
-                                    'config': {
-                                        'refreshSeconds': configData.settings.refreshSeconds,
-                                        'smartThingsHubIP': configData.settings.smartThingsHubIP
-                                    }
-                                }
-                            },
-                            json: true
-                        }
-                        logger.debug('echoDevices (statUpd): ' + Object.keys(echoDevices).length + ' devices');
-                        reqPromise(options)
-                            .then(function(resp) {
-                                console.log('resp:', resp);
-                                eventCount++;
-                                logger.info(`** Sent Echo Speaks Data to SmartThings Hub Successfully! | Hub: (${url}) **`);
-                            })
-                            .catch(function(err) {
-                                logger.error("ERROR: Unable to connect to SmartThings Hub: " + err.message);
-                            });
-                    })
-                    .catch(function(err) {
-                        logger.error('buildEchoDeviceMap Error: ' + err.message);
-                    });
-            } else {
-                logger.silly('SmartThing Hub IP has not been set!!  Please visit http://' + getIPAddress() + ':' + configData.settings.serverPort + '/config to configure settings...');
-            }
-        } catch (err) {
-            logger.error('sendStatusUpdateToST Error: ' + err.message);
+        if (response && response.devices) {
+            handleDataUpload(response.devices, 'sendStatusUpdateToST')
+        } else {
+            logger.error("sendStatusUpdateToST Response was empty... | error: " + error);
         }
     });
 }
@@ -590,22 +559,31 @@ function scheduledDataUpdates() {
     sendStatusUpdateToST(alexa_api);
 }
 
-function configCheckOk() {
-    return (configData.settings.user === '' || configData.settings.password === '' || configData.settings.url === '') ? false : true
+function clearDataUpdates() {
+    scheduledUpdatesActive = false
+    logger.debug("Scheduled Updates Cancelled...");
+    clearInterval(scheduledDataUpdates);
 }
 
-startWebConfig()
-    .then(function(res) {
-        if (configCheckOk()) {
-            logger.info('-- Echo Speaks Web Service Starting Up! Takes about 10 seconds before it\'s available... --');
-            if (configData.state.loginComplete === true) {
-                startWebServer();
+function configCheckOk() {
+    return (configData.settings.user === '' || configData.settings.password === '' || configData.settings.amazonDomain === '') ? false : true
+}
+
+// let load = initConfig()
+if (initConfig()) {
+    startWebConfig()
+        .then(function(res) {
+            if (configCheckOk()) {
+                // logger.info('-- Echo Speaks Web Service Starting Up! Takes about 10 seconds before it\'s available... --');
+                if (configData.state.loginComplete === true) {
+                    startWebServer();
+                }
             }
-        }
-    })
-    .catch(function(err) {
-        logger.error("## Start Web Config Error: " + err.message);
-    });
+        })
+        .catch(function(err) {
+            logger.error("## Start Web Config Error: " + err.message);
+        });
+}
 
 
 /*******************************************************************************
@@ -662,7 +640,7 @@ function getHostUptimeStr(time) {
 
 const loginSuccessHtml = function() {
     let html = '';
-    let redirUrl = 'http://' + getIPAddress() + ':' + configData.settings.serverPort + '/config';
+    let redirUrl = (configData.settings.isHeroku) ? 'https://' + configData.settings.hostUrl + '/config' : 'http://' + getIPAddress() + ':' + configData.settings.serverPort + '/config';
     html += '<!DOCTYPE html>'
     html += '<html>'
     html += '   <head>'
@@ -725,7 +703,7 @@ process.on('uncaughtException', exitHandler.bind(null, {
 function exitHandler(options, exitCode) {
     alexaCookie.stopProxyServer();
     if (scheduledUpdatesActive) {
-        clearInterval(scheduledDataUpdates);
+        clearDataUpdates()
     }
     if (options.cleanup) {
         console.log('clean');
