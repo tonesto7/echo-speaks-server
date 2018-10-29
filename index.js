@@ -198,7 +198,7 @@ function startWebServer() {
         setupProxy: true,
         proxyOwnIp: getIPAddress(),
         proxyListenBind: '0.0.0.0',
-        isHeroku: configData.settings.isHeroku,
+        isHeroku: (configData.settings.isHeroku === true || configData.settings.isHeroku === 'true'),
         proxyHost: configData.settings.hostUrl,
         stEndpoint: configData.settings.smartThingsUrl ? String(configData.settings.smartThingsUrl).replace("/receiveData?", "/cookie?") : null
     };
@@ -562,8 +562,7 @@ function clearDataUpdates() {
 }
 
 function configCheckOk() {
-    return true;
-    // return (configData.settings.user === '' || configData.settings.password === '' || configData.settings.amazonDomain === '') ? false : true
+    return ((configData.settings.isHeroku === true && !configData.settings.smartThingsUrl) || configData.settings.amazonDomain === '' || (!configData.settings.isHeroku && !configData.settings.smartThingsHubIP)) ? false : true
 }
 
 // let load = initConfig()
