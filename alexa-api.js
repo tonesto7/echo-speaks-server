@@ -251,7 +251,9 @@ var getDevices = function(config, callback) {
             }
             callback(null, config.devicesArray);
         } else {
-            console.log('getDevices status: ', response || "", 'Code: (' + response.statusCode || 'error' + ')');
+            if (response && response.statusCode !== undefined) {
+                console.log('getDevices status: ', response || "", 'Code: (' + response.statusCode || 'error' + ')');
+            }
             callback(error, response);
         }
     });
