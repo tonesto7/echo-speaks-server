@@ -32,7 +32,7 @@ var alexaLogin = function(username, password, alexaOptions, webapp, callback) {
         config.deviceSerialNumber = deviceSerialNumber;
         config.deviceType = deviceType;
         config.deviceOwnerCustomerId = deviceOwnerCustomerId;
-        config.alexaURL = alexaOptions.amazonPage;
+        config.alexaURL = alexaOptions.amazonDomain;
         callback(null, 'Login Successful (Stored Session)', config);
     } else {
         alexaCookie.generateAlexaCookie(username, password, alexaOptions, webapp, function(err, result) {
@@ -44,7 +44,7 @@ var alexaLogin = function(username, password, alexaOptions, webapp, callback) {
                 logger.error('generateAlexaCookie: ' + err.message);
                 callback(err, 'There was an error', null);
             } else if (result) {
-                alexaUrl = 'https://alexa.' + alexaOptions.amazonPage;
+                alexaUrl = 'https://alexa.' + alexaOptions.amazonDomain;
                 // IMPORTANT: can be called multiple times!! As soon as a new cookie is fetched or an error happened. Consider that!
                 logger.debug('cookie: ' + result.cookie || undefined);
                 logger.debug('csrf: ' + result.csrf || undefined);
@@ -65,7 +65,7 @@ var alexaLogin = function(username, password, alexaOptions, webapp, callback) {
                     config.deviceSerialNumber = deviceSerialNumber;
                     config.deviceType = deviceType;
                     config.deviceOwnerCustomerId = deviceOwnerCustomerId;
-                    config.alexaURL = alexaOptions.amazonPage;
+                    config.alexaURL = alexaOptions.amazonDomain;
                     callback(null, 'Login Successful', config);
                 } else {
                     callback(true, 'There was an error getting authentication', null);
