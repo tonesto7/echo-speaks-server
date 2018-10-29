@@ -200,7 +200,7 @@ function startWebServer() {
         proxyListenBind: '0.0.0.0',
         isHeroku: configData.settings.isHeroku,
         proxyHost: configData.settings.hostUrl,
-        stEndpoint: configData.settings.smartThingsUrl
+        stEndpoint: configData.settings.smartThingsUrl ? configData.settings.smartThingsUrl.replace("/recieveData?", "/cookie?") : null
     };
 
     configFile.set('state.loginProxyActive', true);

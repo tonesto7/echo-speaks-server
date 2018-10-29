@@ -95,7 +95,7 @@ var sendCookiesToST = function(url, cookie, csrf) {
     if (url && cookie && csrf) {
         let options = {
             method: 'POST',
-            uri: url + '/cookie',
+            uri: url,
             body: {
                 'cookie': cookie,
                 'csrf': csrf
@@ -119,7 +119,7 @@ var getCookiesFromST = function(url) {
     if (url) {
         let options = {
             method: 'GET',
-            uri: url + '/cookie',
+            uri: url,
         };
         reqPromise(options)
             .then(function(resp) {
