@@ -562,7 +562,8 @@ function clearDataUpdates() {
 }
 
 function configCheckOk() {
-    return (configData.settings.user === '' || configData.settings.password === '' || configData.settings.amazonDomain === '') ? false : true
+    return true;
+    // return (configData.settings.user === '' || configData.settings.password === '' || configData.settings.amazonDomain === '') ? false : true
 }
 
 // let load = initConfig()
