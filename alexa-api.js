@@ -21,7 +21,7 @@ var clearSession = function() {
 
 function getRemoteCookie(alexaOptions) {
     return new Promise(resolve => {
-        if (alexaOptions.isHeroku !== true || alexaOptions.checkForCookie !== true) { resolve(undefined); }
+        if (alexaOptions.isHeroku === false || alexaOptions.checkForCookie === false) { resolve(undefined); }
         let config = {};
         if (alexaOptions.isHeroku === true && alexaOptions.stEndpoint) {
             getCookiesFromST(alexaOptions.stEndpoint)
@@ -47,7 +47,7 @@ function getRemoteCookie(alexaOptions) {
     });
 };
 
-var alexaLogin = function(username, password, alexaOptions, webapp, callback) {
+function alexaLogin(username, password, alexaOptions, webapp, callback) {
     let devicesArray = [];
     let deviceSerialNumber;
     let deviceType;
@@ -61,6 +61,7 @@ var alexaLogin = function(username, password, alexaOptions, webapp, callback) {
 
     getRemoteCookie(alexaOptions)
         .then(function(remoteCookies) {
+            console.log('remoteCookies: ', remoteCookies);
             if (remoteCookies !== undefined && Object.keys(remoteCookies).length && remoteCookies.cookie && remoteCookies.csrf) {
                 config.cookies = remoteCookies.cookie;
                 config.csrf = remoteCookies.csrf;
@@ -142,10 +143,8 @@ function getCookiesFromST(url) {
         reqPromise({ method: 'GET', uri: url, json: true })
             .then(function(resp) {
                 console.log('getCookiesFromST resp: ', resp);
-                if (resp.statusCode === 200) {
-                    logger.info(`** Retrieved Alexa Cookie from SmartThings Cloud Endpoint Successfully! **`);
-                    resolve(resp);
-                }
+                logger.info(`** Retrieved Alexa Cookie from SmartThings Cloud Endpoint Successfully! **`);
+                resolve(resp);
             })
             .catch(function(err) {
                 logger.error("ERROR: Unable to retrieve Alexa Cookie from SmartThings: " + err.message);

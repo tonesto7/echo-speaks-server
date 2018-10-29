@@ -53,8 +53,8 @@ function loadConfig() {
         configData.settings = {};
     }
     if (process.env.hostUrl) { configFile.set('settings.isHeroku', process.env.hostUrl); }
-    // configFile.set('settings.isHeroku', true);
-    configFile.set('settings.isHeroku', (process.env.isHeroku === true || process.env.isHeroku === 'true'));
+    configFile.set('settings.isHeroku', true);
+    // configFile.set('settings.isHeroku', (process.env.isHeroku === true || process.env.isHeroku === 'true'));
     configFile.set('settings.amazonDomain', process.env.amazonDomain || configData.settings.amazonDomain);
     configFile.set('settings.smartThingsUrl', process.env.smartThingsUrl || configData.settings.smartThingsUrl);
     configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
@@ -196,6 +196,7 @@ function startWebConfig() {
 function startWebServer(checkForCookie = false) {
     const alexaOptions = {
         debug: false,
+        checkForCookie: checkForCookie,
         serverPort: configData.settings.serverPort,
         amazonDomain: configData.settings.amazonDomain,
         setupProxy: true,
@@ -203,9 +204,7 @@ function startWebServer(checkForCookie = false) {
         proxyListenBind: '0.0.0.0',
         isHeroku: (configData.settings.isHeroku === true || configData.settings.isHeroku === 'true'),
         proxyHost: configData.settings.hostUrl,
-        stEndpoint: configData.settings.smartThingsUrl ? String(configData.settings.smartThingsUrl).replace("/receiveData?", "/cookie?") : null,
-        checkForCookie: checkForCookie
-
+        stEndpoint: configData.settings.smartThingsUrl ? String(configData.settings.smartThingsUrl).replace("/receiveData?", "/cookie?") : null
     };
 
     configFile.set('state.loginProxyActive', true);
@@ -577,7 +576,7 @@ initConfig()
                 if (configCheckOk()) {
                     // logger.info('-- Echo Speaks Web Service Starting Up! Takes about 10 seconds before it\'s available... --');
                     if (configData.state.loginComplete === true || (configData.settings.hostUrl && configData.settings.smartThingsUrl)) {
-                        startWebServer((configData.settings.isHeroku && configData.settings.smartThingsUrl));
+                        startWebServer((configData.settings.isHeroku === true && configData.settings.smartThingsUrl !== undefined));
                     }
                 }
             })
