@@ -104,6 +104,7 @@ var sendCookiesToST = function(url, cookie, csrf) {
         };
         reqPromise(options)
             .then(function(resp) {
+                console.log('resp:', resp);
                 if (resp.statusCode === 200) {
                     logger.info(`** Alexa Cookie sent to SmartThings Cloud Endpoint Successfully! **`);
                 }
