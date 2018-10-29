@@ -61,9 +61,9 @@ function alexaLogin(username, password, alexaOptions, webapp, callback) {
 
     getRemoteCookie(alexaOptions)
         .then(function(remoteCookies) {
-            console.log('remoteCookies: ', remoteCookies);
-            if (remoteCookies !== undefined && Object.keys(remoteCookies).length && remoteCookies.cookie && remoteCookies.csrf) {
-                config.cookies = remoteCookies.cookie;
+            console.log('remoteCookies: ', remoteCookies, 'keys: ', Object.keys(remoteCookies));
+            if (remoteCookies !== undefined && Object.keys(remoteCookies).length > 0 && remoteCookies.cookies && remoteCookies.csrf) {
+                config.cookies = remoteCookies.cookies;
                 config.csrf = remoteCookies.csrf;
                 callback(null, 'Login Successful (Retreived from ST)', config);
             } else if (sessionData.csrf && sessionData.cookie) {
@@ -95,13 +95,8 @@ function alexaLogin(username, password, alexaOptions, webapp, callback) {
                                 sessionData['cookie'] = result.cookie;
                             }
                             sessionFile.save();
-                            config.devicesArray = devicesArray;
                             config.cookies = sessionData.cookie;
                             config.csrf = sessionData.csrf;
-                            config.deviceSerialNumber = deviceSerialNumber;
-                            config.deviceType = deviceType;
-                            config.deviceOwnerCustomerId = deviceOwnerCustomerId;
-                            config.alexaURL = alexaOptions.amazonDomain;
                             sendCookiesToST(alexaOptions.stEndpoint, config.cookies, config.csrf);
                             callback(null, 'Login Successful', config);
                         } else {
@@ -127,7 +122,7 @@ var sendCookiesToST = function(url, cookie, csrf) {
         };
         reqPromise(options)
             .then(function(resp) {
-                console.log('resp:', resp);
+                // console.log('resp:', resp);
                 if (resp.statusCode === 200) {
                     logger.info(`** Alexa Cookie sent to SmartThings Cloud Endpoint Successfully! **`);
                 }
@@ -142,7 +137,7 @@ function getCookiesFromST(url) {
     return new Promise(resolve => {
         reqPromise({ method: 'GET', uri: url, json: true })
             .then(function(resp) {
-                console.log('getCookiesFromST resp: ', resp);
+                // console.log('getCookiesFromST resp: ', resp);
                 logger.info(`** Retrieved Alexa Cookie from SmartThings Cloud Endpoint Successfully! **`);
                 resolve(resp);
             })

@@ -280,7 +280,7 @@ function startWebServer(checkForCookie = false) {
                     });
 
                     webApp.post('/alexa-command', urlencodedParser, function(req, res) {
-                        // console.log('command headers: ', req.headers);
+                        console.log('command headers: ', req.headers);
                         let hubAct = (req.headers.deviceserialnumber != undefined);
                         let serialNumber = req.headers.deviceserialnumber;
                         let deviceType = req.headers.devicetype;
@@ -570,19 +570,20 @@ function configCheckOk() {
 
 initConfig()
     .then(function(res) {
-        console.log(res);
-        startWebConfig()
-            .then(function(res) {
-                if (configCheckOk()) {
-                    // logger.info('-- Echo Speaks Web Service Starting Up! Takes about 10 seconds before it\'s available... --');
-                    if (configData.state.loginComplete === true || (configData.settings.hostUrl && configData.settings.smartThingsUrl)) {
-                        startWebServer((configData.settings.isHeroku === true && configData.settings.smartThingsUrl !== undefined));
+        if (res) {
+            startWebConfig()
+                .then(function(res) {
+                    if (configCheckOk()) {
+                        if (configData.state.loginComplete === true || (configData.settings.hostUrl && configData.settings.smartThingsUrl)) {
+                            // logger.info('-- Echo Speaks Web Service Starting Up! Takes about 10 seconds before it\'s available... --');
+                            startWebServer((configData.settings.isHeroku === true && configData.settings.smartThingsUrl !== undefined));
+                        }
                     }
-                }
-            })
-            .catch(function(err) {
-                logger.error("## Start Web Config Error: " + err.message);
-            });
+                })
+                .catch(function(err) {
+                    logger.error("## Start Web Config Error: " + err.message);
+                });
+        }
     })
     .catch(function(err) {
         logger.error("## InitConfig Error: " + err.message);
