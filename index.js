@@ -492,9 +492,9 @@ function handleDataUpload(deviceData, src) {
                         },
                         body: {
                             'echoDevices': echoDevices,
-                            'isHeroku': (process.env.isHeroku === true),
+                            'isHeroku': (configData.settings.isHeroku === true),
                             'hostUrl': configData.settings.hostUrl || null,
-                            'cloudUrl': (process.env.isHeroku === true) ? 'https://' + configData.settings.hostUrl : null,
+                            'cloudUrl': (configData.settings.isHeroku === true) ? 'https://' + configData.settings.hostUrl : null,
                             'timestamp': Date.now(),
                             'serviceInfo': {
                                 'version': appVer,
