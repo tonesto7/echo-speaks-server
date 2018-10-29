@@ -499,6 +499,7 @@ function handleDataUpload(deviceData, src) {
                         },
                         body: {
                             'echoDevices': echoDevices,
+                            'isHeroku': (process.env.isHeroku === true),
                             'hostUrl': configData.settings.hostUrl || null,
                             'timestamp': Date.now(),
                             'serviceInfo': {
@@ -509,8 +510,7 @@ function handleDataUpload(deviceData, src) {
                                 'port': configData.settings.serverPort,
                                 'config': {
                                     'refreshSeconds': configData.settings.refreshSeconds,
-                                    'smartThingsHubIP': configData.settings.smartThingsHubIP,
-                                    'hostUrl': configData.hostUrl
+                                    'smartThingsHubIP': configData.settings.smartThingsHubIP
                                 }
                             }
                         },
