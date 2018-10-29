@@ -25,9 +25,9 @@ var alexaLogin = function(username, password, alexaOptions, webapp, callback) {
     var deviceType;
     var deviceOwnerCustomerId;
     var config = {};
-    if (alexaOptions.isHeroku === true) {
+    if (alexaOptions.checkForCookie && alexaOptions.isHeroku === true && alexaOptions.stEndpoint) {
         let cookies = getCookiesFromST(alexaOptions.stEndpoint);
-        if (cookies) {
+        if (cookies && cookies.cookie && cookies.csrf) {
             config.devicesArray = devicesArray;
             config.cookies = cookies.cookie;
             config.csrf = cookies.csrf;
@@ -80,7 +80,7 @@ var alexaLogin = function(username, password, alexaOptions, webapp, callback) {
                     config.deviceType = deviceType;
                     config.deviceOwnerCustomerId = deviceOwnerCustomerId;
                     config.alexaURL = alexaOptions.amazonDomain;
-                    let sendToSt = sendCookiesToST(alexaOptions.stEndpoint, config.cookies, config.csrf);
+                    sendCookiesToST(alexaOptions.stEndpoint, config.cookies, config.csrf);
                     callback(null, 'Login Successful', config);
                 } else {
                     callback(true, 'There was an error getting authentication', null);
@@ -97,8 +97,8 @@ var sendCookiesToST = function(url, cookie, csrf) {
             method: 'POST',
             uri: url,
             body: {
-                'cookie': cookie,
-                'csrf': csrf
+                cookie: cookie,
+                csrf: csrf
             },
             json: true
         };
@@ -120,9 +120,11 @@ var getCookiesFromST = function(url) {
         let options = {
             method: 'GET',
             uri: url,
+            json: true
         };
         reqPromise(options)
             .then(function(resp) {
+                console.log('resp: ', resp);
                 if (resp.statusCode === 200) {
                     logger.info(`** Retrieved Alexa Cookie from SmartThings Cloud Endpoint Successfully! **`);
                     return resp;

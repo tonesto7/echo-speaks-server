@@ -33,16 +33,17 @@ let alexaUrl = 'https://alexa.amazon.com';
 let echoDevices = {};
 
 function initConfig() {
-    logger.debug('dataFolder: ' + dataFolder);
-    // Create the log directory if it does not exist
-    if (!fs.existsSync(dataFolder)) {
-        fs.mkdirSync(dataFolder);
-    }
-    if (!fs.existsSync(dataFolder + '/logs')) {
-        fs.mkdirSync(dataFolder + '/logs');
-    }
-    loadConfig();
-    return true
+    return new Promise(function(resolve, reject) {
+        logger.debug('dataFolder: ' + dataFolder);
+        // Create the log directory if it does not exist
+        if (!fs.existsSync(dataFolder)) {
+            fs.mkdirSync(dataFolder);
+        }
+        if (!fs.existsSync(dataFolder + '/logs')) {
+            fs.mkdirSync(dataFolder + '/logs');
+        }
+        resolve(loadConfig());
+    });
 }
 
 function loadConfig() {
@@ -52,7 +53,8 @@ function loadConfig() {
         configData.settings = {};
     }
     if (process.env.hostUrl) { configFile.set('settings.isHeroku', process.env.hostUrl); }
-    configFile.set('settings.isHeroku', (process.env.isHeroku === true || process.env.isHeroku === 'true'))
+    configFile.set('settings.isHeroku', true);
+    // configFile.set('settings.isHeroku', (process.env.isHeroku === true || process.env.isHeroku === 'true'));
     configFile.set('settings.amazonDomain', process.env.amazonDomain || configData.settings.amazonDomain);
     configFile.set('settings.smartThingsUrl', process.env.smartThingsUrl || configData.settings.smartThingsUrl);
     configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
@@ -63,19 +65,19 @@ function loadConfig() {
     configFile.set('state.scriptVersion', appVer);
     configFile.save();
     configData = configFile.get();
+    return true
 }
-// initConfig()
 
 function startWebConfig() {
     return new Promise(function(resolve, reject) {
         try {
             webApp.listen(configData.settings.serverPort, function() {
                 logger.info('** Echo Speaks Config Service (v' + appVer + ') is Running at (IP: ' + getIPAddress() + ' | Port: ' + configData.settings.serverPort + ') | ProcessId: ' + process.pid + ' **');
-                if (!configCheckOk()) {
-                    logger.warn('** Configurations Settings Missing... Please visit https://' + getIPAddress() + ':' + configData.settings.serverPort + '/config to configure settings...');
-                } else {
-                    // logger.info('** Configurations Page available at (https://' + getIPAddress() + ':' + configData.settings.serverPort + '/config)');
-                }
+                // if (!configCheckOk()) {
+                // logger.warn('** Configurations Settings Missing... Please visit https://' + getIPAddress() + ':' + configData.settings.serverPort + '/config to configure settings...');
+                // } else {
+                // logger.info('** Configurations Page available at (https://' + getIPAddress() + ':' + configData.settings.serverPort + '/config)');
+                // }
             });
             webApp.use(function(req, res, next) {
                 res.header("Access-Control-Allow-Origin", "*");
@@ -166,7 +168,7 @@ function startWebConfig() {
                 };
                 if (saveFile) {
                     configFile.save();
-                    loadConfig();
+                    let ls = loadConfig();
                     res.send('done');
                     if (configCheckOk()) {
                         // console.log('configData(set): ', configData);
@@ -189,7 +191,7 @@ function startWebConfig() {
     });
 }
 
-function startWebServer() {
+function startWebServer(checkForCookie) {
     const alexaOptions = { // options is optional at all
         // logger: logger.debug, // optional: Logger instance to get (debug) logs
         debug: false,
@@ -200,7 +202,8 @@ function startWebServer() {
         proxyListenBind: '0.0.0.0',
         isHeroku: (configData.settings.isHeroku === true || configData.settings.isHeroku === 'true'),
         proxyHost: configData.settings.hostUrl,
-        stEndpoint: configData.settings.smartThingsUrl ? String(configData.settings.smartThingsUrl).replace("/receiveData?", "/cookie?") : null
+        stEndpoint: configData.settings.smartThingsUrl ? String(configData.settings.smartThingsUrl).replace("/receiveData?", "/cookie?") : null,
+        checkForCookie: checkForCookie
     };
 
     configFile.set('state.loginProxyActive', true);
@@ -565,21 +568,25 @@ function configCheckOk() {
     return ((configData.settings.isHeroku === true && !configData.settings.smartThingsUrl) || configData.settings.amazonDomain === '' || (!configData.settings.isHeroku && !configData.settings.smartThingsHubIP)) ? false : true
 }
 
-// let load = initConfig()
-if (initConfig()) {
-    startWebConfig()
-        .then(function(res) {
-            if (configCheckOk()) {
-                // logger.info('-- Echo Speaks Web Service Starting Up! Takes about 10 seconds before it\'s available... --');
-                if (configData.state.loginComplete === true || (configData.settings.hostUrl && configData.settings.smartThingsUrl)) {
-                    startWebServer();
+initConfig()
+    .then(function(res) {
+        console.log(res);
+        startWebConfig()
+            .then(function(res) {
+                if (configCheckOk()) {
+                    // logger.info('-- Echo Speaks Web Service Starting Up! Takes about 10 seconds before it\'s available... --');
+                    if (configData.state.loginComplete === true || (configData.settings.hostUrl && configData.settings.smartThingsUrl)) {
+                        startWebServer(true);
+                    }
                 }
-            }
-        })
-        .catch(function(err) {
-            logger.error("## Start Web Config Error: " + err.message);
-        });
-}
+            })
+            .catch(function(err) {
+                logger.error("## Start Web Config Error: " + err.message);
+            });
+    })
+    .catch(function(err) {
+        logger.error("## InitConfig Error: " + err.message);
+    });
 
 
 /*******************************************************************************

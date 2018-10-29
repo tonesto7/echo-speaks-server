@@ -228,7 +228,7 @@
         });
 
         $("#proxyLoginLink").click(function() {
-            let pUrl = 'http://' + rootHost + ':' + configData.settings.serverPort + '/proxy/alexa.' + $('#url').val();
+            let pUrl = 'http://' + rootHost + ':' + configData.settings.serverPort + '/proxy/alexa.' + $('#amazonDomain').val();
             if (isHeroku) {
                 pUrl = 'https://' + rootHost + '/proxy/alexa.' + $('#amazonDomain').val()
             }
