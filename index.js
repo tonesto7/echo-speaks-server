@@ -484,7 +484,7 @@ function getNotificationInfo() {
 function handleDataUpload(deviceData, src) {
     try {
         let url = (configData.settings.isHeroku && configData.settings.smartThingsUrl) ? `${configData.settings.smartThingsUrl}` : `http://${configData.settings.smartThingsHubIP}:39500/event`;
-        logger.info('ST URL: ' + url);
+        // logger.info('ST URL: ' + url);
         if (deviceData === undefined) {
             logger.error('device data missing');
         } else if (configData.settings && ((configData.settings.isHeroku && configData.settings.smartThingsUrl) || (configData.settings.smartThingsHubIP !== "" && configData.settings.smartThingsHubIP !== undefined))) {
