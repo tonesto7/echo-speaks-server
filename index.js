@@ -116,7 +116,8 @@ function startWebConfig() {
             });
             webApp.get('/clearAuth', urlencodedParser, function(req, res) {
                 logger.verbose('got request for to clear authentication');
-                alexa_api.clearSession();
+                let clearUrl = configData.settings.smartThingsUrl ? String(configData.settings.smartThingsUrl).replace("/receiveData?", "/cookie?") : null
+                alexa_api.clearSession(clearUrl, configData.settings.isHeroku);
                 configFile.set('state.loginProxyActive', true);
                 configData.state.loginProxyActive = true;
                 configFile.set('state.loginComplete', false);
@@ -573,7 +574,10 @@ initConfig()
         if (res) {
             startWebConfig()
                 .then(function(res) {
+                    console.log('webconfig up');
+                    console.log('configCheckOk: ' + configCheckOk());
                     if (configCheckOk()) {
+                        console.log('loginComplete: ' + configData.state.loginComplete, 'hostUrl: ' + configData.settings.hostUrl, 'smartThingsUrl: ' + configData.settings.smartThingsUrl);
                         if (configData.state.loginComplete === true || (configData.settings.hostUrl && configData.settings.smartThingsUrl)) {
                             // logger.info('-- Echo Speaks Web Service Starting Up! Takes about 10 seconds before it\'s available... --');
                             startWebServer((configData.settings.isHeroku === true && configData.settings.smartThingsUrl !== undefined));

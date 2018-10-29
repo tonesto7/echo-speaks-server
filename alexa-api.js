@@ -13,10 +13,27 @@ let alexaUrl = 'https://alexa.amazon.com';
 let sessionData = sessionFile.get() || {};
 sessionFile.save();
 
-var clearSession = function() {
+var clearSession = function(url, isHeroku) {
     sessionFile.unset('csrf');
     sessionFile.unset('cookie');
     sessionFile.save();
+    if (url && isHeroku) {
+        let options = {
+            method: 'DELETE',
+            uri: url,
+            json: true
+        };
+        reqPromise(options)
+            .then(function(resp) {
+                // console.log('resp:', resp);
+                if (resp) {
+                    logger.info(`** Sent Remove Alexa Cookie Request to SmartThings Successfully! **`);
+                }
+            })
+            .catch(function(err) {
+                logger.error("ERROR: Unable to send Alexa Cookie to SmartThings: " + err.message);
+            });
+    }
 };
 
 function getRemoteCookie(alexaOptions) {
@@ -101,7 +118,7 @@ function alexaLogin(username, password, alexaOptions, webapp, callback) {
                             callback(null, 'Login Successful', config);
                         } else {
                             callback(true, 'There was an error getting authentication', null);
-                            clearSession();
+                            clearSession(alexaOptions.stEndpoint, alexaOptions.isHeroku);
                         }
                     }
                 });
@@ -123,7 +140,7 @@ var sendCookiesToST = function(url, cookie, csrf) {
         reqPromise(options)
             .then(function(resp) {
                 // console.log('resp:', resp);
-                if (resp.statusCode === 200) {
+                if (resp) {
                     logger.info(`** Alexa Cookie sent to SmartThings Cloud Endpoint Successfully! **`);
                 }
             })
