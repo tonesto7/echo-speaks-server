@@ -53,8 +53,8 @@ function loadConfig() {
         configData.settings = {};
     }
     if (process.env.hostUrl) { configFile.set('settings.isHeroku', process.env.hostUrl); }
-    configFile.set('settings.isHeroku', true);
-    // configFile.set('settings.isHeroku', (process.env.isHeroku === true || process.env.isHeroku === 'true'));
+    // configFile.set('settings.isHeroku', true);
+    configFile.set('settings.isHeroku', (process.env.isHeroku === true || process.env.isHeroku === 'true'));
     configFile.set('settings.amazonDomain', process.env.amazonDomain || configData.settings.amazonDomain);
     configFile.set('settings.smartThingsUrl', process.env.smartThingsUrl || configData.settings.smartThingsUrl);
     configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
@@ -121,6 +121,8 @@ function startWebConfig() {
                 configData.state.loginProxyActive = true;
                 configFile.set('state.loginComplete', false);
                 configData.state.loginComplete = false;
+                configFile.unset('user');
+                configFile.unset('password');
                 configFile.save();
                 if (scheduledUpdatesActive) {
                     clearDataUpdates()
@@ -191,9 +193,8 @@ function startWebConfig() {
     });
 }
 
-function startWebServer(checkForCookie) {
-    const alexaOptions = { // options is optional at all
-        // logger: logger.debug, // optional: Logger instance to get (debug) logs
+function startWebServer(checkForCookie = false) {
+    const alexaOptions = {
         debug: false,
         serverPort: configData.settings.serverPort,
         amazonDomain: configData.settings.amazonDomain,
@@ -204,13 +205,13 @@ function startWebServer(checkForCookie) {
         proxyHost: configData.settings.hostUrl,
         stEndpoint: configData.settings.smartThingsUrl ? String(configData.settings.smartThingsUrl).replace("/receiveData?", "/cookie?") : null,
         checkForCookie: checkForCookie
+
     };
 
     configFile.set('state.loginProxyActive', true);
-    configData.state.loginProxyActive = true;
     configFile.set('state.loginComplete', false);
-    configData.state.loginComplete = false;
     configFile.save();
+    configData = configFile.get();
     loginProxyActive = true;
     alexa_api.alexaLogin(configData.settings.user, configData.settings.password, alexaOptions, webApp, function(error, response, config) {
         alexaUrl = 'https://alexa.' + configData.settings.amazonDomain;
@@ -576,7 +577,7 @@ initConfig()
                 if (configCheckOk()) {
                     // logger.info('-- Echo Speaks Web Service Starting Up! Takes about 10 seconds before it\'s available... --');
                     if (configData.state.loginComplete === true || (configData.settings.hostUrl && configData.settings.smartThingsUrl)) {
-                        startWebServer(true);
+                        startWebServer((configData.settings.isHeroku && configData.settings.smartThingsUrl));
                     }
                 }
             })

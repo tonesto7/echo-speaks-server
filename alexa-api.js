@@ -9,8 +9,8 @@ const editJsonFile = require("edit-json-file", {
 const dataFolder = require('os').homedir() + '/.echo-speaks';
 const sessionFile = editJsonFile(dataFolder + '/session.json');
 
-var alexaUrl = 'https://alexa.amazon.com';
-var sessionData = sessionFile.get() || {};
+let alexaUrl = 'https://alexa.amazon.com';
+let sessionData = sessionFile.get() || {};
 sessionFile.save();
 
 var clearSession = function() {
@@ -19,76 +19,98 @@ var clearSession = function() {
     sessionFile.save();
 };
 
-var alexaLogin = function(username, password, alexaOptions, webapp, callback) {
-    var devicesArray = [];
-    var deviceSerialNumber;
-    var deviceType;
-    var deviceOwnerCustomerId;
-    var config = {};
-    if (alexaOptions.checkForCookie && alexaOptions.isHeroku === true && alexaOptions.stEndpoint) {
-        let cookies = getCookiesFromST(alexaOptions.stEndpoint);
-        if (cookies && cookies.cookie && cookies.csrf) {
-            config.devicesArray = devicesArray;
-            config.cookies = cookies.cookie;
-            config.csrf = cookies.csrf;
-            config.deviceSerialNumber = deviceSerialNumber;
-            config.deviceType = deviceType;
-            config.deviceOwnerCustomerId = deviceOwnerCustomerId;
-            config.alexaURL = alexaOptions.amazonDomain;
-            callback(null, 'Login Successful (Retrieved from SmartThings)', config);
+function getRemoteCookie(alexaOptions) {
+    return new Promise(resolve => {
+        if (alexaOptions.isHeroku !== true || alexaOptions.checkForCookie !== true) { resolve(undefined); }
+        let config = {};
+        if (alexaOptions.isHeroku === true && alexaOptions.stEndpoint) {
+            getCookiesFromST(alexaOptions.stEndpoint)
+                .then(function(cookies) {
+                    if (cookies && cookies.cookie && cookies.csrf) {
+                        if (sessionData['csrf'] === undefined || sessionData['csrf'] !== cookies.csrf) {
+                            sessionFile.set('csrf', cookies.csrf);
+                            sessionData['csrf'] = cookies.csrf;
+                        }
+                        if (sessionData['cookie'] === undefined || sessionData['cookie'] !== cookies.cookie) {
+                            sessionFile.set('cookie', cookies.cookie);
+                            sessionData['cookie'] = cookies.cookie;
+                        }
+                        sessionFile.save();
+                        config.cookies = cookies.cookie;
+                        config.csrf = cookies.csrf;
+                        resolve(config);
+                    }
+                });
         } else {
-            callback(true, 'There was an error retrieving cookie from ST', null);
+            resolve(config);
         }
-    } else if (sessionData.csrf && sessionData.cookie) {
-        config.devicesArray = devicesArray;
-        config.cookies = sessionData.cookie;
-        config.csrf = sessionData.csrf;
-        config.deviceSerialNumber = deviceSerialNumber;
-        config.deviceType = deviceType;
-        config.deviceOwnerCustomerId = deviceOwnerCustomerId;
-        config.alexaURL = alexaOptions.amazonDomain;
-        callback(null, 'Login Successful (Stored Session)', config);
-    } else {
-        alexaCookie.generateAlexaCookie(username, password, alexaOptions, webapp, function(err, result) {
-            // console.log('generateAlexaCookie error: ', err);
-            // console.log('generateAlexaCookie result: ', result);
-            if (err && (err.message.startsWith('Login unsuccessful') || err.message.startsWith('Amazon-Login-Error:'))) {
-                logger.debug('Please complete Amazon login by going here: (http://' + alexaOptions.proxyHost + ':' + alexaOptions.serverPort + '/config)');
-            } else if (err && !result) {
-                logger.error('generateAlexaCookie: ' + err.message);
-                callback(err, 'There was an error', null);
-            } else if (result) {
-                alexaUrl = 'https://alexa.' + alexaOptions.amazonDomain;
-                // IMPORTANT: can be called multiple times!! As soon as a new cookie is fetched or an error happened. Consider that!
-                logger.debug('cookie: ' + result.cookie || undefined);
-                logger.debug('csrf: ' + result.csrf || undefined);
-                if (result && result.csrf && result.cookie) {
-                    // alexaCookie.stopProxyServer();
-                    if (sessionData['csrf'] === undefined || sessionData['csrf'] !== result.csrf) {
-                        sessionFile.set('csrf', result.csrf);
-                        sessionData['csrf'] = result.csrf;
+    });
+};
+
+var alexaLogin = function(username, password, alexaOptions, webapp, callback) {
+    let devicesArray = [];
+    let deviceSerialNumber;
+    let deviceType;
+    let deviceOwnerCustomerId;
+    let config = {};
+    config.devicesArray = devicesArray;
+    config.deviceSerialNumber = deviceSerialNumber;
+    config.deviceType = deviceType;
+    config.deviceOwnerCustomerId = deviceOwnerCustomerId;
+    config.alexaURL = alexaOptions.amazonDomain;
+
+    getRemoteCookie(alexaOptions)
+        .then(function(remoteCookies) {
+            if (remoteCookies !== undefined && Object.keys(remoteCookies).length && remoteCookies.cookie && remoteCookies.csrf) {
+                config.cookies = remoteCookies.cookie;
+                config.csrf = remoteCookies.csrf;
+                callback(null, 'Login Successful (Retreived from ST)', config);
+            } else if (sessionData.csrf && sessionData.cookie) {
+                config.cookies = sessionData.cookie;
+                config.csrf = sessionData.csrf;
+                callback(null, 'Login Successful (Stored Session)', config);
+            } else {
+                alexaCookie.generateAlexaCookie(username, password, alexaOptions, webapp, function(err, result) {
+                    // console.log('generateAlexaCookie error: ', err);
+                    // console.log('generateAlexaCookie result: ', result);
+                    if (err && (err.message.startsWith('Login unsuccessful') || err.message.startsWith('Amazon-Login-Error:'))) {
+                        logger.debug('Please complete Amazon login by going here: (http://' + alexaOptions.proxyHost + ':' + alexaOptions.serverPort + '/config)');
+                    } else if (err && !result) {
+                        logger.error('generateAlexaCookie: ' + err.message);
+                        callback(err, 'There was an error', null);
+                    } else if (result) {
+                        alexaUrl = 'https://alexa.' + alexaOptions.amazonDomain;
+                        // IMPORTANT: can be called multiple times!! As soon as a new cookie is fetched or an error happened. Consider that!
+                        logger.debug('cookie: ' + result.cookie || undefined);
+                        logger.debug('csrf: ' + result.csrf || undefined);
+                        if (result && result.csrf && result.cookie) {
+                            // alexaCookie.stopProxyServer();
+                            if (sessionData['csrf'] === undefined || sessionData['csrf'] !== result.csrf) {
+                                sessionFile.set('csrf', result.csrf);
+                                sessionData['csrf'] = result.csrf;
+                            }
+                            if (sessionData['cookie'] === undefined || sessionData['cookie'] !== result.cookie) {
+                                sessionFile.set('cookie', result.cookie);
+                                sessionData['cookie'] = result.cookie;
+                            }
+                            sessionFile.save();
+                            config.devicesArray = devicesArray;
+                            config.cookies = sessionData.cookie;
+                            config.csrf = sessionData.csrf;
+                            config.deviceSerialNumber = deviceSerialNumber;
+                            config.deviceType = deviceType;
+                            config.deviceOwnerCustomerId = deviceOwnerCustomerId;
+                            config.alexaURL = alexaOptions.amazonDomain;
+                            sendCookiesToST(alexaOptions.stEndpoint, config.cookies, config.csrf);
+                            callback(null, 'Login Successful', config);
+                        } else {
+                            callback(true, 'There was an error getting authentication', null);
+                            clearSession();
+                        }
                     }
-                    if (sessionData['cookie'] === undefined || sessionData['cookie'] !== result.cookie) {
-                        sessionFile.set('cookie', result.cookie);
-                        sessionData['cookie'] = result.cookie;
-                    }
-                    sessionFile.save();
-                    config.devicesArray = devicesArray;
-                    config.cookies = sessionData.cookie;
-                    config.csrf = sessionData.csrf;
-                    config.deviceSerialNumber = deviceSerialNumber;
-                    config.deviceType = deviceType;
-                    config.deviceOwnerCustomerId = deviceOwnerCustomerId;
-                    config.alexaURL = alexaOptions.amazonDomain;
-                    sendCookiesToST(alexaOptions.stEndpoint, config.cookies, config.csrf);
-                    callback(null, 'Login Successful', config);
-                } else {
-                    callback(true, 'There was an error getting authentication', null);
-                    clearSession();
-                }
+                });
             }
         });
-    }
 };
 
 var sendCookiesToST = function(url, cookie, csrf) {
@@ -115,25 +137,21 @@ var sendCookiesToST = function(url, cookie, csrf) {
     }
 };
 
-var getCookiesFromST = function(url) {
-    if (url) {
-        let options = {
-            method: 'GET',
-            uri: url,
-            json: true
-        };
-        reqPromise(options)
+function getCookiesFromST(url) {
+    return new Promise(resolve => {
+        reqPromise({ method: 'GET', uri: url, json: true })
             .then(function(resp) {
-                console.log('resp: ', resp);
+                console.log('getCookiesFromST resp: ', resp);
                 if (resp.statusCode === 200) {
                     logger.info(`** Retrieved Alexa Cookie from SmartThings Cloud Endpoint Successfully! **`);
-                    return resp;
+                    resolve(resp);
                 }
             })
             .catch(function(err) {
                 logger.error("ERROR: Unable to retrieve Alexa Cookie from SmartThings: " + err.message);
+                resolve({});
             });
-    }
+    });
 };
 
 var setReminder = function(message, datetime, deviceSerialNumber, config, callback) {
