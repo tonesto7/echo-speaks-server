@@ -52,7 +52,7 @@ function loadConfig() {
     if (!configData.settings) {
         configData.settings = {};
     }
-    if (process.env.hostUrl) { configFile.set('settings.isHeroku', process.env.hostUrl); }
+    if (process.env.hostUrl) { configFile.set('settings.hostUrl', process.env.hostUrl); }
     configFile.set('settings.isHeroku', true);
     // configFile.set('settings.isHeroku', (process.env.isHeroku === true || process.env.isHeroku === 'true'));
     configFile.set('settings.amazonDomain', process.env.amazonDomain || configData.settings.amazonDomain);
