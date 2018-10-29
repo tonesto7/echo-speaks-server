@@ -231,7 +231,7 @@ var setMedia = function(command, deviceSerialNumber, config, callback) {
 };
 
 var getDevices = function(config, callback) {
-    console.log('config: ', JSON.stringify(config));
+    // console.log('config: ', JSON.stringify(config));
     request({
         method: 'GET',
         url: alexaUrl + '/api/devices-v2/device',
@@ -240,10 +240,9 @@ var getDevices = function(config, callback) {
             'csrf': config.csrf
         }
     }, function(error, response, body) {
-
         if (!error && response.statusCode === 200) {
             try {
-                console.log('getDevices Body: ', body);
+                // console.log('getDevices Body: ', body);
                 config.devicesArray = JSON.parse(body);
             } catch (e) {
                 logger.error('getDevices Error: ' + e.message);
@@ -252,7 +251,7 @@ var getDevices = function(config, callback) {
             callback(null, config.devicesArray);
         } else {
             if (response && response.statusCode !== undefined) {
-                console.log('getDevices status: ', response || "", 'Code: (' + response.statusCode || 'error' + ')');
+                // console.log('getDevices status: ', response || "", 'Code: (' + response.statusCode || 'error' + ')');
             }
             callback(error, response);
         }
