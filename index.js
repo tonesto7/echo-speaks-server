@@ -51,6 +51,7 @@ function loadConfig() {
     if (!configData.settings) {
         configData.settings = {};
     }
+    if (process.env.hostUrl) { configFile.set('settings.isHeroku', process.env.hostUrl); }
     configFile.set('settings.isHeroku', (process.env.isHeroku === true || process.env.isHeroku === 'true'))
     configFile.set('settings.amazonDomain', process.env.amazonDomain || configData.settings.amazonDomain);
     configFile.set('settings.smartThingsUrl', process.env.smartThingsUrl || configData.settings.smartThingsUrl);
@@ -198,7 +199,8 @@ function startWebServer() {
         proxyOwnIp: getIPAddress(),
         proxyListenBind: '0.0.0.0',
         isHeroku: configData.settings.isHeroku,
-        proxyHost: configData.settings.hostUrl
+        proxyHost: configData.settings.hostUrl,
+        stEndpoint: configData.settings.smartThingsUrl
     };
 
     configFile.set('state.loginProxyActive', true);
@@ -569,7 +571,7 @@ if (initConfig()) {
         .then(function(res) {
             if (configCheckOk()) {
                 // logger.info('-- Echo Speaks Web Service Starting Up! Takes about 10 seconds before it\'s available... --');
-                if (configData.state.loginComplete === true) {
+                if (configData.state.loginComplete === true || (configData.settings.hostUrl && configData.settings.smartThingsUrl)) {
                     startWebServer();
                 }
             }

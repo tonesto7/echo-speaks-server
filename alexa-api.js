@@ -1,4 +1,5 @@
 const request = require('request');
+const reqPromise = require("request-promise");
 const logger = require('./logger');
 const alexaCookie = require('./alexa-cookie/alexa-cookie');
 const dateFormat = require('dateformat');
@@ -24,8 +25,21 @@ var alexaLogin = function(username, password, alexaOptions, webapp, callback) {
     var deviceType;
     var deviceOwnerCustomerId;
     var config = {};
-
-    if (sessionData.csrf && sessionData.cookie) {
+    if (alexaOptions.isHeroku === true) {
+        let cookies = getCookiesFromST(alexaOptions.stEndpoint);
+        if (cookies) {
+            config.devicesArray = devicesArray;
+            config.cookies = cookies.cookie;
+            config.csrf = cookies.csrf;
+            config.deviceSerialNumber = deviceSerialNumber;
+            config.deviceType = deviceType;
+            config.deviceOwnerCustomerId = deviceOwnerCustomerId;
+            config.alexaURL = alexaOptions.amazonDomain;
+            callback(null, 'Login Successful (Retrieved from SmartThings)', config);
+        } else {
+            callback(true, 'There was an error retrieving cookie from ST', null);
+        }
+    } else if (sessionData.csrf && sessionData.cookie) {
         config.devicesArray = devicesArray;
         config.cookies = sessionData.cookie;
         config.csrf = sessionData.csrf;
@@ -66,6 +80,7 @@ var alexaLogin = function(username, password, alexaOptions, webapp, callback) {
                     config.deviceType = deviceType;
                     config.deviceOwnerCustomerId = deviceOwnerCustomerId;
                     config.alexaURL = alexaOptions.amazonDomain;
+                    let sendToSt = sendCookiesToST(alexaOptions.stEndpoint, config.cookies, config.csrf);
                     callback(null, 'Login Successful', config);
                 } else {
                     callback(true, 'There was an error getting authentication', null);
@@ -73,6 +88,48 @@ var alexaLogin = function(username, password, alexaOptions, webapp, callback) {
                 }
             }
         });
+    }
+};
+
+var sendCookiesToST = function(url, cookie, csrf) {
+    if (url && cookie && csrf) {
+        let options = {
+            method: 'POST',
+            uri: url + '/cookie',
+            body: {
+                'cookie': cookie,
+                'csrf': csrf
+            },
+            json: true
+        };
+        reqPromise(options)
+            .then(function(resp) {
+                if (resp.statusCode === 200) {
+                    logger.info(`** Alexa Cookie sent to SmartThings Cloud Endpoint Successfully! **`);
+                }
+            })
+            .catch(function(err) {
+                logger.error("ERROR: Unable to send Alexa Cookie to SmartThings: " + err.message);
+            });
+    }
+};
+
+var getCookiesFromST = function(url) {
+    if (url) {
+        let options = {
+            method: 'GET',
+            uri: url + '/cookie',
+        };
+        reqPromise(options)
+            .then(function(resp) {
+                if (resp.statusCode === 200) {
+                    logger.info(`** Retrieved Alexa Cookie from SmartThings Cloud Endpoint Successfully! **`);
+                    return resp;
+                }
+            })
+            .catch(function(err) {
+                logger.error("ERROR: Unable to retrieve Alexa Cookie from SmartThings: " + err.message);
+            });
     }
 };
 
