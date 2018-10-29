@@ -1,9 +1,8 @@
 {
     "name": "echo-speaks-server",
-    "version": "0.8.0",
+    "version": "0.9.0",
     "author": "Anthony Santilli",
-    "contributors": [
-        {
+    "contributors": [{
             "name": "Corey L.",
             "email": "no@email.com"
         },

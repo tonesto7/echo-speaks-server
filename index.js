@@ -53,8 +53,8 @@ function loadConfig() {
         configData.settings = {};
     }
     if (process.env.hostUrl) { configFile.set('settings.hostUrl', process.env.hostUrl); }
-    configFile.set('settings.isHeroku', true);
-    // configFile.set('settings.isHeroku', (process.env.isHeroku === true || process.env.isHeroku === 'true'));
+    // configFile.set('settings.isHeroku', true);
+    configFile.set('settings.isHeroku', (process.env.isHeroku === true || process.env.isHeroku === 'true'));
     configFile.set('settings.amazonDomain', process.env.amazonDomain || configData.settings.amazonDomain);
     configFile.set('settings.smartThingsUrl', process.env.smartThingsUrl || configData.settings.smartThingsUrl);
     configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
@@ -574,10 +574,10 @@ initConfig()
         if (res) {
             startWebConfig()
                 .then(function(res) {
-                    console.log('webconfig up');
-                    console.log('configCheckOk: ' + configCheckOk());
+                    // console.log('webconfig up');
+                    // console.log('configCheckOk: ' + configCheckOk());
                     if (configCheckOk()) {
-                        console.log('loginComplete: ' + configData.state.loginComplete, 'hostUrl: ' + configData.settings.hostUrl, 'smartThingsUrl: ' + configData.settings.smartThingsUrl);
+                        // console.log('loginComplete: ' + configData.state.loginComplete, 'hostUrl: ' + configData.settings.hostUrl, 'smartThingsUrl: ' + configData.settings.smartThingsUrl);
                         if (configData.state.loginComplete === true || (configData.settings.hostUrl && configData.settings.smartThingsUrl)) {
                             // logger.info('-- Echo Speaks Web Service Starting Up! Takes about 10 seconds before it\'s available... --');
                             startWebServer((configData.settings.isHeroku === true && configData.settings.smartThingsUrl !== undefined));

@@ -78,7 +78,7 @@ function alexaLogin(username, password, alexaOptions, webapp, callback) {
 
     getRemoteCookie(alexaOptions)
         .then(function(remoteCookies) {
-            console.log('remoteCookies: ', remoteCookies, 'keys: ', Object.keys(remoteCookies));
+            // console.log('remoteCookies: ', remoteCookies, 'keys: ', Object.keys(remoteCookies));
             if (remoteCookies !== undefined && Object.keys(remoteCookies).length > 0 && remoteCookies.cookies && remoteCookies.csrf) {
                 config.cookies = remoteCookies.cookies;
                 config.csrf = remoteCookies.csrf;
