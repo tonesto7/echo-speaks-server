@@ -163,10 +163,6 @@ function startWebConfig() {
                     configFile.set('settings.serverPort', req.headers.serverport);
                     saveFile = true;
                 };
-                // if (req.headers.isheroku) {
-                //     configFile.set('settings.isHeroku', req.headers.isheroku);
-                //     saveFile = true;
-                // };
                 if (saveFile) {
                     configFile.save();
                     loadConfig();
@@ -411,13 +407,10 @@ function startWebServer() {
                         }
                         configFile.save();
                     });
-                    // if (Object.keys(echoDevices).length) {
-                    // console.log(echoDevices);
                     sendDeviceDataToST(echoDevices);
                     logger.debug("** Device Data Refresh Scheduled for Every (" + configData.settings.refreshSeconds + ' sec) **');
                     setInterval(scheduledDataUpdates, configData.settings.refreshSeconds * 1000);
                     scheduledUpdatesActive = true;
-                    // }
                 })
                 .catch(function(err) {
                     console.log(err);
@@ -501,6 +494,7 @@ function handleDataUpload(deviceData, src) {
                             'echoDevices': echoDevices,
                             'isHeroku': (process.env.isHeroku === true),
                             'hostUrl': configData.settings.hostUrl || null,
+                            'cloudUrl': (process.env.isHeroku === true) ? 'https://' + configData.settings.hostUrl : null,
                             'timestamp': Date.now(),
                             'serviceInfo': {
                                 'version': appVer,
