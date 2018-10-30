@@ -13,6 +13,7 @@
             "description": "Dynamic URL generated for this heroku instance"
         },
         "useHeroku": {
+            "description": "This is used to tell the service that is running under heroku and act accordingly.",
             "value": true
         },
         "refreshSeconds": {
