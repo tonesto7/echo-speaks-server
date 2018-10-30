@@ -13,18 +13,18 @@
         },
         "hostUrl": {
             "description": "Dynamic URL generated for this heroku instance",
-            "value": ""
+            "value": "placeholder"
         },
         "useHeroku": {
             "value": "true"
         },
         "refreshSeconds": {
             "description": "The number of seconds between refreshes of the amazon data",
-            "value": 60
+            "value": "60"
         },
         "smartThingsUrl": {
             "description": "The Echo Speaks smart app endpoint url",
-            "value": ""
+            "value": "placeholder"
         },
     }
 }
