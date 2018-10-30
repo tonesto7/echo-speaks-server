@@ -6,7 +6,6 @@
     "logo": "https://raw.githubusercontent.com/tonesto7/echo-speaks/master/resources/icons/echo_speaks.1x.png",
     "keywords": ["alexa", "smartthings", "echo"],
     "env": {
-
         "amazonDomain": {
             "description": "Used by the service to define the correct domain for your region",
             "value": "amazon.com"
@@ -16,7 +15,7 @@
             "value": "placeholder"
         },
         "useHeroku": {
-            "value": "true"
+            "value": true
         },
         "refreshSeconds": {
             "description": "The number of seconds between refreshes of the amazon data",
@@ -26,5 +25,8 @@
             "description": "The Echo Speaks smart app endpoint url",
             "value": "placeholder"
         },
+        "HEROKU_APP_NAME": {
+            "required": true
+        }
     }
 }
