@@ -412,6 +412,12 @@ function startWebServer(checkForCookie = false) {
                         }
                         configFile.save();
                     });
+
+                    webApp.get('/heartbeat', urlencodedParser, function(req, res) {
+                        logger.verbose('++ Received a heartbeat Request... ++');
+                        res.send({ result: "i am alive" })
+                    });
+
                     sendDeviceDataToST(echoDevices);
                     logger.debug("** Device Data Refresh Scheduled for Every (" + configData.settings.refreshSeconds + ' sec) **');
                     setInterval(scheduledDataUpdates, configData.settings.refreshSeconds * 1000);
