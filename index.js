@@ -53,8 +53,8 @@ function loadConfig() {
         configData.settings = {};
     }
     if (process.env.hostUrl) { configFile.set('settings.hostUrl', process.env.hostUrl); }
-    // configFile.set('settings.isHeroku', true);
-    configFile.set('settings.isHeroku', (process.env.isHeroku === true || process.env.isHeroku === 'true'));
+    // configFile.set('settings.useHeroku', true);
+    configFile.set('settings.useHeroku', (process.env.useHeroku === true || process.env.useHeroku === 'true'));
     configFile.set('settings.amazonDomain', process.env.amazonDomain || configData.settings.amazonDomain);
     configFile.set('settings.smartThingsUrl', process.env.smartThingsUrl || configData.settings.smartThingsUrl);
     configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
@@ -117,7 +117,7 @@ function startWebConfig() {
             webApp.get('/clearAuth', urlencodedParser, function(req, res) {
                 logger.verbose('got request for to clear authentication');
                 let clearUrl = configData.settings.smartThingsUrl ? String(configData.settings.smartThingsUrl).replace("/receiveData?", "/cookie?") : null
-                alexa_api.clearSession(clearUrl, configData.settings.isHeroku);
+                alexa_api.clearSession(clearUrl, configData.settings.useHeroku);
                 configFile.set('state.loginProxyActive', true);
                 configData.state.loginProxyActive = true;
                 configFile.set('state.loginComplete', false);
@@ -203,7 +203,7 @@ function startWebServer(checkForCookie = false) {
         setupProxy: true,
         proxyOwnIp: getIPAddress(),
         proxyListenBind: '0.0.0.0',
-        isHeroku: (configData.settings.isHeroku === true || configData.settings.isHeroku === 'true'),
+        useHeroku: (configData.settings.useHeroku === true || configData.settings.useHeroku === 'true'),
         proxyHost: configData.settings.hostUrl,
         stEndpoint: configData.settings.smartThingsUrl ? String(configData.settings.smartThingsUrl).replace("/receiveData?", "/cookie?") : null
     };
@@ -482,11 +482,11 @@ function getNotificationInfo() {
 
 function handleDataUpload(deviceData, src) {
     try {
-        let url = (configData.settings.isHeroku && configData.settings.smartThingsUrl) ? `${configData.settings.smartThingsUrl}` : `http://${configData.settings.smartThingsHubIP}:39500/event`;
+        let url = (configData.settings.useHeroku && configData.settings.smartThingsUrl) ? `${configData.settings.smartThingsUrl}` : `http://${configData.settings.smartThingsHubIP}:39500/event`;
         // logger.info('ST URL: ' + url);
         if (deviceData === undefined) {
             logger.error('device data missing');
-        } else if (configData.settings && ((configData.settings.isHeroku && configData.settings.smartThingsUrl) || (configData.settings.smartThingsHubIP !== "" && configData.settings.smartThingsHubIP !== undefined))) {
+        } else if (configData.settings && ((configData.settings.useHeroku && configData.settings.smartThingsUrl) || (configData.settings.smartThingsHubIP !== "" && configData.settings.smartThingsHubIP !== undefined))) {
             buildEchoDeviceMap(deviceData)
                 .then(function(devOk) {
                     let options = {
@@ -498,9 +498,9 @@ function handleDataUpload(deviceData, src) {
                         },
                         body: {
                             'echoDevices': echoDevices,
-                            'isHeroku': (configData.settings.isHeroku === true),
+                            'useHeroku': (configData.settings.useHeroku === true),
                             'hostUrl': configData.settings.hostUrl || null,
-                            'cloudUrl': (configData.settings.isHeroku === true) ? 'https://' + configData.settings.hostUrl : null,
+                            'cloudUrl': (configData.settings.useHeroku === true) ? 'https://' + configData.settings.hostUrl : null,
                             'timestamp': Date.now(),
                             'serviceInfo': {
                                 'version': appVer,
@@ -520,7 +520,7 @@ function handleDataUpload(deviceData, src) {
                         .then(function(resp) {
                             // logger.debug('resp:', resp);
                             eventCount++;
-                            if (configData.settings.isHeroku) {
+                            if (configData.settings.useHeroku) {
                                 logger.info(`** Sent Echo Speaks Data to SmartThings Cloud Endpoint Successfully! **`);
                             } else {
                                 logger.info(`** Sent Echo Speaks Data to SmartThings Hub Successfully! | Hub: (${url}) **`);
@@ -566,7 +566,7 @@ function clearDataUpdates() {
 }
 
 function configCheckOk() {
-    return ((configData.settings.isHeroku === true && !configData.settings.smartThingsUrl) || configData.settings.amazonDomain === '' || (!configData.settings.isHeroku && !configData.settings.smartThingsHubIP)) ? false : true
+    return ((configData.settings.useHeroku === true && !configData.settings.smartThingsUrl) || configData.settings.amazonDomain === '' || (!configData.settings.useHeroku && !configData.settings.smartThingsHubIP)) ? false : true
 }
 
 initConfig()
@@ -580,7 +580,7 @@ initConfig()
                         // console.log('loginComplete: ' + configData.state.loginComplete, 'hostUrl: ' + configData.settings.hostUrl, 'smartThingsUrl: ' + configData.settings.smartThingsUrl);
                         if (configData.state.loginComplete === true || (configData.settings.hostUrl && configData.settings.smartThingsUrl)) {
                             // logger.info('-- Echo Speaks Web Service Starting Up! Takes about 10 seconds before it\'s available... --');
-                            startWebServer((configData.settings.isHeroku === true && configData.settings.smartThingsUrl !== undefined));
+                            startWebServer((configData.settings.useHeroku === true && configData.settings.smartThingsUrl !== undefined));
                         }
                     }
                 })
@@ -648,7 +648,7 @@ function getHostUptimeStr(time) {
 
 const loginSuccessHtml = function() {
     let html = '';
-    let redirUrl = (configData.settings.isHeroku) ? 'https://' + configData.settings.hostUrl + '/config' : 'http://' + getIPAddress() + ':' + configData.settings.serverPort + '/config';
+    let redirUrl = (configData.settings.useHeroku) ? 'https://' + configData.settings.hostUrl + '/config' : 'http://' + getIPAddress() + ':' + configData.settings.serverPort + '/config';
     html += '<!DOCTYPE html>'
     html += '<html>'
     html += '   <head>'

@@ -66,7 +66,7 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
         webApp = webapp;
     }
     let getLocalHost = function() {
-        return (_options.proxyHost || _options.proxyOwnIp) + (_options.isHeroku ? '' : ':' + _options.serverPort);
+        return (_options.proxyHost || _options.proxyOwnIp) + (_options.useHeroku ? '' : ':' + _options.serverPort);
     };
 
     function request(options, info, callback) {
@@ -325,7 +325,7 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
     // proxy middleware options
 
     let getLocalHost = function() {
-        return (_options.proxyHost || _options.proxyOwnIp) + (_options.isHeroku ? '' : ':' + _options.serverPort);
+        return (_options.proxyHost || _options.proxyOwnIp) + (_options.useHeroku ? '' : ':' + _options.serverPort);
     };
 
     const optionsAlexa = {

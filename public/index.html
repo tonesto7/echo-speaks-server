@@ -84,9 +84,9 @@
                 <div class="card-header blue lighten-1 w-100 text-white text-center">Status Info</div>
                 <div class="card-body w-100">
                     <div class="form-check">
-                        <input type="checkbox" class="form-check-input" id="isHeroku" disabled>
-                        <label class="form-check-label" for="isHeroku">Running on Heroku?</label>
-                        <small id="isHerokuHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
+                        <input type="checkbox" class="form-check-input" id="useHeroku" disabled>
+                        <label class="form-check-label" for="useHeroku">Running on Heroku?</label>
+                        <small id="useHerokuHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
                             Sets all the appropriate options for the cloud based instance.
                         </small>
                     </div>
@@ -162,8 +162,8 @@
         function getChecked(name) {
             return ($(`#${name}`).prop("checked") === true);
         }
-        let isHeroku = getChecked('isHeroku');
-        // if (isHeroku) {
+        let useHeroku = getChecked('useHeroku');
+        // if (useHeroku) {
         //     console.log(rootOrigin)
         //     rootOrigin = 'http://' + rootHost;
         // }
@@ -200,12 +200,12 @@
                     if ($(elem)) {
                         if (key === 'amazonDomain') {
                             $('#amazonDomain').val(val);
-                        } else if (key === 'isHeroku') {
-                            console.log('isHeroku: ' + val);
-                            isHeroku = (val === true || val === 'true')
-                            $('#isHeroku').prop('checked', isHeroku);
-                            isHeroku ? $('[id^="localDiv"]').hide() : $('[id^="localDiv"]').show();
-                            isHeroku ? $('[id^="cloudDiv"]').show() : $('[id^="cloudDiv"]').hide();
+                        } else if (key === 'useHeroku') {
+                            console.log('useHeroku: ' + val);
+                            useHeroku = (val === true || val === 'true')
+                            $('#useHeroku').prop('checked', useHeroku);
+                            useHeroku ? $('[id^="localDiv"]').hide() : $('[id^="localDiv"]').show();
+                            useHeroku ? $('[id^="cloudDiv"]').show() : $('[id^="cloudDiv"]').hide();
                         } else {
                             $(elem).attr('value', val);
                             $(elem).focus();
@@ -219,17 +219,17 @@
             console.log($(this).val());
             configData.settings.amazonDomain = $(this).val();
         });
-        $("#isHeroku").change(function() {
-            configData.settings.isHeroku = getChecked('isHeroku');
-            isHeroku = configData.settings.isHeroku;
-            console.log(`isHeroku: ${isHeroku}`)
-            isHeroku ? $('[id^="localDiv"]').hide() : $('[id^="localDiv"]').show();
-            isHeroku ? $('[id^="cloudDiv"]').show() : $('[id^="cloudDiv"]').hide();
+        $("#useHeroku").change(function() {
+            configData.settings.useHeroku = getChecked('useHeroku');
+            useHeroku = configData.settings.useHeroku;
+            console.log(`useHeroku: ${useHeroku}`)
+            useHeroku ? $('[id^="localDiv"]').hide() : $('[id^="localDiv"]').show();
+            useHeroku ? $('[id^="cloudDiv"]').show() : $('[id^="cloudDiv"]').hide();
         });
 
         $("#proxyLoginLink").click(function() {
             let pUrl = 'http://' + rootHost + ':' + configData.settings.serverPort + '/proxy/alexa.' + $('#amazonDomain').val();
-            if (isHeroku) {
+            if (useHeroku) {
                 pUrl = 'https://' + rootHost + '/proxy/alexa.' + $('#amazonDomain').val()
             }
             console.log('Proxy Url: ' + pUrl)
@@ -294,7 +294,7 @@
                     config.password = "";
                 }
                 config.amazonDomain = configData.settings.amazonDomain;
-                config.isHeroku = configData.settings.isHeroku;
+                config.useHeroku = configData.settings.useHeroku;
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("POST", rootOrigin + '/configData');
                 xmlhttp.onreadystatechange = function() {

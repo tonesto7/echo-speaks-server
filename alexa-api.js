@@ -13,11 +13,11 @@ let alexaUrl = 'https://alexa.amazon.com';
 let sessionData = sessionFile.get() || {};
 sessionFile.save();
 
-var clearSession = function(url, isHeroku) {
+var clearSession = function(url, useHeroku) {
     sessionFile.unset('csrf');
     sessionFile.unset('cookie');
     sessionFile.save();
-    if (url && isHeroku) {
+    if (url && useHeroku) {
         let options = {
             method: 'DELETE',
             uri: url,
@@ -38,9 +38,9 @@ var clearSession = function(url, isHeroku) {
 
 function getRemoteCookie(alexaOptions) {
     return new Promise(resolve => {
-        if (alexaOptions.isHeroku === false || alexaOptions.checkForCookie === false) { resolve(undefined); }
+        if (alexaOptions.useHeroku === false || alexaOptions.checkForCookie === false) { resolve(undefined); }
         let config = {};
-        if (alexaOptions.isHeroku === true && alexaOptions.stEndpoint) {
+        if (alexaOptions.useHeroku === true && alexaOptions.stEndpoint) {
             getCookiesFromST(alexaOptions.stEndpoint)
                 .then(function(cookies) {
                     if (cookies && cookies.cookie && cookies.csrf) {
@@ -118,7 +118,7 @@ function alexaLogin(username, password, alexaOptions, webapp, callback) {
                             callback(null, 'Login Successful', config);
                         } else {
                             callback(true, 'There was an error getting authentication', null);
-                            clearSession(alexaOptions.stEndpoint, alexaOptions.isHeroku);
+                            clearSession(alexaOptions.stEndpoint, alexaOptions.useHeroku);
                         }
                     }
                 });
