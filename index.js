@@ -54,6 +54,7 @@ function loadConfig() {
     }
     if (process.env.hostUrl) { configFile.set('settings.hostUrl', process.env.hostUrl); }
     // configFile.set('settings.useHeroku', true);
+    console.log('HEROKU_APP_NAME: ' + process.env.HEROKU_APP_NAME);
     configFile.set('settings.useHeroku', (process.env.useHeroku === true || process.env.useHeroku === 'true'));
     configFile.set('settings.amazonDomain', process.env.amazonDomain || configData.settings.amazonDomain);
     configFile.set('settings.smartThingsUrl', process.env.smartThingsUrl || configData.settings.smartThingsUrl);
