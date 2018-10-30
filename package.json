@@ -1,6 +1,6 @@
 {
     "name": "echo-speaks-server",
-    "version": "0.9.0",
+    "version": "1.0.0",
     "author": "Anthony Santilli",
     "contributors": [{
             "name": "Corey L.",
@@ -38,10 +38,10 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/tonesto7/echo-speaks.git"
+        "url": "git+https://github.com/tonesto7/echo-speaks-server.git"
     },
     "bugs": {
-        "url": "https://github.com/tonesto7/echo-speaks/issues"
+        "url": "https://github.com/tonesto7/echo-speaks-server/issues"
     },
     "main": "index.js",
     "readmeFilename": "readme.md",
