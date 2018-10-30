@@ -2,6 +2,29 @@
     "name": "Echo Speaks",
     "description": "Amazon Login Proxy and Alexa API for Echo Speaks SmartApp",
     "repository": "https://github.com/tonesto7/echo-speaks-server",
+    "success_url": "/config",
     "logo": "https://raw.githubusercontent.com/tonesto7/echo-speaks/master/resources/icons/echo_speaks.1x.png",
-    "keywords": ["alexa", "smartthings", "echo"]
+    "keywords": ["alexa", "smartthings", "echo"],
+    "env": {
+
+        "amazonDomain": {
+            "description": "Used by the service to define the correct domain for your region",
+            "value": "amazon.com"
+        },
+        "hostUrl": {
+            "description": "Dynamic URL generated for this heroku instance",
+            "value": ""
+        },
+        "useHeroku": {
+            "value": "true"
+        },
+        "refreshSeconds": {
+            "description": "The number of seconds between refreshes of the amazon data",
+            "value": 60
+        },
+        "smartThingsUrl": {
+            "description": "The Echo Speaks smart app endpoint url",
+            "value": ""
+        },
+    }
 }
