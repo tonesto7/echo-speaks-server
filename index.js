@@ -59,7 +59,7 @@ function loadConfig() {
     configFile.set('settings.amazonDomain', process.env.amazonDomain || configData.settings.amazonDomain);
     configFile.set('settings.smartThingsUrl', process.env.smartThingsUrl || configData.settings.smartThingsUrl);
     configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
-    configFile.set('settings.refreshSeconds', process.env.refreshSeconds || (configData.settings.refreshSeconds || 60));
+    configFile.set('settings.refreshSeconds', process.env.refreshSeconds ? parseInt(process.env.refreshSeconds) : (configData.settings.refreshSeconds || 60));
     if (!configData.state) {
         configData.state = {};
     }
