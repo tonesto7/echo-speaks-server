@@ -7,12 +7,10 @@
     "keywords": ["alexa", "smartthings", "echo"],
     "env": {
         "amazonDomain": {
-            "description": "Used by the service to define the correct domain for your region",
-            "value": "amazon.com"
+            "description": "Used by the service to define the correct domain for your region"
         },
         "hostUrl": {
-            "description": "Dynamic URL generated for this heroku instance",
-            "value": "placeholder"
+            "description": "Dynamic URL generated for this heroku instance"
         },
         "useHeroku": {
             "value": true
@@ -22,11 +20,7 @@
             "value": "60"
         },
         "smartThingsUrl": {
-            "description": "The Echo Speaks smart app endpoint url",
-            "value": "placeholder"
-        },
-        "HEROKU_APP_NAME": {
-            "required": true
+            "description": "The Echo Speaks smart app endpoint url"
         }
     }
 }
