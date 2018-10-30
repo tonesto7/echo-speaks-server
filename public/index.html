@@ -45,7 +45,7 @@
     <!-- Settings Form -->
     <div style="margin: 0 auto; max-width: 500px;">
         <form class="p-5">
-            <p class="h4 mb-0 text-center">Echo Speaks Configuration</p>
+            <p class="h4 mb-0 text-center">Echo Speaks Service</p>
             <p id="scriptVer" class="h5 mt-0 mb-4 text-center"></p>
             <div class="card w-100 mb-3">
                 <div class="card-header deep-orange lighten-1 white-text w-100 text-center">Amazon Login</div>
@@ -80,21 +80,21 @@
                 </div>
             </div>
 
-            <div class="card w-100 mb-3">
+            <div id="statusCard" class="card w-100 mb-3">
                 <div class="card-header blue lighten-1 w-100 text-white text-center">Status Info</div>
                 <div class="card-body w-100">
                     <div class="form-check">
                         <input type="checkbox" class="form-check-input" id="useHeroku" disabled>
                         <label class="form-check-label" for="useHeroku">Running on Heroku?</label>
-                        <small id="useHerokuHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
+                        <!-- <small id="useHerokuHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
                             Sets all the appropriate options for the cloud based instance.
-                        </small>
+                        </small> -->
                     </div>
                 </div>
             </div>
 
             <!-- Material input -->
-            <div class="card w-100 mb-3">
+            <div id="settingsCard" class="card w-100 mb-3">
                 <div class="card-header grey lighten-1 w-100 text-center">Required Settings</div>
                 <div class="card-body w-100">
                     <div class="md-form mt-0">
@@ -146,7 +146,7 @@
             </div>
 
             <!-- Sign in button -->
-            <div class="text-center">
+            <div id="submitBtnDiv" class="text-center">
                 <button class="btn btn-success btn-rounded my-4" type="submit"><i class="fa fa-save mr-1"></i>Save Settings</button>
             </div>
         </form>
@@ -206,6 +206,10 @@
                             $('#useHeroku').prop('checked', useHeroku);
                             useHeroku ? $('[id^="localDiv"]').hide() : $('[id^="localDiv"]').show();
                             useHeroku ? $('[id^="cloudDiv"]').show() : $('[id^="cloudDiv"]').hide();
+                            if (useHeroku) {
+                                $('#settingsCard').hide();
+                                $('#submitBtnDiv').hide();
+                            }
                         } else {
                             $(elem).attr('value', val);
                             $(elem).focus();
