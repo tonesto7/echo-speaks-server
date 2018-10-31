@@ -267,8 +267,8 @@ var executeCommand = function(_cmdOpts, callback) {
     // console.log('Query: ', _cmdOpts.qs);
     // console.log('Body: ', _cmdOpts.json);
     request(_cmdOpts, function(error, response, body) {
-        console.log('body:', body);
-        console.log('status: (' + response.statusCode + ')');
+        // console.log('body:', body);
+        console.log('executeCommand Status: (' + response.statusCode + ')');
         if (!error && response.statusCode === 200) {
             callback(null, {
                 "statusCode": response.statusCode,

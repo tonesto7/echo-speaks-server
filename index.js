@@ -281,7 +281,7 @@ function startWebServer(checkForCookie = false) {
 
                     webApp.post('/alexa-command', urlencodedParser, function(req, res) {
                         // console.log('command headers: ', req.headers);
-                        let hubAct = (req.headers.deviceserialnumber != undefined);
+                        let hubAct = (req.headers.deviceserialnumber != undefined && !configData.settings.useHeroku);
                         let serialNumber = req.headers.deviceserialnumber;
                         let deviceType = req.headers.devicetype;
                         let deviceOwnerCustomerId = req.headers.deviceownercustomerid;
@@ -339,7 +339,7 @@ function startWebServer(checkForCookie = false) {
                             }
                         }
                         if (serialNumber) {
-                            logger.debug('++ Received an Execute Command Request for Device: ' + serialNumber + ' | CmdType: ' + cmdType + ' | CmdValObj: ' + cmdValues + ' | deviceDni: ' + cmdOpts.deviceId + ' ' + (hubAct ? ' | Source: (ST HubAction)' : '') + ' ++');
+                            logger.debug('++ Received an Execute Command Request for Device: ' + serialNumber + ' | CmdType: ' + cmdType + ' | CmdValObj: ' + cmdValues + ' | deviceDni: ' + cmdOpts.deviceId + ' ' + (hubAct && !configData.settings.useHeroku ? ' | Source: (ST HubAction)' : (configData.settings.useHeroku ? ' | Source: (ST C2C)' : '')) + ' ++');
                             alexa_api.executeCommand(cmdOpts, function(error, response) {
                                 res.send(response);
                             });
