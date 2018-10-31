@@ -280,7 +280,7 @@ function startWebServer(checkForCookie = false) {
                     });
 
                     webApp.post('/alexa-command', urlencodedParser, function(req, res) {
-                        console.log('command headers: ', req.headers);
+                        // console.log('command headers: ', req.headers);
                         let hubAct = (req.headers.deviceserialnumber != undefined);
                         let serialNumber = req.headers.deviceserialnumber;
                         let deviceType = req.headers.devicetype;
