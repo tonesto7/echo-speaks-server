@@ -324,17 +324,15 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
 function initAmazonProxy(_options, email, password, callbackCookie, callbackListening) {
     // proxy middleware options
 
-    let getLocalHost = function() {
-        return (_options.proxyHost || _options.proxyOwnIp) + (_options.useHeroku ? '' : ':' + _options.serverPort);
+    let getLocalHost = function(noPort = false) {
+        return (_options.proxyHost || _options.proxyOwnIp) + ((_options.useHeroku || noPort) ? '' : ':' + _options.serverPort);
     };
 
     const optionsAlexa = {
         target: `https://alexa.${_options.amazonDomain}`,
         changeOrigin: true,
         ws: false,
-        pathRewrite: {
-            // '^/proxy': '/'
-        }, // enhanced below
+        pathRewrite: {}, // enhanced below
         router: router,
         hostRewrite: true,
         followRedirects: false,
@@ -353,8 +351,8 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
     optionsAlexa.pathRewrite[`^/proxy/www.${_options.amazonDomain}`] = '';
     optionsAlexa.pathRewrite[`^/proxy/alexa.${_options.amazonDomain}`] = '';
     optionsAlexa.pathRewrite[`^/alexa.${_options.amazonDomain}`] = '';
-    optionsAlexa.cookieDomainRewrite[`.${_options.amazonDomain}`] = getLocalHost(); //_options.proxyOwnIp;
-    optionsAlexa.cookieDomainRewrite[_options.amazonDomain] = getLocalHost(); //_options.proxyOwnIp;
+    optionsAlexa.cookieDomainRewrite[`.${_options.amazonDomain}`] = getLocalHost(true); //_options.proxyOwnIp;
+    optionsAlexa.cookieDomainRewrite[_options.amazonDomain] = getLocalHost(true); //_options.proxyOwnIp;
     if (_options.logger) optionsAlexa.logProvider = function logProvider(provider) {
         return {
             log: _options.logger.log || _options.logger,
