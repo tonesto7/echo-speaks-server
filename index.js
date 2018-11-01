@@ -435,7 +435,7 @@ async function buildEchoDeviceMap(eDevData) {
     try {
         let removeKeys = ['appDeviceList', 'charging', 'clusterMembers', 'essid', 'macAddress', 'parentClusters', 'deviceTypeFriendlyName', 'registrationId', 'remainingBatteryLevel', 'postalCode', 'language'];
         for (const dev in eDevData) {
-            if (eDevData[dev].deviceFamily === 'ECHO' || eDevData[dev].deviceFamily === 'KNIGHT' || eDevData[dev].deviceFamily === 'ROOK' || eDevData[dev].deviceFamily === 'TABLET' || (eDevData[dev].deviceFamily === 'THIRD_PARTY_AVS_MEDIA_DISPLAY' && it.capabilities.contains("AUDIBLE"))) {
+            if (eDevData[dev].deviceFamily === 'ECHO' || eDevData[dev].deviceFamily === 'KNIGHT' || eDevData[dev].deviceFamily === 'ROOK' || eDevData[dev].deviceFamily === 'TABLET' || (eDevData[dev].deviceFamily === 'THIRD_PARTY_AVS_MEDIA_DISPLAY' && dev.capabilities.contains("AUDIBLE"))) {
                 for (const item in removeKeys) {
                     delete eDevData[dev][removeKeys[item]];
                 }
