@@ -8,7 +8,7 @@ const express = require('express');
 // const io = socketIO(express);
 const bodyParser = require('body-parser');
 const os = require('os');
-const alexaCookie = require('./alexa-cookie/alexa-cookie');
+// const alexaCookie = require('./alexa-cookie/alexa-cookie');
 const editJsonFile = require("edit-json-file", {
     autosave: true
 });
@@ -26,7 +26,7 @@ let configData = {};
 let scheduledUpdatesActive = false;
 let loginProxyActive = false;
 let savedConfig = {};
-let command = {};
+// let command = {};
 let serviceStartTime = Date.now(); //Returns time in millis
 let eventCount = 0;
 let alexaUrl = 'https://alexa.amazon.com';
@@ -64,7 +64,7 @@ function loadConfig() {
     configFile.set('state.scriptVersion', appVer);
     configFile.save();
     configData = configFile.get();
-    return true
+    return true;
 }
 
 function startWebConfig() {
@@ -115,7 +115,7 @@ function startWebConfig() {
             });
             webApp.get('/clearAuth', urlencodedParser, function(req, res) {
                 logger.verbose('got request for to clear authentication');
-                let clearUrl = configData.settings.smartThingsUrl ? String(configData.settings.smartThingsUrl).replace("/receiveData?", "/cookie?") : null
+                let clearUrl = configData.settings.smartThingsUrl ? String(configData.settings.smartThingsUrl).replace("/receiveData?", "/cookie?") : null;
                 alexa_api.clearSession(clearUrl, configData.settings.useHeroku);
                 configFile.set('state.loginProxyActive', true);
                 configData.state.loginProxyActive = true;
@@ -125,7 +125,7 @@ function startWebConfig() {
                 configFile.unset('password');
                 configFile.save();
                 if (scheduledUpdatesActive) {
-                    clearDataUpdates()
+                    clearDataUpdates();
                 }
                 startWebServer();
                 res.send({ result: 'Clear Complete' });
@@ -170,7 +170,7 @@ function startWebConfig() {
                 };
                 if (saveFile) {
                     configFile.save();
-                    let ls = loadConfig();
+                    const ls = loadConfig();
                     res.send('done');
                     if (configCheckOk()) {
                         // console.log('configData(set): ', configData);
@@ -186,9 +186,9 @@ function startWebConfig() {
             webApp.get('/cookie-success', function(req, res) {
                 res.send(loginSuccessHtml());
             });
-            resolve(true)
+            resolve(true);
         } catch (ex) {
-            reject(ex)
+            reject(ex);
         }
     });
 }
@@ -281,7 +281,7 @@ function startWebServer(checkForCookie = false) {
 
                     webApp.post('/alexa-command', urlencodedParser, function(req, res) {
                         // console.log('command headers: ', req.headers);
-                        let hubAct = (req.headers.deviceserialnumber != undefined && !configData.settings.useHeroku);
+                        let hubAct = (req.headers.deviceserialnumber !== undefined && !configData.settings.useHeroku);
                         let serialNumber = req.headers.deviceserialnumber;
                         let deviceType = req.headers.devicetype;
                         let deviceOwnerCustomerId = req.headers.deviceownercustomerid;
@@ -319,7 +319,7 @@ function startWebServer(checkForCookie = false) {
                                     \"deviceSerialNumber\":\"" + serialNumber + "\",\"locale\":\"en-US\", \
                                     \"customerId\":\"" + deviceOwnerCustomerId + "\", \"textToSpeak\": \"" + message + "\"}}}",
                                     "status": "ENABLED"
-                                }
+                                };
                                 break;
                             default:
                                 cmdOpts.method = 'POST';
@@ -331,7 +331,7 @@ function startWebServer(checkForCookie = false) {
                                 cmdOpts.json = {
                                     type: cmdType
                                 };
-                                break
+                                break;
                         }
                         if (Object.keys(cmdValues).length) {
                             for (const key in cmdValues) {
@@ -401,7 +401,7 @@ function startWebServer(checkForCookie = false) {
                             logger.debug('++ Changed Setting (refreshSeconds) | New Value: (' + req.headers.refreshseconds + ') | Old Value: (' + configData.settings.refreshSeconds + ') ++');
                             configData.settings.refreshSeconds = parseInt(req.headers.refreshseconds);
                             configFile.set('settings.refreshSeconds', parseInt(req.headers.refreshseconds));
-                            clearDataUpdates()
+                            clearDataUpdates();
                             logger.debug("** Device Data Refresh Schedule Changed to Every (" + configData.settings.refreshSeconds + ' sec) **');
                             setInterval(scheduledDataUpdates, configData.settings.refreshSeconds * 1000);
                         }
@@ -415,7 +415,7 @@ function startWebServer(checkForCookie = false) {
 
                     webApp.get('/heartbeat', urlencodedParser, function(req, res) {
                         logger.verbose('++ Received a heartbeat Request... ++');
-                        res.send({ result: "i am alive" })
+                        res.send({ result: "i am alive" });
                     });
 
                     sendDeviceDataToST(echoDevices);
@@ -547,13 +547,13 @@ function handleDataUpload(deviceData, src) {
 }
 
 function sendDeviceDataToST(eDevData) {
-    handleDataUpload(eDevData, 'sendDeviceDataToST')
+    handleDataUpload(eDevData, 'sendDeviceDataToST');
 }
 
 function sendStatusUpdateToST(self) {
     self.getDevices(savedConfig, function(error, response) {
         if (response && response.devices) {
-            handleDataUpload(response.devices, 'sendStatusUpdateToST')
+            handleDataUpload(response.devices, 'sendStatusUpdateToST');
         } else {
             logger.error("sendStatusUpdateToST Response was empty... | error: " + error);
         }
@@ -565,13 +565,13 @@ function scheduledDataUpdates() {
 }
 
 function clearDataUpdates() {
-    scheduledUpdatesActive = false
+    scheduledUpdatesActive = false;
     logger.debug("Scheduled Updates Cancelled...");
     clearInterval(scheduledDataUpdates);
 }
 
 function configCheckOk() {
-    return ((configData.settings.useHeroku === true && !configData.settings.smartThingsUrl) || configData.settings.amazonDomain === '' || (!configData.settings.useHeroku && !configData.settings.smartThingsHubIP)) ? false : true
+    return ((configData.settings.useHeroku === true && !configData.settings.smartThingsUrl) || configData.settings.amazonDomain === '' || (!configData.settings.useHeroku && !configData.settings.smartThingsHubIP)) ? false : true;
 }
 
 initConfig()
@@ -654,37 +654,37 @@ function getHostUptimeStr(time) {
 const loginSuccessHtml = function() {
     let html = '';
     let redirUrl = (configData.settings.useHeroku) ? 'https://' + configData.settings.hostUrl + '/config' : 'http://' + getIPAddress() + ':' + configData.settings.serverPort + '/config';
-    html += '<!DOCTYPE html>'
-    html += '<html>'
-    html += '   <head>'
-    html += '       <meta name="viewport" content="width=640">'
-    html += '       <title>Echo Speaks Amazon Authentication</title>'
-    html += '       <style type="text/css">'
-    html += '           body { background-color: slategray; text-align: center; }'
-    html += '           .container {'
-    html += '               width: 90%;'
-    html += '               padding: 4%;'
-    html += '               text-align: center;'
-    html += '               color: white;'
-    html += '           }'
-    html += '           p {'
-    html += '               font-size: 2.2em;'
-    html += '               text-align: center;'
-    html += '               padding: 0 40px;'
-    html += '               margin-bottom: 0;'
-    html += '           }'
-    html += '       </style>'
-    html += '   </head>'
-    html += '   <body>'
-    html += '       <div class="container">'
-    html += '           <h3>Amazon Alexa Cookie Retrieved Successfully</h3>'
+    html += '<!DOCTYPE html>';
+    html += '<html>';
+    html += '   <head>';
+    html += '       <meta name="viewport" content="width=640">';
+    html += '       <title>Echo Speaks Amazon Authentication</title>';
+    html += '       <style type="text/css">';
+    html += '           body { background-color: slategray; text-align: center; }';
+    html += '           .container {';
+    html += '               width: 90%;';
+    html += '               padding: 4%;';
+    html += '               text-align: center;';
+    html += '               color: white;';
+    html += '           }';
+    html += '           p {';
+    html += '               font-size: 2.2em;';
+    html += '               text-align: center;';
+    html += '               padding: 0 40px;';
+    html += '               margin-bottom: 0;';
+    html += '           }';
+    html += '       </style>';
+    html += '   </head>';
+    html += '   <body>';
+    html += '       <div class="container">';
+    html += '           <h3>Amazon Alexa Cookie Retrieved Successfully</h3>';
     html += '           <h5>You will be redirected back to the config page in 5 seconds.</h5>';
     html += '       </div>';
     html += "       <script>setTimeout( function(){ window.location.href = '" + redirUrl + "'; }, 5000 );</script>";
-    html += '   </body>'
+    html += '   </body>';
     html += '</html>';
     return html;
-}
+};
 
 
 /*******************************************************************************
@@ -716,7 +716,7 @@ process.on('uncaughtException', exitHandler.bind(null, {
 function exitHandler(options, exitCode) {
     // alexaCookie.stopProxyServer();
     if (scheduledUpdatesActive) {
-        clearDataUpdates()
+        clearDataUpdates();
     }
     if (options.cleanup) {
         console.log('clean');
