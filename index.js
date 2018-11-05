@@ -196,7 +196,7 @@ function startWebConfig() {
 
 function startWebServer(checkForCookie = false) {
     const alexaOptions = {
-        debug: configData.settings.serviceDebug || false,
+        debug: (configData.settings.serviceDebug === true),
         checkForCookie: checkForCookie,
         serverPort: configData.settings.serverPort,
         amazonDomain: configData.settings.amazonDomain,
