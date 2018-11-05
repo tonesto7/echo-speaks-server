@@ -86,16 +86,10 @@
                     <div class="form-check">
                         <input type="checkbox" class="form-check-input" id="useHeroku" disabled>
                         <label class="form-check-label" for="useHeroku">Running on Heroku?</label>
-                        <!-- <small id="useHerokuHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
-                            Sets all the appropriate options for the cloud based instance.
-                        </small> -->
                     </div>
                     <div class="form-check">
                         <input type="checkbox" class="form-check-input" id="serviceDebug" disabled>
                         <label class="form-check-label" for="serviceDebug">Service Debug?</label>
-                        <!-- <small id="useHerokuHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
-                            Sets all the appropriate options for the cloud based instance.
-                        </small> -->
                     </div>
                 </div>
             </div>
@@ -239,6 +233,11 @@
             console.log(`useHeroku: ${useHeroku}`)
             useHeroku ? $('[id^="localDiv"]').hide() : $('[id^="localDiv"]').show();
             useHeroku ? $('[id^="cloudDiv"]').show() : $('[id^="cloudDiv"]').hide();
+        });
+        $("#serviceDebug").change(function() {
+            configData.settings.serviceDebug = getChecked('useHeroku');
+            serviceDebug = configData.settings.serviceDebug;
+            console.log(`serviceDebug: ${serviceDebug}`)
         });
 
         $("#proxyLoginLink").click(function() {
