@@ -17,7 +17,8 @@
             "value": true
         },
         "serviceDebug": {
-            "description": "This is used to tell the service to provide more detailed logs."
+            "description": "This is used to tell the service to provide more detailed logs.",
+            "value": false
         },
         "refreshSeconds": {
             "description": "The number of seconds between refreshes of the amazon data",
