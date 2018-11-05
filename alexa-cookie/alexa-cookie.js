@@ -176,7 +176,7 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
     }
 
     function initConfig() {
-        _options.amazonDomain = _options.amazonDomain || defaultAmazonDomain;
+        // _options.amazonDomain = _options.amazonDomain || defaultAmazonDomain;
         _options.logger && _options.logger('Alexa-Cookie: Use as Login-Amazon-URL: ' + _options.amazonDomain);
 
         _options.alexaServiceHost = _options.alexaServiceHost || defaultAlexaServiceHost;
