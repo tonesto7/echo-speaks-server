@@ -179,7 +179,7 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
         // _options.amazonDomain = _options.amazonDomain || defaultAmazonDomain;
         _options.debug && console.log('Alexa-Cookie: Use as Login-Amazon-URL: ' + _options.amazonDomain);
 
-        _options.alexaServiceHost = _options.alexaServiceHost || defaultAlexaServiceHost;
+        // _options.alexaServiceHost = _options.alexaServiceHost || defaultAlexaServiceHost;
         _options.debug && console.log('Alexa-Cookie: Use as Alexa-Service-Host: ' + _options.alexaServiceHost);
 
         if (!_options.userAgent) {

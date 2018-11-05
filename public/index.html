@@ -217,6 +217,7 @@
                                 $('#submitBtnDiv').hide();
                             }
                         } else if (key === 'serviceDebug') {
+                            console.log('serviceDebug: ' + val);
                             serviceDebug = (val === true || val === 'true')
                             $('#serviceDebug').prop('checked', serviceDebug);
                         } else {
