@@ -90,6 +90,13 @@
                             Sets all the appropriate options for the cloud based instance.
                         </small> -->
                     </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="serviceDebug" disabled>
+                        <label class="form-check-label" for="serviceDebug">Service Debug?</label>
+                        <!-- <small id="useHerokuHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
+                            Sets all the appropriate options for the cloud based instance.
+                        </small> -->
+                    </div>
                 </div>
             </div>
 
@@ -165,10 +172,7 @@
             return ($(`#${name}`).prop("checked") === true);
         }
         let useHeroku = getChecked('useHeroku');
-        // if (useHeroku) {
-        //     console.log(rootOrigin)
-        //     rootOrigin = 'http://' + rootHost;
-        // }
+        let serviceDebug = getChecked('serviceDebug');
         console.log('rootOrigin: ' + rootOrigin);
         console.log('rootHost: ' + rootHost);
 
@@ -212,6 +216,9 @@
                                 $('#settingsCard').hide();
                                 $('#submitBtnDiv').hide();
                             }
+                        } else if (key === 'serviceDebug') {
+                            serviceDebug = (val === true || val === 'true')
+                            $('#serviceDebug').prop('checked', serviceDebug);
                         } else {
                             $(elem).attr('value', val);
                             $(elem).focus();
@@ -301,6 +308,7 @@
                 }
                 config.amazonDomain = configData.settings.amazonDomain;
                 config.useHeroku = configData.settings.useHeroku;
+                config.serviceDebug = configData.settings.serviceDebug;
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("POST", rootOrigin + '/configData');
                 xmlhttp.onreadystatechange = function() {

@@ -19,7 +19,7 @@ const webApp = express();
 const urlencodedParser = bodyParser.urlencoded({
     extended: false
 });
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+// process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 // These the config variables
 let configData = {};
@@ -56,6 +56,7 @@ function loadConfig() {
     configFile.set('settings.useHeroku', (process.env.useHeroku === true || process.env.useHeroku === 'true'));
     configFile.set('settings.amazonDomain', process.env.amazonDomain || configData.settings.amazonDomain);
     configFile.set('settings.smartThingsUrl', process.env.smartThingsUrl || configData.settings.smartThingsUrl);
+    configFile.set('settings.serviceDebug', process.env.serviceDebug === true || false);
     configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
     configFile.set('settings.refreshSeconds', process.env.refreshSeconds ? parseInt(process.env.refreshSeconds) : (configData.settings.refreshSeconds || 60));
     if (!configData.state) {
@@ -195,7 +196,7 @@ function startWebConfig() {
 
 function startWebServer(checkForCookie = false) {
     const alexaOptions = {
-        debug: true,
+        debug: configData.settings.serviceDebug || false,
         checkForCookie: checkForCookie,
         serverPort: configData.settings.serverPort,
         amazonDomain: configData.settings.amazonDomain,
