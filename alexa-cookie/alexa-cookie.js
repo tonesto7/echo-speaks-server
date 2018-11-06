@@ -414,7 +414,6 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
         const url = req.originalUrl || req.url;
         if (url.endsWith('.ico') || url.endsWith('.js') || url.endsWith('.ttf') || url.endsWith('.svg') || url.endsWith('.png') || url.endsWith('.appcache')) return;
         if (url.startsWith('/ap/uedata')) return;
-        if (url.startsWith('/ap/challenge')) return;
 
         _options.debug && console.log('Alexa-Cookie: Proxy-Request: ' + req.method + ' ' + url);
         //_options.logger && _options.logger('Alexa-Cookie: Proxy-Request-Data: ' + customStringify(proxyReq, null, 2));
@@ -460,9 +459,7 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
     function onProxyRes(proxyRes, req, res) {
         const url = req.originalUrl || req.url;
         if (url.endsWith('.ico') || url.endsWith('.js') || url.endsWith('.ttf') || url.endsWith('.svg') || url.endsWith('.png') || url.endsWith('.appcache')) { return; }
-        if (url.startsWith('/ap/uedata')) {
-            return;
-        }
+        if (url.startsWith('/ap/uedata')) { return; }
         if (_options.debug) {
             // console.log('Proxy-Response: ' + customStringify(proxyRes, null, 2));
             // console.log('Alexa-Cookie: Proxy-Response Headers: ' + customStringify(proxyRes._headers, null, 2));
