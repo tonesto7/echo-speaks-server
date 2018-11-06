@@ -348,14 +348,13 @@ var getDevices = function(config, callback) {
     });
 };
 
-var getState = function(deviceSerialNumber, config, callback) {
-    var device = {};
+var getState = function(device, _config, callback) {
     request({
         method: 'GET',
-        url: alexaUrl + '/api/np/player?deviceSerialNumber=' + device.deviceSerialNumber + '&deviceType=' + device.deviceType + '&screenWidth=2560',
+        url: alexaUrl + '/api/np/player?deviceSerialNumber=' + device.serialNumber + '&deviceType=' + device.deviceType + '&screenWidth=2560',
         headers: {
-            'Cookie': config.cookies,
-            'csrf': config.csrf
+            'Cookie': _config.cookies,
+            'csrf': _config.csrf
         }
     }, function(error, response, body) {
         if (!error && response.statusCode === 200) {

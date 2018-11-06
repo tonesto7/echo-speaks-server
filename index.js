@@ -443,7 +443,7 @@ async function buildEchoDeviceMap(eDevData) {
                     delete eDevData[dev][removeKeys[item]];
                 }
                 echoDevices[eDevData[dev].serialNumber] = eDevData[dev];
-                let devState = await getDeviceStateInfo(eDevData[dev].serialNumber);
+                let devState = await getDeviceStateInfo(eDevData[dev]);
                 echoDevices[eDevData[dev].serialNumber].playerState = devState;
             }
         }
@@ -464,9 +464,9 @@ async function buildEchoDeviceMap(eDevData) {
     }
 }
 
-function getDeviceStateInfo(deviceId) {
+function getDeviceStateInfo(device) {
     return new Promise(resolve => {
-        alexa_api.getState(deviceId, savedConfig, function(err, resp) {
+        alexa_api.getState(device, savedConfig, function(err, resp) {
             resolve(resp.playerInfo || {});
         });
     });
