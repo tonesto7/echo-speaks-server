@@ -155,7 +155,8 @@ function getCookiesFromST(url) {
         reqPromise({ method: 'GET', uri: url, json: true })
             .then(function(resp) {
                 // console.log('getCookiesFromST resp: ', resp);
-                logger.info(`** Retrieved Alexa Cookie from SmartThings Cloud Endpoint Successfully! **`);
+                if (resp && resp.length > 0)
+                    logger.info(`** Retrieved Alexa Cookie from SmartThings Cloud Endpoint Successfully! **`);
                 resolve(resp);
             })
             .catch(function(err) {
