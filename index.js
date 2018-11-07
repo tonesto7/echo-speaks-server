@@ -5,6 +5,7 @@ const alexa_api = require('./alexa-api');
 const reqPromise = require("request-promise");
 const logger = require('./logger');
 const express = require('express');
+const gson = require('gson');
 // const io = socketIO(express);
 const bodyParser = require('body-parser');
 const os = require('os');
@@ -234,16 +235,6 @@ function startWebServer(checkForCookie = false) {
                 .then(function(devOk) {
                     logger.silly('Echo Speaks Alexa API is Actively Running at (IP: ' + getIPAddress() + ' | Port: ' + configData.settings.serverPort + ') | ProcessId: ' + process.pid);
 
-                    webApp.post('/alexa-tts', urlencodedParser, function(req, res) {
-                        let hubAct = (req.headers.tts !== undefined || req.headers.deviceserialnumber !== undefined);
-                        let tts = req.body.tts || req.headers.tts;
-                        let deviceSerialNumber = req.body.deviceSerialNumber || req.headers.deviceserialnumber;
-                        logger.debug('++ Received a Send TTS Request for Device: ' + deviceSerialNumber + ' | Message: ' + tts + (hubAct ? ' | Source: (ST HubAction)' : '') + ' ++');
-                        alexa_api.setTTS(tts, deviceSerialNumber, savedConfig, function(error, response) {
-                            res.send(response);
-                        });
-                    });
-
                     webApp.post('/alexa-getDevices', urlencodedParser, function(req, res) {
                         logger.verbose('++ Received a getDevices Request... ++');
                         alexa_api.getDevices(savedConfig, function(error, response) {
@@ -316,15 +307,6 @@ function startWebServer(checkForCookie = false) {
                             case 'SendTTS':
                                 cmdOpts.method = 'POST';
                                 cmdOpts.url = alexaUrl + '/api/behaviors/preview';
-                                // cmdOpts.json = {
-                                //     "behaviorId": "PREVIEW",
-                                //     "sequenceJson": "{\"@type\":\"com.amazon.alexa.behaviors.model.Sequence\", \
-                                //     \"startNode\":{\"@type\":\"com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode\", \
-                                //     \"type\":\"Alexa.Speak\",\"operationPayload\":{\"deviceType\":\"" + deviceType + "\", \
-                                //     \"deviceSerialNumber\":\"" + serialNumber + "\",\"locale\":\"en-US\", \
-                                //     \"customerId\":\"" + deviceOwnerCustomerId + "\", \"textToSpeak\": \"" + message + "\"}}}",
-                                //     "status": "ENABLED"
-                                // };
                                 cmdOpts.json = sequenceJsonBuilder("Alexa.Speak", serialNumber, deviceType, deviceOwnerCustomerId, "textToSpeak", message);
                                 break;
                             case 'ExecuteSequence':
@@ -442,15 +424,34 @@ function startWebServer(checkForCookie = false) {
 }
 
 let sequenceJsonBuilder = function(cmdType, serial, devType, custId, cmdKey, cmdVal) {
-    return {
+    // return {
+    //     "behaviorId": "PREVIEW",
+    //     "sequenceJson": "{\"@type\":\"com.amazon.alexa.behaviors.model.Sequence\", \
+    //                                 \"startNode\":{\"@type\":\"com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode\", \
+    //                                 \"type\":\"" + cmdType + "\",\"operationPayload\":{\"deviceType\":\"" + devType + "\", \
+    //                                 \"deviceSerialNumber\":\"" + serial + "\",\"locale\":\"en-US\", \
+    //                                 \"customerId\":\"" + custId + "\", \"" + cmdKey + "\": \"" + cmdVal + "\"}}}",
+    //     "status": "ENABLED"
+    // };
+    let json = {
         "behaviorId": "PREVIEW",
-        "sequenceJson": "{\"@type\":\"com.amazon.alexa.behaviors.model.Sequence\", \
-                                    \"startNode\":{\"@type\":\"com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode\", \
-                                    \"type\":\"" + cmdType + "\",\"operationPayload\":{\"deviceType\":\"" + devType + "\", \
-                                    \"deviceSerialNumber\":\"" + serial + "\",\"locale\":\"en-US\", \
-                                    \"customerId\":\"" + custId + "\", \"" + cmdKey + "\": \"" + cmdVal + "\"}}}",
+        "sequenceJson": {
+            "@type": "com.amazon.alexa.behaviors.model.Sequence",
+            "startNode": {
+                "@type": "com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode",
+                "type": cmdType,
+                "operationPayload": {
+                    "deviceType": devType,
+                    "deviceSerialNumber": serial,
+                    "locale": "en-US",
+                    "customerId": custId
+                }
+            }
+        },
         "status": "ENABLED"
     };
+    json.sequenceJson.startNode.operationPayload[cmdKey] = cmdVal;
+    return gson.encode(json);
 };
 
 async function buildEchoDeviceMap(eDevData) {

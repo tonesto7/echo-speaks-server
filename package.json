@@ -2,7 +2,8 @@
     "name": "echo-speaks-server",
     "version": "1.0.5",
     "author": "Anthony Santilli",
-    "contributors": [{
+    "contributors": [
+        {
             "name": "Corey L.",
             "email": "no@email.com"
         },
@@ -16,6 +17,7 @@
     },
     "dependencies": {
         "@types/underscore": "^1.8.9",
+        "gson": "^0.1.5",
         "body-parser": "^1.18.3",
         "dateformat": "^3.0.3",
         "edit-json-file": "^1.1.0",

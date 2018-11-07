@@ -224,44 +224,6 @@ var setReminder = function(message, datetime, deviceSerialNumber, config, callba
     });
 };
 
-var setTTS = function(message, deviceSerialNumber, config, callback) {
-    var device = {};
-    config.devicesArray.devices.forEach(function(dev) {
-        if (dev.serialNumber === deviceSerialNumber) {
-            device.deviceSerialNumber = dev.serialNumber;
-            device.deviceType = dev.deviceType;
-            device.deviceOwnerCustomerId = dev.deviceOwnerCustomerId;
-        }
-    });
-    request({
-        method: 'POST',
-        url: alexaUrl + '/api/behaviors/preview',
-        headers: {
-            'Cookie': config.cookies,
-            'csrf': config.csrf
-        },
-        json: {
-            "behaviorId": "PREVIEW",
-            "sequenceJson": "{\"@type\":\"com.amazon.alexa.behaviors.model.Sequence\", \
-        \"startNode\":{\"@type\":\"com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode\", \
-        \"type\":\"Alexa.Speak\",\"operationPayload\":{\"deviceType\":\"" + device.deviceType + "\", \
-        \"deviceSerialNumber\":\"" + device.deviceSerialNumber + "\",\"locale\":\"en-US\", \
-        \"customerId\":\"" + device.deviceOwnerCustomerId + "\", \"textToSpeak\": \"" + message + "\"}}}",
-            "status": "ENABLED"
-        }
-    }, function(error, response) {
-        if (!error && response.statusCode === 200) {
-            callback(null, {
-                "status": "success"
-            });
-        } else {
-            callback(error, {
-                "status": "failure"
-            });
-        }
-    });
-};
-
 var executeCommand = function(_cmdOpts, callback) {
     // console.log('Method: ' + _cmdOpts.method);
     // console.log('URL:' + _cmdOpts.url);
@@ -499,7 +461,6 @@ var disconnectBluetoothDevice = function(deviceSerialNumber, config, callback) {
 exports.alexaLogin = alexaLogin;
 exports.clearSession = clearSession;
 exports.setReminder = setReminder;
-exports.setTTS = setTTS;
 exports.setMedia = setMedia;
 exports.getDevices = getDevices;
 exports.getState = getState;
