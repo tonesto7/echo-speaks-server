@@ -5,7 +5,7 @@ const alexa_api = require('./alexa-api');
 const reqPromise = require("request-promise");
 const logger = require('./logger');
 const express = require('express');
-const gson = require('gson');
+// const gson = require('gson');
 // const io = socketIO(express);
 const bodyParser = require('body-parser');
 const os = require('os');
@@ -273,6 +273,14 @@ function startWebServer(checkForCookie = false) {
                         res.send('done');
                     });
 
+                    // webApp.get('/alexa-speak', urlencodedParser, function(req, res) {
+                    //     console.log('++ Received a Speak Request... ++');
+                    //     alexa_api.sendTTS(ttsMsg, echoDevices[echo].serialNumber, savedConfig, function(error, response) {
+                    //         console.log('sent testmsg to ' + echoDevices[echo].serialNumber);
+                    //         res.send('done');
+                    //     });
+                    // });
+
                     webApp.post('/alexa-command', urlencodedParser, function(req, res) {
                         // console.log('command headers: ', req.headers);
                         let hubAct = (req.headers.deviceserialnumber !== undefined && !configData.settings.useHeroku);
@@ -282,7 +290,6 @@ function startWebServer(checkForCookie = false) {
                         let cmdType = req.headers.cmdtype;
                         let cmdValues = (req.headers.cmdvalobj && req.headers.cmdvalobj.length) ? JSON.parse(req.headers.cmdvalobj) : {};
                         let message = (req.headers.message) || "";
-                        let seqType = req.headers.sequencetype || undefined;
 
                         let cmdOpts = {
                             headers: {
@@ -310,9 +317,12 @@ function startWebServer(checkForCookie = false) {
                                 cmdOpts.json = sequenceJsonBuilder("Alexa.Speak", serialNumber, deviceType, deviceOwnerCustomerId, "textToSpeak", message);
                                 break;
                             case 'ExecuteSequence':
+                                let seqType = req.headers.sequencetype || undefined;
+                                let seqCmdKey = req.headers.seqcmdkey || undefined;
+                                let seqCmdVal = req.headers.seqcmdval || undefined;
                                 cmdOpts.method = 'POST';
                                 cmdOpts.url = alexaUrl + '/api/behaviors/preview';
-                                cmdOpts.json = sequenceJsonBuilder(seqType, serialNumber, deviceType, deviceOwnerCustomerId, "textToSpeak", message);
+                                cmdOpts.json = sequenceJsonBuilder(seqType, serialNumber, deviceType, deviceOwnerCustomerId, seqCmdKey, seqCmdVal);
                                 break;
                             default:
                                 cmdOpts.method = 'POST';
@@ -439,6 +449,7 @@ async function buildEchoDeviceMap(eDevData) {
     // console.log('eDevData: ', eDevData);
     try {
         let removeKeys = ['appDeviceList', 'charging', 'clusterMembers', 'essid', 'macAddress', 'parentClusters', 'deviceTypeFriendlyName', 'registrationId', 'remainingBatteryLevel', 'postalCode', 'language'];
+        let notifs = await getNotificationInfo();
         for (const dev in eDevData) {
             if (eDevData[dev].deviceFamily === 'ECHO' || eDevData[dev].deviceFamily === 'KNIGHT' || eDevData[dev].deviceFamily === 'ROOK' || eDevData[dev].deviceFamily === 'TABLET') {
                 for (const item in removeKeys) {
@@ -447,6 +458,9 @@ async function buildEchoDeviceMap(eDevData) {
                 echoDevices[eDevData[dev].serialNumber] = eDevData[dev];
                 let devState = await getDeviceStateInfo(eDevData[dev]);
                 echoDevices[eDevData[dev].serialNumber].playerState = devState;
+                let playlist = await getPlaylistInfo(eDevData[dev]);
+                echoDevices[eDevData[dev].serialNumber].playlists = playlist;
+                echoDevices[eDevData[dev].serialNumber].notifications = notifs.filter(item => item.deviceSerialNumber === eDevData[dev].serialNumber) || [];
             }
         }
         let dndState = await getDeviceDndInfo();
@@ -455,10 +469,11 @@ async function buildEchoDeviceMap(eDevData) {
                 echoDevices[dndState[ds].deviceSerialNumber].dndEnabled = dndState[ds].enabled || false;
             }
         }
-        // let notifs = await getNotificationInfo();
+
+
         // for (const nd in notifs) {
         //     if (echoDevices[notifs[nd].deviceSerialNumber] !== undefined) {
-        //         echoDevices[notifs[nd].deviceSerialNumber].dndEnabled = notifs[nd].enabled || false;
+        //         echoDevices[notifs[nd].deviceSerialNumber].notification = notifs[nd].filter(item => item.deviceSerialNumber === ); || [];
         //     }
         // }
     } catch (err) {
@@ -470,6 +485,14 @@ function getDeviceStateInfo(device) {
     return new Promise(resolve => {
         alexa_api.getState(device, savedConfig, function(err, resp) {
             resolve(resp.playerInfo || {});
+        });
+    });
+}
+
+function getPlaylistInfo(device) {
+    return new Promise(resolve => {
+        alexa_api.getPlaylists(device, savedConfig, function(err, resp) {
+            resolve(resp.getPlaylists || {});
         });
     });
 }

@@ -166,6 +166,18 @@ function getCookiesFromST(url) {
     });
 };
 
+let sequenceJsonBuilder = function(cmdType, serial, devType, custId, cmdKey, cmdVal) {
+    return {
+        "behaviorId": "PREVIEW",
+        "sequenceJson": "{\"@type\":\"com.amazon.alexa.behaviors.model.Sequence\", \
+                                    \"startNode\":{\"@type\":\"com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode\", \
+                                    \"type\":\"" + cmdType + "\",\"operationPayload\":{\"deviceType\":\"" + devType + "\", \
+                                    \"deviceSerialNumber\":\"" + serial + "\",\"locale\":\"en-US\", \
+                                    \"customerId\":\"" + custId + "\", \"" + cmdKey + "\": \"" + cmdVal + "\"}}}",
+        "status": "ENABLED"
+    };
+};
+
 var setReminder = function(message, datetime, deviceSerialNumber, config, callback) {
     var now = new Date();
     var createdDate = now.getTime();
@@ -219,6 +231,35 @@ var setReminder = function(message, datetime, deviceSerialNumber, config, callba
         } else {
             callback(error, {
                 "status": "failure"
+            });
+        }
+    });
+};
+
+var sendTTS = function(_cmdOpts, callback) {
+    // console.log('Method: ' + _cmdOpts.method);
+    // console.log('URL:' + _cmdOpts.url);
+    // console.log('Query: ', _cmdOpts.qs);
+    // console.log('Body: ', _cmdOpts.json);
+    request(_cmdOpts, function(error, response, body) {
+        // console.log('body:', body);
+        console.log('sendTTS Status: (' + response.statusCode + ')');
+        if (!error && response.statusCode === 200) {
+            callback(null, {
+                "statusCode": response.statusCode,
+                "deviceId": _cmdOpts.deviceId,
+                "message": "success",
+                "queueKey": _cmdOpts.queueKey,
+                "msgDelay": _cmdOpts.msgDelay
+            });
+        } else {
+            // console.log('error: ', error.message);
+            callback(error, {
+                "statusCode": response.statusCode,
+                "deviceId": _cmdOpts.deviceId,
+                "message": body.message || null,
+                "queueKey": _cmdOpts.queueKey,
+                "msgDelay": _cmdOpts.msgDelay
             });
         }
     });
@@ -383,6 +424,23 @@ var getNotifications = function(_config, callback) {
     });
 };
 
+var getPlaylists = function(device, _config, callback) {
+    request({
+        method: 'GET',
+        url: alexaUrl + '/api/cloudplayer/playlists?deviceSerialNumber=' + device.serialNumber + '&deviceType=' + device.deviceType + '&mediaOwnerCustomerId=' + device.deviceOwnerCustomerId + '&screenWidth=2560',
+        headers: {
+            'Cookie': _config.cookies,
+            'csrf': _config.csrf
+        }
+    }, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            callback(null, JSON.parse(body));
+        } else {
+            callback(error, response);
+        }
+    });
+};
+
 
 var getBluetoothDevices = function(config, callback) {
     request({
@@ -465,6 +523,7 @@ exports.setMedia = setMedia;
 exports.getDevices = getDevices;
 exports.getState = getState;
 exports.getDndStatus = getDndStatus;
+exports.getPlaylists = getPlaylists;
 exports.getNotifications = getNotifications;
 exports.executeCommand = executeCommand;
 exports.getBluetoothDevices = getBluetoothDevices;
