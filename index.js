@@ -343,7 +343,7 @@ function startWebServer(checkForCookie = false) {
                             }
                         }
                         if (serialNumber) {
-                            logger.debug('++ Received an Execute Command Request for Device: ' + serialNumber + ' | CmdType: ' + cmdType + ' | CmdValObj: ' + JSON.stringify(cmdValues) + ' | ' + (hubAct && !configData.settings.useHeroku ? ' | Source: (ST HubAction)' : (configData.settings.useHeroku ? ' | Source: (ST C2C)' : '')) + ' ++');
+                            logger.debug('++ Received an Execute Command Request for Device: ' + serialNumber + ' | CmdType: ' + cmdType + ' | CmdValObj: ' + JSON.stringify(cmdValues) + (hubAct && !configData.settings.useHeroku ? ' | Source: (ST HubAction)' : (configData.settings.useHeroku ? ' | Source: (ST C2C)' : '')) + ' ++');
                             alexa_api.executeCommand(cmdOpts, function(error, response) {
                                 res.send(response);
                             });
