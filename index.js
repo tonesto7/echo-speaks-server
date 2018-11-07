@@ -315,6 +315,7 @@ function startWebServer(checkForCookie = false) {
                                 cmdOpts.method = 'POST';
                                 cmdOpts.url = alexaUrl + '/api/behaviors/preview';
                                 cmdOpts.json = sequenceJsonBuilder(seqType, serialNumber, deviceType, deviceOwnerCustomerId, seqCmdKey, seqCmdVal);
+                                console.log('ExecuteSequence json: ', cmdOpts.json);
                                 break;
                             default:
                                 cmdOpts.method = 'POST';
