@@ -426,13 +426,14 @@ function startWebServer(checkForCookie = false) {
 }
 
 let sequenceJsonBuilder = function(cmdType, serial, devType, custId, cmdKey, cmdVal) {
+    let cmd0 = (cmdKey && cmdVal) ? `"\", \"${cmdKey}\": \"${cmdVal}\"` : `"\"`;
     return {
         "behaviorId": "PREVIEW",
         "sequenceJson": "{\"@type\":\"com.amazon.alexa.behaviors.model.Sequence\", \
                                     \"startNode\":{\"@type\":\"com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode\", \
                                     \"type\":\"" + cmdType + "\",\"operationPayload\":{\"deviceType\":\"" + devType + "\", \
                                     \"deviceSerialNumber\":\"" + serial + "\",\"locale\":\"en-US\", \
-                                    \"customerId\":\"" + custId + "\", \"" + cmdKey + "\": \"" + cmdVal + "\"}}}",
+                                    \"customerId\":\"" + custId + cmd0 + "}}}",
         "status": "ENABLED"
     };
 };
