@@ -436,22 +436,23 @@ let sequenceJsonBuilder = function(cmdType, serial, devType, custId, cmdKey, cmd
     let json = {
         "behaviorId": "PREVIEW",
         "sequenceJson": {
-            "@type": "com.amazon.alexa.behaviors.model.Sequence",
-            "startNode": {
-                "@type": "com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode",
-                "type": cmdType,
-                "operationPayload": {
-                    "deviceType": devType,
-                    "deviceSerialNumber": serial,
-                    "locale": "en-US",
-                    "customerId": custId
-                }
-            }
+            "@type": "com.amazon.alexa.behaviors.model.Sequence"
         },
         "status": "ENABLED"
     };
-    json.sequenceJson.startNode.operationPayload[cmdKey] = cmdVal;
-    return gson.encode(json);
+    let a = {
+        "@type": "com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode",
+        "type": cmdType,
+        "operationPayload": {
+            "deviceType": devType,
+            "deviceSerialNumber": serial,
+            "locale": "en-US",
+            "customerId": custId
+        }
+    };
+    a.operationPayload[cmdKey] = cmdVal;
+    json.sequenceJson.startNode = gson.encode(a);
+    return json;
 };
 
 async function buildEchoDeviceMap(eDevData) {
