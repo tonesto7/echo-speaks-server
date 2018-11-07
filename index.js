@@ -273,14 +273,6 @@ function startWebServer(checkForCookie = false) {
                         res.send('done');
                     });
 
-                    // webApp.get('/alexa-speak', urlencodedParser, function(req, res) {
-                    //     console.log('++ Received a Speak Request... ++');
-                    //     alexa_api.sendTTS(ttsMsg, echoDevices[echo].serialNumber, savedConfig, function(error, response) {
-                    //         console.log('sent testmsg to ' + echoDevices[echo].serialNumber);
-                    //         res.send('done');
-                    //     });
-                    // });
-
                     webApp.post('/alexa-command', urlencodedParser, function(req, res) {
                         // console.log('command headers: ', req.headers);
                         let hubAct = (req.headers.deviceserialnumber !== undefined && !configData.settings.useHeroku);
@@ -469,13 +461,6 @@ async function buildEchoDeviceMap(eDevData) {
                 echoDevices[dndState[ds].deviceSerialNumber].dndEnabled = dndState[ds].enabled || false;
             }
         }
-
-
-        // for (const nd in notifs) {
-        //     if (echoDevices[notifs[nd].deviceSerialNumber] !== undefined) {
-        //         echoDevices[notifs[nd].deviceSerialNumber].notification = notifs[nd].filter(item => item.deviceSerialNumber === ); || [];
-        //     }
-        // }
     } catch (err) {
         logger.error('buildEchoDeviceMap ERROR:', err);
     }

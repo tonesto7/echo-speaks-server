@@ -236,35 +236,6 @@ var setReminder = function(message, datetime, deviceSerialNumber, config, callba
     });
 };
 
-var sendTTS = function(_cmdOpts, callback) {
-    // console.log('Method: ' + _cmdOpts.method);
-    // console.log('URL:' + _cmdOpts.url);
-    // console.log('Query: ', _cmdOpts.qs);
-    // console.log('Body: ', _cmdOpts.json);
-    request(_cmdOpts, function(error, response, body) {
-        // console.log('body:', body);
-        console.log('sendTTS Status: (' + response.statusCode + ')');
-        if (!error && response.statusCode === 200) {
-            callback(null, {
-                "statusCode": response.statusCode,
-                "deviceId": _cmdOpts.deviceId,
-                "message": "success",
-                "queueKey": _cmdOpts.queueKey,
-                "msgDelay": _cmdOpts.msgDelay
-            });
-        } else {
-            // console.log('error: ', error.message);
-            callback(error, {
-                "statusCode": response.statusCode,
-                "deviceId": _cmdOpts.deviceId,
-                "message": body.message || null,
-                "queueKey": _cmdOpts.queueKey,
-                "msgDelay": _cmdOpts.msgDelay
-            });
-        }
-    });
-};
-
 var executeCommand = function(_cmdOpts, callback) {
     // console.log('Method: ' + _cmdOpts.method);
     // console.log('URL:' + _cmdOpts.url);
