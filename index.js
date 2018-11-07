@@ -291,6 +291,7 @@ function startWebServer(checkForCookie = false) {
                         let cmdType = req.headers.cmdtype;
                         let cmdValues = (req.headers.cmdvalobj && req.headers.cmdvalobj.length) ? JSON.parse(req.headers.cmdvalobj) : {};
                         let message = (req.headers.message) || "";
+                        let seqType = req.headers.sequencetype || undefined;
 
                         let cmdOpts = {
                             headers: {
@@ -299,6 +300,10 @@ function startWebServer(checkForCookie = false) {
                             },
                             json: {}
                         };
+                        cmdOpts.deviceId = req.headers.deviceid || undefined;
+                        cmdOpts.queueKey = req.headers.queuekey || undefined;
+                        cmdOpts.msgDelay = req.headers.msgdelay || undefined;
+
                         switch (cmdType) {
                             case 'SetDnd':
                                 cmdOpts.method = 'PUT';
@@ -311,9 +316,6 @@ function startWebServer(checkForCookie = false) {
                             case 'SendTTS':
                                 cmdOpts.method = 'POST';
                                 cmdOpts.url = alexaUrl + '/api/behaviors/preview';
-                                cmdOpts.deviceId = req.headers.deviceid || undefined;
-                                cmdOpts.queueKey = req.headers.queuekey || undefined;
-                                cmdOpts.msgDelay = req.headers.msgdelay || undefined;
                                 // cmdOpts.json = {
                                 //     "behaviorId": "PREVIEW",
                                 //     "sequenceJson": "{\"@type\":\"com.amazon.alexa.behaviors.model.Sequence\", \
@@ -328,24 +330,7 @@ function startWebServer(checkForCookie = false) {
                             case 'ExecuteSequence':
                                 cmdOpts.method = 'POST';
                                 cmdOpts.url = alexaUrl + '/api/behaviors/preview';
-                                cmdOpts.json = {
-                                    behaviorId: "PREVIEW",
-                                    sequenceJson: {
-                                        "@type": "com.amazon.alexa.behaviors.model.Sequence",
-                                        "startNode": {
-                                            "@type": "com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode",
-                                            "type": "Alexa.Speak",
-                                            "operationPayload": {
-                                                "deviceType": deviceType,
-                                                "deviceSerialNumber": +serialNumber,
-                                                "locale": "en-US",
-                                                "customerId": deviceOwnerCustomerId,
-                                                "textToSpeak": message
-                                            }
-                                        }
-                                    },
-                                    "status": "ENABLED"
-                                };
+                                cmdOpts.json = sequenceJsonBuilder(seqType, serialNumber, deviceType, deviceOwnerCustomerId, "textToSpeak", message);
                                 break;
                             default:
                                 cmdOpts.method = 'POST';
@@ -475,7 +460,7 @@ let sequenceJsonBuilder = function(cmdType, serial, devType, custId, cmdKey, cmd
         "status": "ENABLED"
     };
     json.sequenceJson.startNode.operationPayload[cmdKey] = cmdVal;
-    return json;
+    return JSON.stringify(json);
 };
 
 async function buildEchoDeviceMap(eDevData) {
