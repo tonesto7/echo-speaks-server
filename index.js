@@ -442,25 +442,15 @@ function startWebServer(checkForCookie = false) {
 }
 
 let sequenceJsonBuilder = function(cmdType, serial, devType, custId, cmdKey, cmdVal) {
-    let json = {
-        behaviorId: "PREVIEW",
-        sequenceJson: {
-            "@type": "com.amazon.alexa.behaviors.model.Sequence",
-            "startNode": {
-                "@type": "com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode",
-                "type": cmdType,
-                "operationPayload": {
-                    "deviceType": devType,
-                    "deviceSerialNumber": serial,
-                    "locale": "en-US",
-                    "customerId": custId
-                }
-            }
-        },
+    return {
+        "behaviorId": "PREVIEW",
+        "sequenceJson": "{\"@type\":\"com.amazon.alexa.behaviors.model.Sequence\", \
+                                    \"startNode\":{\"@type\":\"com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode\", \
+                                    \"type\":\"" + cmdType + "\",\"operationPayload\":{\"deviceType\":\"" + devType + "\", \
+                                    \"deviceSerialNumber\":\"" + serial + "\",\"locale\":\"en-US\", \
+                                    \"customerId\":\"" + custId + "\", \"" + cmdKey + "\": \"" + cmdVal + "\"}}}",
         "status": "ENABLED"
     };
-    json.sequenceJson.startNode.operationPayload[cmdKey] = cmdVal;
-    return JSON.stringify(json);
 };
 
 async function buildEchoDeviceMap(eDevData) {
