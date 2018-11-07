@@ -441,7 +441,7 @@ async function buildEchoDeviceMap(eDevData) {
     // console.log('eDevData: ', eDevData);
     try {
         let removeKeys = ['appDeviceList', 'charging', 'clusterMembers', 'essid', 'macAddress', 'parentClusters', 'deviceTypeFriendlyName', 'registrationId', 'remainingBatteryLevel', 'postalCode', 'language'];
-        let notifs = await getNotificationInfo();
+        // let notifs = await getNotificationInfo();
         for (const dev in eDevData) {
             if (eDevData[dev].deviceFamily === 'ECHO' || eDevData[dev].deviceFamily === 'KNIGHT' || eDevData[dev].deviceFamily === 'ROOK' || eDevData[dev].deviceFamily === 'TABLET') {
                 for (const item in removeKeys) {
@@ -452,7 +452,7 @@ async function buildEchoDeviceMap(eDevData) {
                 echoDevices[eDevData[dev].serialNumber].playerState = devState;
                 let playlist = await getPlaylistInfo(eDevData[dev]);
                 echoDevices[eDevData[dev].serialNumber].playlists = playlist;
-                echoDevices[eDevData[dev].serialNumber].notifications = notifs.filter(item => item.deviceSerialNumber === eDevData[dev].serialNumber) || [];
+                // echoDevices[eDevData[dev].serialNumber].notifications = notifs.filter(item => item.deviceSerialNumber === eDevData[dev].serialNumber) || [];
             }
         }
         let dndState = await getDeviceDndInfo();
