@@ -424,35 +424,15 @@ function startWebServer(checkForCookie = false) {
 }
 
 let sequenceJsonBuilder = function(cmdType, serial, devType, custId, cmdKey, cmdVal) {
-    // return {
-    //     "behaviorId": "PREVIEW",
-    //     "sequenceJson": "{\"@type\":\"com.amazon.alexa.behaviors.model.Sequence\", \
-    //                                 \"startNode\":{\"@type\":\"com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode\", \
-    //                                 \"type\":\"" + cmdType + "\",\"operationPayload\":{\"deviceType\":\"" + devType + "\", \
-    //                                 \"deviceSerialNumber\":\"" + serial + "\",\"locale\":\"en-US\", \
-    //                                 \"customerId\":\"" + custId + "\", \"" + cmdKey + "\": \"" + cmdVal + "\"}}}",
-    //     "status": "ENABLED"
-    // };
-    let json = {
+    return {
         "behaviorId": "PREVIEW",
-        "sequenceJson": {
-            "@type": "com.amazon.alexa.behaviors.model.Sequence"
-        },
+        "sequenceJson": "{\"@type\":\"com.amazon.alexa.behaviors.model.Sequence\", \
+                                    \"startNode\":{\"@type\":\"com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode\", \
+                                    \"type\":\"" + cmdType + "\",\"operationPayload\":{\"deviceType\":\"" + devType + "\", \
+                                    \"deviceSerialNumber\":\"" + serial + "\",\"locale\":\"en-US\", \
+                                    \"customerId\":\"" + custId + "\", \"" + cmdKey + "\": \"" + cmdVal + "\"}}}",
         "status": "ENABLED"
     };
-    let a = {
-        "@type": "com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode",
-        "type": cmdType,
-        "operationPayload": {
-            "deviceType": devType,
-            "deviceSerialNumber": serial,
-            "locale": "en-US",
-            "customerId": custId
-        }
-    };
-    a.operationPayload[cmdKey] = cmdVal;
-    json.sequenceJson.startNode = gson.encode(a);
-    return json;
 };
 
 async function buildEchoDeviceMap(eDevData) {
