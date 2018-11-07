@@ -287,6 +287,7 @@ function startWebServer(checkForCookie = false) {
                         let hubAct = (req.headers.deviceserialnumber !== undefined && !configData.settings.useHeroku);
                         let serialNumber = req.headers.deviceserialnumber;
                         let deviceType = req.headers.devicetype;
+                        let deviceDni = req.headers.devicedni || "";
                         let deviceOwnerCustomerId = req.headers.deviceownercustomerid;
                         let cmdType = req.headers.cmdtype;
                         let cmdValues = (req.headers.cmdvalobj && req.headers.cmdvalobj.length) ? JSON.parse(req.headers.cmdvalobj) : {};
@@ -342,7 +343,7 @@ function startWebServer(checkForCookie = false) {
                             }
                         }
                         if (serialNumber) {
-                            logger.debug('++ Received an Execute Command Request for Device: ' + serialNumber + ' | CmdType: ' + cmdType + ' | CmdValObj: ' + JSON.stringify(cmdValues) + ' | deviceDni: ' + cmdOpts.deviceId + ' ' + (hubAct && !configData.settings.useHeroku ? ' | Source: (ST HubAction)' : (configData.settings.useHeroku ? ' | Source: (ST C2C)' : '')) + ' ++');
+                            logger.debug('++ Received an Execute Command Request for Device: ' + serialNumber + ' | CmdType: ' + cmdType + ' | CmdValObj: ' + JSON.stringify(cmdValues) + ' | ' + (hubAct && !configData.settings.useHeroku ? ' | Source: (ST HubAction)' : (configData.settings.useHeroku ? ' | Source: (ST C2C)' : '')) + ' ++');
                             alexa_api.executeCommand(cmdOpts, function(error, response) {
                                 res.send(response);
                             });
