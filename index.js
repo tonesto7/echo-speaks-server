@@ -455,6 +455,8 @@ async function buildEchoDeviceMap(eDevData) {
     try {
         let removeKeys = ['appDeviceList', 'charging', 'clusterMembers', 'essid', 'macAddress', 'parentClusters', 'deviceTypeFriendlyName', 'registrationId', 'remainingBatteryLevel', 'postalCode', 'language'];
         // let notifs = await getNotificationInfo();
+        let wakeWords = await getWakeWordInfo();
+        let dndState = await getDeviceDndInfo();
         for (const dev in eDevData) {
             if (eDevData[dev].deviceFamily === 'ECHO' || eDevData[dev].deviceFamily === 'KNIGHT' || eDevData[dev].deviceFamily === 'ROOK' || eDevData[dev].deviceFamily === 'TABLET') {
                 for (const item in removeKeys) {
@@ -465,10 +467,13 @@ async function buildEchoDeviceMap(eDevData) {
                 echoDevices[eDevData[dev].serialNumber].playerState = devState;
                 let playlist = await getPlaylistInfo(eDevData[dev]);
                 echoDevices[eDevData[dev].serialNumber].playlists = playlist;
+                let wakeWord = wakeWords.filter((item) => item.deviceSerialNumber === eDevData[dev].serialNumber).shift();
+                echoDevices[eDevData[dev].serialNumber].wakeWord = wakeWord ? wakeWord.wakeWord : "";
+
                 // echoDevices[eDevData[dev].serialNumber].notifications = notifs.filter(item => item.deviceSerialNumber === eDevData[dev].serialNumber) || [];
             }
         }
-        let dndState = await getDeviceDndInfo();
+        // let dndState = await getDeviceDndInfo();
         for (const ds in dndState) {
             if (echoDevices[dndState[ds].deviceSerialNumber] !== undefined) {
                 echoDevices[dndState[ds].deviceSerialNumber].dndEnabled = dndState[ds].enabled || false;
@@ -499,6 +504,14 @@ function getDeviceDndInfo() {
     return new Promise(resolve => {
         alexa_api.getDndStatus(savedConfig, function(err, resp) {
             resolve(resp || []);
+        });
+    });
+}
+
+function getWakeWordInfo() {
+    return new Promise(resolve => {
+        alexa_api.getWakeWords(savedConfig, function(err, resp) {
+            resolve(resp.wakeWords || []);
         });
     });
 }

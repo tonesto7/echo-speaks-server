@@ -412,6 +412,23 @@ var getPlaylists = function(device, _config, callback) {
     });
 };
 
+var getWakeWords = function(_config, callback) {
+    request({
+        method: 'GET',
+        url: alexaUrl + '/api/wake-word',
+        headers: {
+            'Cookie': _config.cookies,
+            'csrf': _config.csrf
+        }
+    }, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            callback(null, JSON.parse(body));
+        } else {
+            callback(error, response);
+        }
+    });
+};
+
 
 var getBluetoothDevices = function(config, callback) {
     request({
@@ -492,6 +509,7 @@ exports.clearSession = clearSession;
 exports.setReminder = setReminder;
 exports.setMedia = setMedia;
 exports.getDevices = getDevices;
+exports.getWakeWords = getWakeWords;
 exports.getState = getState;
 exports.getDndStatus = getDndStatus;
 exports.getPlaylists = getPlaylists;
