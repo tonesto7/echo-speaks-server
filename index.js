@@ -287,7 +287,6 @@ function startWebServer(checkForCookie = false) {
                         let hubAct = (req.headers.deviceserialnumber !== undefined && !configData.settings.useHeroku);
                         let serialNumber = req.headers.deviceserialnumber;
                         let deviceType = req.headers.devicetype;
-                        let deviceDni = req.headers.devicedni || "";
                         let deviceOwnerCustomerId = req.headers.deviceownercustomerid;
                         let cmdType = req.headers.cmdtype;
                         let cmdValues = (req.headers.cmdvalobj && req.headers.cmdvalobj.length) ? JSON.parse(req.headers.cmdvalobj) : {};
@@ -315,13 +314,36 @@ function startWebServer(checkForCookie = false) {
                                 cmdOpts.deviceId = req.headers.deviceid || undefined;
                                 cmdOpts.queueKey = req.headers.queuekey || undefined;
                                 cmdOpts.msgDelay = req.headers.msgdelay || undefined;
+                                // cmdOpts.json = {
+                                //     "behaviorId": "PREVIEW",
+                                //     "sequenceJson": "{\"@type\":\"com.amazon.alexa.behaviors.model.Sequence\", \
+                                //     \"startNode\":{\"@type\":\"com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode\", \
+                                //     \"type\":\"Alexa.Speak\",\"operationPayload\":{\"deviceType\":\"" + deviceType + "\", \
+                                //     \"deviceSerialNumber\":\"" + serialNumber + "\",\"locale\":\"en-US\", \
+                                //     \"customerId\":\"" + deviceOwnerCustomerId + "\", \"textToSpeak\": \"" + message + "\"}}}",
+                                //     "status": "ENABLED"
+                                // };
+                                cmdOpts.json = sequenceJsonBuilder("Alexa.Speak", serialNumber, deviceType, deviceOwnerCustomerId, "textToSpeak", message);
+                                break;
+                            case 'ExecuteSequence':
+                                cmdOpts.method = 'POST';
+                                cmdOpts.url = alexaUrl + '/api/behaviors/preview';
                                 cmdOpts.json = {
-                                    "behaviorId": "PREVIEW",
-                                    "sequenceJson": "{\"@type\":\"com.amazon.alexa.behaviors.model.Sequence\", \
-                                    \"startNode\":{\"@type\":\"com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode\", \
-                                    \"type\":\"Alexa.Speak\",\"operationPayload\":{\"deviceType\":\"" + deviceType + "\", \
-                                    \"deviceSerialNumber\":\"" + serialNumber + "\",\"locale\":\"en-US\", \
-                                    \"customerId\":\"" + deviceOwnerCustomerId + "\", \"textToSpeak\": \"" + message + "\"}}}",
+                                    behaviorId: "PREVIEW",
+                                    sequenceJson: {
+                                        "@type": "com.amazon.alexa.behaviors.model.Sequence",
+                                        "startNode": {
+                                            "@type": "com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode",
+                                            "type": "Alexa.Speak",
+                                            "operationPayload": {
+                                                "deviceType": deviceType,
+                                                "deviceSerialNumber": +serialNumber,
+                                                "locale": "en-US",
+                                                "customerId": deviceOwnerCustomerId,
+                                                "textToSpeak": message
+                                            }
+                                        }
+                                    },
                                     "status": "ENABLED"
                                 };
                                 break;
@@ -433,6 +455,28 @@ function startWebServer(checkForCookie = false) {
         }
     });
 }
+
+let sequenceJsonBuilder = function(cmdType, serial, devType, custId, cmdKey, cmdVal) {
+    let json = {
+        behaviorId: "PREVIEW",
+        sequenceJson: {
+            "@type": "com.amazon.alexa.behaviors.model.Sequence",
+            "startNode": {
+                "@type": "com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode",
+                "type": cmdType,
+                "operationPayload": {
+                    "deviceType": devType,
+                    "deviceSerialNumber": serial,
+                    "locale": "en-US",
+                    "customerId": custId
+                }
+            }
+        },
+        "status": "ENABLED"
+    };
+    json.sequenceJson.startNode.operationPayload[cmdKey] = cmdVal;
+    return json;
+};
 
 async function buildEchoDeviceMap(eDevData) {
     // console.log('eDevData: ', eDevData);
