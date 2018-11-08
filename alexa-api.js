@@ -186,7 +186,7 @@ let checkAuthentication = function(callback) {
                 resolve(false);
             });
     });
-}
+};
 
 let createSequenceNode = function(device, command, value, callback) {
     const seqNode = {
@@ -327,8 +327,26 @@ let createSequenceNode = function(device, command, value, callback) {
 //     });
 // };
 
-getDevicePreferences(callback) {
-    this.httpsGet('https://alexa.amazon.de/api/device-preferences?cached=true&_=%t', callback);
+function getDevicePreferences(callback) {
+    return new Promise(resolve => {
+        reqPromise({
+                method: 'GET',
+                uri: '/api/device-preferences?cached=true&_=%t',
+                json: true
+            })
+            .then(function(resp) {
+                // console.log('checkAuthentication resp: ', resp);
+                if (resp !== undefined) {
+                    return resolve(resp);
+                }
+                resolve(undefined);
+            })
+            .catch(function(err) {
+                logger.error("ERROR: Unable to get device preferences: " + err.message);
+                resolve(undefined);
+            });
+    });
+
 }
 
 let getAutomationRoutines = function(limit, callback) {
@@ -736,12 +754,13 @@ exports.getDndStatus = getDndStatus;
 exports.getPlaylists = getPlaylists;
 exports.getNotifications = getNotifications;
 exports.executeCommand = executeCommand;
+exports.getDevicePreferences = getDevicePreferences;
 exports.getBluetoothDevices = getBluetoothDevices;
 exports.setBluetoothDevice = setBluetoothDevice;
 exports.disconnectBluetoothDevice = disconnectBluetoothDevice;
 exports.checkAuthentication = checkAuthentication;
 exports.createSequenceNode = createSequenceNode;
-exports.sendSequenceCommand = sendSequenceCommand;
+// exports.sendSequenceCommand = sendSequenceCommand;
 // exports.sendMultiSequenceCommand = sendMultiSequenceCommand;
 exports.getAutomationRoutines = getAutomationRoutines;
 exports.executeAutomationRoutine = executeAutomationRoutine;
