@@ -2,6 +2,7 @@ const request = require('request');
 const reqPromise = require("request-promise");
 const logger = require('./logger');
 const alexaCookie = require('./alexa-cookie/alexa-cookie');
+// const alexaRemote = require('alexa-remote2');
 const dateFormat = require('dateformat');
 const editJsonFile = require("edit-json-file", {
     autosave: true
@@ -166,14 +167,35 @@ function getCookiesFromST(url) {
     });
 };
 
-let createSequenceNode = function(command, value, callback) {
+let checkAuthentication = function(callback) {
+    return new Promise(resolve => {
+        reqPromise({
+                method: 'GET',
+                uri: '/api/bootstrap?version=0',
+                json: true
+            })
+            .then(function(resp) {
+                // console.log('checkAuthentication resp: ', resp);
+                if (resp && resp.authentication && resp.authentication.authenticated !== undefined) {
+                    return resolve(resp.authentication.authenticated);
+                }
+                resolve(false);
+            })
+            .catch(function(err) {
+                logger.error("ERROR: Unable to Authenticate Alexa Login: " + err.message);
+                resolve(false);
+            });
+    });
+}
+
+let createSequenceNode = function(device, command, value, callback) {
     const seqNode = {
         '@type': 'com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode',
         'operationPayload': {
-            'deviceType': 'ALEXA_CURRENT_DEVICE_TYPE',
-            'deviceSerialNumber': 'ALEXA_CURRENT_DSN',
-            'locale': 'ALEXA_CURRENT_LOCALE',
-            'customerId': 'ALEXA_CUSTOMER_ID'
+            'deviceType': device.deviceType,
+            'deviceSerialNumber': device.deviceSerialNumber,
+            'locale': device.locale,
+            'customerId': device.deviceOwnerCustomerId
         }
     };
     switch (command) {
@@ -250,56 +272,64 @@ let createSequenceNode = function(command, value, callback) {
     return seqNode;
 };
 
-let sendMultiSequenceCommand = function(serialOrName, commands, sequenceType, callback) {
-    if (typeof sequenceType === 'function') {
-        callback = sequenceType;
-        sequenceType = null;
-    }
-    if (!sequenceType) sequenceType = 'SerialNode'; // or ParallelNode
+// let sendMultiSequenceCommand = function(serialOrName, commands, sequenceType, callback) {
+//     if (!sequenceType) sequenceType = 'SerialNode'; // or ParallelNode
+//     let nodes = [];
+//     for (let command of commands) {
+//         const commandNode = this.createSequenceNode(command.command, command.value, callback);
+//         if (commandNode) nodes.push(commandNode);
+//     }
 
-    let nodes = [];
-    for (let command of commands) {
-        const commandNode = this.createSequenceNode(command.command, command.value, callback);
-        if (commandNode) nodes.push(commandNode);
-    }
+//     const sequenceObj = {
+//         'sequence': {
+//             '@type': 'com.amazon.alexa.behaviors.model.Sequence',
+//             'startNode': {
+//                 '@type': 'com.amazon.alexa.behaviors.model.' + sequenceType,
+//                 'name': null,
+//                 'nodesToExecute': nodes
+//             }
+//         }
+//     };
 
-    const sequenceObj = {
-        'sequence': {
-            '@type': 'com.amazon.alexa.behaviors.model.Sequence',
-            'startNode': {
-                '@type': 'com.amazon.alexa.behaviors.model.' + sequenceType,
-                'name': null,
-                'nodesToExecute': nodes
-            }
-        }
-    };
+//     sendSequenceCommand(serialOrName, sequenceObj, callback);
+// };
 
-    sendSequenceCommand(serialOrName, sequenceObj, callback);
-};
+// let sendSequenceCommand = function(device, command, value, config, callback) {
+//     let seqCommandObj = {
+//         '@type': 'com.amazon.alexa.behaviors.model.Sequence',
+//         'startNode': this.createSequenceNode(command, value)
+//     };
+//     const reqObj = {
+//         'behaviorId': seqCommandObj.sequenceId ? command.automationId : 'PREVIEW',
+//         'sequenceJson': JSON.stringify(seqCommandObj),
+//         'status': 'ENABLED'
+//     };
+//     reqObj.sequenceJson = reqObj.sequenceJson.replace(/"deviceType":"ALEXA_CURRENT_DEVICE_TYPE"/g, `"deviceType":"${device.deviceType}"`);
+//     reqObj.sequenceJson = reqObj.sequenceJson.replace(/"deviceSerialNumber":"ALEXA_CURRENT_DSN"/g, `"deviceSerialNumber":"${device.deviceSerialNumber}"`);
+//     reqObj.sequenceJson = reqObj.sequenceJson.replace(/"customerId":"ALEXA_CUSTOMER_ID"/g, `"customerId":"${device.deviceOwnerCustomerId}"`);
+//     reqObj.sequenceJson = reqObj.sequenceJson.replace(/"locale":"ALEXA_CURRENT_LOCALE"/g, `"locale":"de-DE"`);
+//     request({
+//         method: 'POST',
+//         url: alexaUrl + '/api/behaviors/preview',
+//         headers: {
+//             'Cookie': config.cookies,
+//             'csrf': config.csrf
+//         },
+//         json: reqObj
+//     }, function(error, response) {
+//         if (!error && response.statusCode === 200) {
+//             callback(null, {
+//                 "message": "success"
+//             });
+//         } else {
+//             callback(error, response);
+//         }
+//     });
+// };
 
-let sendSequenceCommand = function(device, command, value, callback) {
-    let seqCommandObj = {
-        '@type': 'com.amazon.alexa.behaviors.model.Sequence',
-        'startNode': this.createSequenceNode(command, value)
-    };
-
-    const reqObj = {
-        'behaviorId': seqCommandObj.sequenceId ? command.automationId : 'PREVIEW',
-        'sequenceJson': JSON.stringify(seqCommandObj),
-        'status': 'ENABLED'
-    };
-    reqObj.sequenceJson = reqObj.sequenceJson.replace(/"deviceType":"ALEXA_CURRENT_DEVICE_TYPE"/g, `"deviceType":"${dev.deviceType}"`);
-    reqObj.sequenceJson = reqObj.sequenceJson.replace(/"deviceSerialNumber":"ALEXA_CURRENT_DSN"/g, `"deviceSerialNumber":"${dev.serialNumber}"`);
-    reqObj.sequenceJson = reqObj.sequenceJson.replace(/"customerId":"ALEXA_CUSTOMER_ID"/g, `"customerId":"${dev.deviceOwnerCustomerId}"`);
-    reqObj.sequenceJson = reqObj.sequenceJson.replace(/"locale":"ALEXA_CURRENT_LOCALE"/g, `"locale":"de-DE"`);
-
-    httpsGet(`/api/behaviors/preview`,
-        callback, {
-            method: 'POST',
-            data: JSON.stringify(reqObj)
-        }
-    );
-};
+getDevicePreferences(callback) {
+    this.httpsGet('https://alexa.amazon.de/api/device-preferences?cached=true&_=%t', callback);
+}
 
 let getAutomationRoutines = function(limit, callback) {
     if (typeof limit === 'function') {
@@ -709,10 +739,10 @@ exports.executeCommand = executeCommand;
 exports.getBluetoothDevices = getBluetoothDevices;
 exports.setBluetoothDevice = setBluetoothDevice;
 exports.disconnectBluetoothDevice = disconnectBluetoothDevice;
-
+exports.checkAuthentication = checkAuthentication;
 exports.createSequenceNode = createSequenceNode;
 exports.sendSequenceCommand = sendSequenceCommand;
-exports.sendMultiSequenceCommand = sendMultiSequenceCommand;
+// exports.sendMultiSequenceCommand = sendMultiSequenceCommand;
 exports.getAutomationRoutines = getAutomationRoutines;
 exports.executeAutomationRoutine = executeAutomationRoutine;
 exports.playMusicProvider = playMusicProvider;

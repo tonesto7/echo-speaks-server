@@ -317,7 +317,7 @@ function startWebServer(checkForCookie = false) {
                                     'startNode': alexa_api.createSequenceNode(seqCmdKey, seqCmdVal)
                                 };
                                 const reqObj = {
-                                    'behaviorId': seqCommandObj.sequenceId ? seqCommandObj.automationId : 'PREVIEW',
+                                    'behaviorId': 'PREVIEW',
                                     'sequenceJson': JSON.stringify(seqCommandObj),
                                     'status': 'ENABLED'
                                 };
@@ -439,27 +439,21 @@ function startWebServer(checkForCookie = false) {
 }
 
 let sequenceJsonBuilder = function(cmdType, serial, devType, custId, cmdKey, cmdVal) {
-    if (cmdKey && cmdVal) {
-        return {
-            "behaviorId": "PREVIEW",
-            "sequenceJson": "{\"@type\":\"com.amazon.alexa.behaviors.model.Sequence\", \
-                            \"startNode\":{\"@type\":\"com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode\", \
-                            \"type\":\"" + cmdType + "\",\"operationPayload\":{\"deviceType\":\"" + devType + "\", \
-                            \"deviceSerialNumber\":\"" + serial + "\",\"locale\":\"en-US\", \
-                            \"customerId\":\"" + custId + "\", \"" + cmdKey + "\": \"" + cmdVal + "\"}}}",
-            "status": "ENABLED"
-        };
-    } else {
-        return {
-            "behaviorId": "PREVIEW",
-            "sequenceJson": "{\"@type\":\"com.amazon.alexa.behaviors.model.Sequence\", \
-                            \"startNode\":{\"@type\":\"com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode\", \
-                            \"type\":\"" + cmdType + "\",\"operationPayload\":{\"deviceType\":\"" + devType + "\", \
-                            \"deviceSerialNumber\":\"" + serial + "\",\"locale\":\"en-US\", \
-                            \"customerId\":\"" + custId + "\"}}}",
-            "status": "ENABLED"
-        };
-    }
+    let device = {
+        deviceSerialNumber: serial,
+        deviceType: devType,
+        deviceOwnerCustomerId: custId,
+        locale: 'en-US'
+    };
+    const reqObj = {
+        'behaviorId': 'PREVIEW',
+        'sequenceJson': JSON.stringify({
+            '@type': 'com.amazon.alexa.behaviors.model.Sequence',
+            'startNode': alexa_api.createSequenceNode(device, cmdKey, cmdVal)
+        }),
+        'status': 'ENABLED'
+    };
+    return reqObj;
 };
 
 async function buildEchoDeviceMap(eDevData) {
