@@ -290,7 +290,9 @@ function startWebServer(checkForCookie = false) {
                             },
                             json: {}
                         };
-
+                        cmdOpts.deviceId = req.headers.deviceid || undefined;
+                        cmdOpts.queueKey = req.headers.queuekey || undefined;
+                        cmdOpts.msgDelay = req.headers.msgdelay || undefined;
                         switch (cmdType) {
                             case 'SetDnd':
                                 cmdOpts.method = 'PUT';
@@ -303,9 +305,6 @@ function startWebServer(checkForCookie = false) {
                             case 'SendTTS':
                                 cmdOpts.method = 'POST';
                                 cmdOpts.url = alexaUrl + '/api/behaviors/preview';
-                                cmdOpts.deviceId = req.headers.deviceid || undefined;
-                                cmdOpts.queueKey = req.headers.queuekey || undefined;
-                                cmdOpts.msgDelay = req.headers.msgdelay || undefined;
                                 cmdOpts.json = sequenceJsonBuilder("Alexa.Speak", serialNumber, deviceType, deviceOwnerCustomerId, "textToSpeak", message);
                                 break;
                             case 'ExecuteSequence':
@@ -313,13 +312,11 @@ function startWebServer(checkForCookie = false) {
                                 let seqCmdVal = req.headers.seqcmdval || undefined;
                                 cmdOpts.method = 'POST';
                                 cmdOpts.url = alexaUrl + '/api/behaviors/preview';
-                                cmdOpts.deviceId = req.headers.deviceid || undefined;
-                                cmdOpts.queueKey = req.headers.queuekey || undefined;
-                                cmdOpts.msgDelay = req.headers.msgdelay || undefined;
+
 
                                 let seqCommandObj = {
                                     '@type': 'com.amazon.alexa.behaviors.model.Sequence',
-                                    'startNode': this.createSequenceNode(seqCmdKey, seqCmdVal)
+                                    'startNode': alexa_api.createSequenceNode(seqCmdKey, seqCmdVal)
                                 };
                                 const reqObj = {
                                     'behaviorId': seqCommandObj.sequenceId ? seqCommandObj.automationId : 'PREVIEW',
@@ -332,6 +329,7 @@ function startWebServer(checkForCookie = false) {
                                 reqObj.sequenceJson = reqObj.sequenceJson.replace(/"locale":"ALEXA_CURRENT_LOCALE"/g, `"locale":"en-US"`);
                                 cmdOpts.json = JSON.stringify(reqObj);
                                 console.log('ExecuteSequence json: ', cmdOpts.json);
+
                                 break;
                             default:
                                 cmdOpts.method = 'POST';
