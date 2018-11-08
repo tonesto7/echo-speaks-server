@@ -313,7 +313,7 @@ function startWebServer(checkForCookie = false) {
                                 let seqCmdVal = req.headers.seqcmdval || undefined;
                                 cmdOpts.method = 'POST';
                                 cmdOpts.url = alexaUrl + '/api/behaviors/preview';
-                                cmdOpts.json = sequenceJsonBuilder(serialNumber, deviceType, deviceOwnerCustomerId, "speak", message);
+                                cmdOpts.json = sequenceJsonBuilder(serialNumber, deviceType, deviceOwnerCustomerId, seqCmdKey, seqCmdVal);
                                 // let seqCommandObj = {
                                 //     '@type': 'com.amazon.alexa.behaviors.model.Sequence',
                                 //     'startNode': alexa_api.createSequenceNode(seqCmdKey, seqCmdVal)
