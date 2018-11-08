@@ -327,7 +327,7 @@ function startWebServer(checkForCookie = false) {
                                 reqObj.sequenceJson = reqObj.sequenceJson.replace(/"deviceSerialNumber":"ALEXA_CURRENT_DSN"/g, `"deviceSerialNumber":"${serialNumber}"`);
                                 reqObj.sequenceJson = reqObj.sequenceJson.replace(/"customerId":"ALEXA_CUSTOMER_ID"/g, `"customerId":"${deviceOwnerCustomerId}"`);
                                 reqObj.sequenceJson = reqObj.sequenceJson.replace(/"locale":"ALEXA_CURRENT_LOCALE"/g, `"locale":"en-US"`);
-                                cmdOpts.json = JSON.stringify(reqObj);
+                                cmdOpts.json = reqObj;
                                 console.log('ExecuteSequence json: ', cmdOpts.json);
 
                                 break;
