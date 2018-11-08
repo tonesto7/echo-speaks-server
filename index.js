@@ -312,8 +312,6 @@ function startWebServer(checkForCookie = false) {
                                 let seqCmdVal = req.headers.seqcmdval || undefined;
                                 cmdOpts.method = 'POST';
                                 cmdOpts.url = alexaUrl + '/api/behaviors/preview';
-
-
                                 let seqCommandObj = {
                                     '@type': 'com.amazon.alexa.behaviors.model.Sequence',
                                     'startNode': alexa_api.createSequenceNode(seqCmdKey, seqCmdVal)
