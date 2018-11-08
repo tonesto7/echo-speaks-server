@@ -11,6 +11,21 @@ const os = require('os');
 const extend = require('extend');
 const AlexaWsMqtt = require('./alexa-wsmqtt.js');
 
+const reqPromise = require("request-promise");
+const logger = require('./logger');
+const alexaCookie = require('./alexa-cookie/alexa-cookie');
+const dateFormat = require('dateformat');
+const editJsonFile = require("edit-json-file", {
+    autosave: true
+});
+const dataFolder = require('os').homedir() + '/.echo-speaks';
+const sessionFile = editJsonFile(dataFolder + '/session.json');
+
+let alexaUrl = 'https://alexa.amazon.com';
+let sessionData = sessionFile.get() || {};
+sessionFile.save();
+
+
 const EventEmitter = require('events');
 
 function _00(val) {
@@ -122,6 +137,29 @@ class AlexaRemote extends EventEmitter {
                 });
             });
         });
+    }
+
+    clearSession(url, useHeroku) {
+        sessionFile.unset('csrf');
+        sessionFile.unset('cookie');
+        sessionFile.save();
+        if (url && useHeroku) {
+            let options = {
+                method: 'DELETE',
+                uri: url,
+                json: true
+            };
+            reqPromise(options)
+                .then(function(resp) {
+                    // console.log('resp:', resp);
+                    if (resp) {
+                        logger.info(`** Sent Remove Alexa Cookie Request to SmartThings Successfully! **`);
+                    }
+                })
+                .catch(function(err) {
+                    logger.error("ERROR: Unable to send Alexa Cookie to SmartThings: " + err.message);
+                });
+        }
     }
 
     prepare(callback) {
