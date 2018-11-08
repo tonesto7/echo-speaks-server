@@ -502,10 +502,13 @@ function getWakeWordInfo() {
 function getMusicProviderInfo() {
     return new Promise(resolve => {
         alexa_api.getMusicProviders(savedConfig, function(err, resp) {
-            resolve(resp ? resp.map((item) => (item.availability === 'AVAILABLE') ? {
-                displayName: item.displayName,
-                id: item.id
-            } : {}) : {});
+            let items = [];
+            resp.map((item) =>
+                (item.availability === 'AVAILABLE') ? items.push({
+                    displayName: item.displayName,
+                    id: item.id
+                }) : '');
+            resolve(items || {});
         });
     });
 }
