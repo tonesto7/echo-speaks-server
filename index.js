@@ -305,7 +305,7 @@ function startWebServer(checkForCookie = false) {
                             case 'SendTTS':
                                 cmdOpts.method = 'POST';
                                 cmdOpts.url = alexaUrl + '/api/behaviors/preview';
-                                cmdOpts.json = sequenceJsonBuilder("Alexa.Speak", serialNumber, deviceType, deviceOwnerCustomerId, "textToSpeak", message);
+                                cmdOpts.json = sequenceJsonBuilder(serialNumber, deviceType, deviceOwnerCustomerId, "speak", message);
                                 console.log(cmdOpts.json);
                                 break;
                             case 'ExecuteSequence':
@@ -435,20 +435,19 @@ function startWebServer(checkForCookie = false) {
     });
 }
 
-let sequenceJsonBuilder = function(cmdType, serial, devType, custId, cmdKey, cmdVal) {
+let sequenceJsonBuilder = function(serial, devType, custId, cmdKey, cmdVal) {
     let device = {
         deviceSerialNumber: serial,
         deviceType: devType,
         deviceOwnerCustomerId: custId,
         locale: 'en-US'
     };
-    let seqCommandObj = {
-        '@type': 'com.amazon.alexa.behaviors.model.Sequence',
-        'startNode': alexa_api.createSequenceNode(device, cmdKey, cmdVal)
-    };
     const reqObj = {
         'behaviorId': 'PREVIEW',
-        'sequenceJson': JSON.stringify(seqCommandObj),
+        'sequenceJson': JSON.stringify({
+            '@type': 'com.amazon.alexa.behaviors.model.Sequence',
+            'startNode': alexa_api.createSequenceNode(device, cmdKey, cmdVal)
+        }),
         'status': 'ENABLED'
     };
     console.log(reqObj);
