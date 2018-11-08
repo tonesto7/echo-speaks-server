@@ -313,16 +313,17 @@ function startWebServer(checkForCookie = false) {
                                 let seqCmdVal = req.headers.seqcmdval || undefined;
                                 cmdOpts.method = 'POST';
                                 cmdOpts.url = alexaUrl + '/api/behaviors/preview';
-                                let seqCommandObj = {
-                                    '@type': 'com.amazon.alexa.behaviors.model.Sequence',
-                                    'startNode': alexa_api.createSequenceNode(seqCmdKey, seqCmdVal)
-                                };
-                                const reqObj = {
-                                    'behaviorId': 'PREVIEW',
-                                    'sequenceJson': JSON.stringify(seqCommandObj),
-                                    'status': 'ENABLED'
-                                };
-                                cmdOpts.json = reqObj;
+                                cmdOpts.json = sequenceJsonBuilder(serialNumber, deviceType, deviceOwnerCustomerId, "speak", message);
+                                // let seqCommandObj = {
+                                //     '@type': 'com.amazon.alexa.behaviors.model.Sequence',
+                                //     'startNode': alexa_api.createSequenceNode(seqCmdKey, seqCmdVal)
+                                // };
+                                // const reqObj = {
+                                //     'behaviorId': 'PREVIEW',
+                                //     'sequenceJson': JSON.stringify(seqCommandObj),
+                                //     'status': 'ENABLED'
+                                // };
+                                // cmdOpts.json = reqObj;
                                 console.log('ExecuteSequence json: ', cmdOpts.json);
 
                                 break;
