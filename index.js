@@ -306,6 +306,7 @@ function startWebServer(checkForCookie = false) {
                                 cmdOpts.method = 'POST';
                                 cmdOpts.url = alexaUrl + '/api/behaviors/preview';
                                 cmdOpts.json = sequenceJsonBuilder("Alexa.Speak", serialNumber, deviceType, deviceOwnerCustomerId, "textToSpeak", message);
+                                console.log(cmdOpts.json);
                                 break;
                             case 'ExecuteSequence':
                                 let seqCmdKey = req.headers.seqcmdkey || undefined;
@@ -321,10 +322,6 @@ function startWebServer(checkForCookie = false) {
                                     'sequenceJson': JSON.stringify(seqCommandObj),
                                     'status': 'ENABLED'
                                 };
-                                reqObj.sequenceJson = reqObj.sequenceJson.replace(/"deviceType":"ALEXA_CURRENT_DEVICE_TYPE"/g, `"deviceType":"${deviceType}"`);
-                                reqObj.sequenceJson = reqObj.sequenceJson.replace(/"deviceSerialNumber":"ALEXA_CURRENT_DSN"/g, `"deviceSerialNumber":"${serialNumber}"`);
-                                reqObj.sequenceJson = reqObj.sequenceJson.replace(/"customerId":"ALEXA_CUSTOMER_ID"/g, `"customerId":"${deviceOwnerCustomerId}"`);
-                                reqObj.sequenceJson = reqObj.sequenceJson.replace(/"locale":"ALEXA_CURRENT_LOCALE"/g, `"locale":"en-US"`);
                                 cmdOpts.json = reqObj;
                                 console.log('ExecuteSequence json: ', cmdOpts.json);
 

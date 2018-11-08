@@ -167,11 +167,15 @@ function getCookiesFromST(url) {
     });
 };
 
-let checkAuthentication = function(callback) {
+let checkAuthentication = function(_config, callback) {
     return new Promise(resolve => {
         reqPromise({
                 method: 'GET',
                 uri: '/api/bootstrap?version=0',
+                headers: {
+                    'Cookie': _config.cookies,
+                    'csrf': _config.csrf
+                },
                 json: true
             })
             .then(function(resp) {
@@ -327,11 +331,15 @@ let createSequenceNode = function(device, command, value, callback) {
 //     });
 // };
 
-function getDevicePreferences(callback) {
+function getDevicePreferences(_config, callback) {
     return new Promise(resolve => {
         reqPromise({
                 method: 'GET',
                 uri: '/api/device-preferences?cached=true&_=%t',
+                headers: {
+                    'Cookie': _config.cookies,
+                    'csrf': _config.csrf
+                },
                 json: true
             })
             .then(function(resp) {
