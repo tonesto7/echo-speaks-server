@@ -2,6 +2,7 @@ const request = require('request');
 const reqPromise = require("request-promise");
 const logger = require('./logger');
 const alexaCookie = require('./alexa-cookie/alexa-cookie');
+const os = require('os');
 // const alexaRemote = require('alexa-remote2');
 const dateFormat = require('dateformat');
 const editJsonFile = require("edit-json-file", {
@@ -67,15 +68,21 @@ function getRemoteCookie(alexaOptions) {
 
 function alexaLogin(username, password, alexaOptions, webapp, callback) {
     let devicesArray = [];
-    let deviceSerialNumber;
-    let deviceType;
-    let deviceOwnerCustomerId;
     let config = {};
     config.devicesArray = devicesArray;
-    config.deviceSerialNumber = deviceSerialNumber;
-    config.deviceType = deviceType;
-    config.deviceOwnerCustomerId = deviceOwnerCustomerId;
     config.alexaURL = alexaOptions.amazonDomain;
+    if (!config.userAgent) {
+        let platform = os.platform();
+        if (platform === 'win32') {
+            config.userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:99.0) Gecko/20100101 Firefox/99.0';
+        }
+        /*else if (platform === 'darwin') {
+            config.userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36';
+        }*/
+        else {
+            config.userAgent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36';
+        }
+    }
 
     getRemoteCookie(alexaOptions)
         .then(function(remoteCookies) {
@@ -167,33 +174,538 @@ function getCookiesFromST(url) {
     });
 };
 
-let checkAuthentication = function(_config) {
-    return new Promise(resolve => {
-        reqPromise({
-                method: 'GET',
-                uri: '/api/bootstrap?version=0',
-                headers: {
-                    'Cookie': _config.cookies,
-                    'csrf': _config.csrf
-                },
-                json: true
-            })
-            .then(function(resp) {
-                // console.log('checkAuthentication resp: ', resp);
-                if (resp && resp.authentication && resp.authentication.authenticated !== undefined) {
-                    resolve(resp.authentication.authenticated);
-                }
-                resolve(false);
-            })
-            .catch(function(err) {
-                logger.error("ERROR: Unable to Authenticate Alexa Login: " + err.message);
-                resolve(false);
+let checkAuthentication = function(config, callback) {
+    request({
+        method: 'GET',
+        url: `${alexaUrl}/api/bootstrap?version=0`,
+        headers: {
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        },
+        json: true
+    }, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            let data = body;
+            callback(null, body);
+        } else {
+            callback(null, {
+                result: false
             });
+        }
     });
 };
 
-let createSequenceNode = function(device, command, value, callback) {
+let getDevicePreferences = function(cached = true, config, callback) {
+    request({
+        method: 'GET',
+        url: `${alexaUrl}/api/device-preferences?cached=${cached === true}`,
+        headers: {
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        }
+    }, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            callback(null, JSON.parse(body));
+        } else {
+            callback(error, response);
+        }
+    });
+};
 
+let getAutomationRoutines = function(limit, config, callback) {
+    limit = limit || 2000;
+    request({
+        method: 'GET',
+        uri: `${alexaUrl}/api/behaviors/automations?limit=${limit}`,
+        headers: {
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        },
+        json: true
+    }, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            callback(null, JSON.parse(JSON.stringify(body)));
+        } else {
+            callback(error, response);
+        }
+    });
+};
+
+
+let executeAutomationRoutine = function(serialOrName, routine, callback) {
+    return this.sendSequenceCommand(serialOrName, routine, callback);
+};
+
+
+
+
+let setReminder = function(message, datetime, device, config, callback) {
+    let now = new Date();
+    let createdDate = now.getTime();
+    let addSeconds = new Date(createdDate + 1 * 60000); // one minute afer the current time
+    let alarmTime = addSeconds.getTime();
+    if (datetime) {
+        let datetimeDate = new Date(dateFormat(datetime));
+        alarmTime = datetimeDate.getTime();
+    }
+    let originalTime = dateFormat(alarmTime, 'HH:MM:00.000');
+    let originalDate = dateFormat(alarmTime, 'yyyy-mm-dd');
+    request({
+        method: 'PUT',
+        url: alexaUrl + '/api/notifications/createReminder',
+        headers: {
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        },
+        json: {
+            type: 'Reminder',
+            status: 'ON',
+            alarmTime: alarmTime,
+            originalTime: originalTime,
+            originalDate: originalDate,
+            timeZoneId: null,
+            reminderIndex: null,
+            sound: null,
+            deviceSerialNumber: device.deviceSerialNumber,
+            deviceType: device.deviceType,
+            recurringPattern: '',
+            reminderLabel: message,
+            isSaveInFlight: true,
+            id: 'createReminder',
+            isRecurring: false,
+            createdDate: createdDate
+        }
+    }, function(error, response) {
+        if (!error && response.statusCode === 200) {
+            callback(null, {
+                "status": "success"
+            });
+        } else {
+            callback(error, {
+                "status": "failure"
+            });
+        }
+    });
+};
+
+let executeCommand = function(_cmdOpts, callback) {
+    // console.log('Method: ' + _cmdOpts.method);
+    // console.log('URL:' + _cmdOpts.url);
+    // console.log('Query: ', _cmdOpts.qs);
+    // console.log('Body: ', _cmdOpts.json);
+    request(_cmdOpts, function(error, response, body) {
+        // console.log('body:', body);
+        console.log('executeCommand Status: (' + response.statusCode + ')');
+        if (!error && response.statusCode === 200) {
+            callback(null, {
+                "statusCode": response.statusCode,
+                "deviceId": _cmdOpts.deviceId,
+                "message": "success",
+                "queueKey": _cmdOpts.queueKey,
+                "msgDelay": _cmdOpts.msgDelay
+            });
+        } else {
+            // console.log('error: ', error.message);
+            callback(error, {
+                "statusCode": response.statusCode,
+                "deviceId": _cmdOpts.deviceId,
+                "message": body.message || null,
+                "queueKey": _cmdOpts.queueKey,
+                "msgDelay": _cmdOpts.msgDelay
+            });
+        }
+    });
+};
+
+let setMedia = function(command, device, config, callback) {
+    request({
+        method: 'POST',
+        url: alexaUrl + '/api/np/command?deviceSerialNumber=' +
+            device.deviceSerialNumber + '&deviceType=' + device.deviceType,
+        headers: {
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        },
+        json: command
+    }, function(error, response) {
+        if (!error && response.statusCode === 200) {
+            callback(null, {
+                "status": "success"
+            });
+        } else {
+            callback(error, response);
+        }
+    });
+};
+
+let getDevices = function(config, callback) {
+    // console.log('config: ', JSON.stringify(config));
+    request({
+        method: 'GET',
+        url: alexaUrl + '/api/devices-v2/device',
+        headers: {
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        }
+    }, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            try {
+                // console.log('getDevices Body: ', body);
+                config.devicesArray = JSON.parse(body);
+            } catch (e) {
+                logger.error('getDevices Error: ' + e.message);
+                config.devicesArray = [];
+            }
+            callback(null, config.devicesArray);
+        } else {
+            if (response && response.statusCode !== undefined) {
+                // console.log('getDevices status: ', response || "", 'Code: (' + response.statusCode || 'error' + ')');
+            }
+            callback(error, response);
+        }
+    });
+};
+
+let getState = function(device, _config, callback) {
+    request({
+        method: 'GET',
+        url: alexaUrl + '/api/np/player?deviceSerialNumber=' + device.serialNumber + '&deviceType=' + device.deviceType + '&screenWidth=2560',
+        headers: {
+            'Cookie': _config.cookies,
+            'csrf': _config.csrf
+        }
+    }, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            callback(null, JSON.parse(body));
+        } else {
+            callback(error, response);
+        }
+    });
+};
+
+let getDndStatus = function(_config, callback) {
+    request({
+        method: 'GET',
+        url: alexaUrl + '/api/dnd/device-status-list',
+        headers: {
+            'Cookie': _config.cookies,
+            'csrf': _config.csrf
+        }
+    }, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            let items = [];
+            try {
+                let res = JSON.parse(body);
+                if (Object.keys(res).length) {
+                    if (res.doNotDisturbDeviceStatusList.length) {
+                        items = res.doNotDisturbDeviceStatusList;
+                    }
+                }
+            } catch (e) {
+                logger.error('getDevices Error: ' + e.message);
+            }
+            callback(null, items);
+        } else {
+            callback(error, response);
+        }
+    });
+};
+
+let getNotifications = function(_config, callback) {
+    request({
+        method: 'GET',
+        url: alexaUrl + '/api/notifications',
+        headers: {
+            'Cookie': _config.cookies,
+            'csrf': _config.csrf
+        }
+    }, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            let items = [];
+            try {
+                let res = JSON.parse(body);
+                if (Object.keys(res).length) {
+                    if (res.notifications.length) {
+                        items = res.notifications;
+                    }
+                }
+            } catch (e) {
+                logger.error('getNotifications Error: ' + e.message);
+            }
+            callback(null, items);
+        } else {
+            callback(error, response);
+        }
+    });
+};
+
+let getPlaylists = function(device, _config, callback) {
+    request({
+        method: 'GET',
+        url: alexaUrl + '/api/cloudplayer/playlists?deviceSerialNumber=' + device.serialNumber + '&deviceType=' + device.deviceType + '&mediaOwnerCustomerId=' + device.deviceOwnerCustomerId + '&screenWidth=2560',
+        headers: {
+            'Cookie': _config.cookies,
+            'csrf': _config.csrf
+        }
+    }, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            callback(null, JSON.parse(body));
+        } else {
+            callback(error, response);
+        }
+    });
+};
+
+let getWakeWords = function(_config, callback) {
+    request({
+        method: 'GET',
+        url: alexaUrl + '/api/wake-word',
+        headers: {
+            'Cookie': _config.cookies,
+            'csrf': _config.csrf
+        }
+    }, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            callback(null, JSON.parse(body));
+        } else {
+            callback(error, response);
+        }
+    });
+};
+
+function getList(device, listType, options, config, callback) {
+    if (typeof options === 'function') {
+        callback = options;
+        options = {};
+    }
+    request({
+        method: 'GET',
+        url: `${alexaUrl}/api/todos?size=${options.size || 100}
+            &startTime=${options.startTime || ''}
+            &endTime=${options.endTime || ''}
+            &completed=${options.completed || false}
+            &type=${listType}
+            &deviceSerialNumber=${device.deviceSerialNumber}
+            &deviceType=${device.deviceType}
+            &_=%t`,
+        headers: {
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        }
+    }, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            callback(null, JSON.parse(body));
+        } else {
+            callback(error, response);
+        }
+    });
+}
+
+let getLists = function(device, options, config, callback) {
+    getList(device, 'TASK', options, config, function(err, res) {
+        let ret = {};
+        if (!err && res) {
+            ret.tasks = res;
+        }
+        getList(device, 'SHOPPING_ITEM', options, config, function(err, res) {
+            ret.shoppingItems = res;
+            callback && callback(null, ret);
+        });
+    });
+};
+
+let getAccount = function(config, callback) {
+    request({
+        method: 'GET',
+        url: `https://alexa-comms-mobile-service.${config.amazonDomain}/accounts`,
+        headers: {
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        }
+    }, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            callback(null, JSON.parse(body));
+        } else {
+            callback(error, response);
+        }
+    });
+};
+
+let getBluetoothDevices = function(config, callback) {
+    request({
+        method: 'GET',
+        url: alexaUrl + '/api/bluetooth?cached=false',
+        headers: {
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        }
+    }, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            callback(null, JSON.parse(body));
+        } else {
+            callback(error, response);
+        }
+    });
+};
+
+let setBluetoothDevice = function(mac, device, config, callback) {
+    request({
+        method: 'POST',
+        url: alexaUrl + '/api/bluetooth/pair-sink/' + device.deviceType + '/' + device.deviceSerialNumber,
+        headers: {
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        },
+        json: {
+            bluetoothDeviceAddress: mac
+        }
+    }, function(error, response) {
+        if (!error && response.statusCode === 200) {
+            callback(null, {
+                "message": "success"
+            });
+        } else {
+            callback(error, response);
+        }
+    });
+};
+
+let disconnectBluetoothDevice = function(device, config, callback) {
+    request({
+        method: 'POST',
+        url: alexaUrl + '/api/bluetooth/disconnect-sink/' + device.deviceType + '/' + device.deviceSerialNumber,
+        headers: {
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        },
+    }, function(error, response) {
+        if (!error && response.statusCode === 200) {
+            callback(null, {
+                "message": "success"
+            });
+        } else {
+            callback(error, response);
+        }
+    });
+};
+
+let getMusicProviders = function(config, callback) {
+    request({
+        method: 'GET',
+        url: `${alexaUrl}/api/behaviors/entities?skillId=amzn1.ask.1p.music`,
+        headers: {
+            'Routines-Version': '1.1.210292',
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        },
+        json: true
+    }, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            callback(null, JSON.parse(JSON.stringify(body)));
+        } else {
+            callback(error, response);
+        }
+    });
+};
+
+let playMusicProvider = function(options, config, callback) {
+    if (options.searchPhrase === '') return callback && callback(new Error('Searchphrase empty', null));
+    const validateObj = {
+        'type': 'Alexa.Music.PlaySearchPhrase',
+        'operationPayload': JSON.stringify({
+            'deviceType': options.deviceType,
+            'deviceSerialNumber': options.deviceSerialNumber,
+            'locale': options.locale,
+            'customerId': options.deviceOwnerCustomerId,
+            'musicProviderId': options.providerId,
+            'searchPhrase': options.searchPhrase
+        })
+    };
+    request({
+        method: 'POST',
+        url: `${alexaUrl}/api/behaviors/operation/validate`,
+        headers: {
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        },
+        json: validateObj
+    }, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            if (body.result !== 'VALID') {
+                callback(new Error('Request invalid'), response);
+            }
+            validateObj.operationPayload = body.operationPayload;
+
+            const seqCommandObj = {
+                '@type': 'com.amazon.alexa.behaviors.model.Sequence',
+                'startNode': validateObj
+            };
+            seqCommandObj.startNode['@type'] = 'com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode';
+
+            sendSequenceCommand(options, seqCommandObj, undefined, config, function(error, response) {
+                callback(null, response);
+            });
+        } else {
+            callback(error, response);
+        }
+    });
+};
+
+let sendSequenceCommand = function(device, command, value, config, callback) {
+    let seqCommandObj;
+    if (typeof command === 'object') {
+        seqCommandObj = command.sequence || command;
+    } else {
+        seqCommandObj = {
+            '@type': 'com.amazon.alexa.behaviors.model.Sequence',
+            'startNode': createSequenceNode(device, command, value)
+        };
+    }
+
+    const reqObj = {
+        'behaviorId': seqCommandObj.sequenceId ? command.automationId : 'PREVIEW',
+        'sequenceJson': JSON.stringify(seqCommandObj),
+        'status': 'ENABLED'
+    };
+    request({
+        method: 'POST',
+        url: alexaUrl + '/api/behaviors/preview',
+        headers: {
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        },
+        json: reqObj
+    }, function(error, response) {
+        if (!error && response.statusCode === 200) {
+            callback(null, {
+                "message": response
+            });
+        } else {
+            callback(error, response);
+        }
+    });
+};
+
+let sequenceJsonBuilder = function(serial, devType, custId, cmdKey, cmdVal) {
+    let device = {
+        deviceSerialNumber: serial,
+        deviceType: devType,
+        deviceOwnerCustomerId: custId,
+        locale: 'en-US'
+    };
+    const reqObj = {
+        'behaviorId': 'PREVIEW',
+        'sequenceJson': JSON.stringify({
+            '@type': 'com.amazon.alexa.behaviors.model.Sequence',
+            'startNode': createSequenceNode(device, cmdKey, cmdVal)
+        }),
+        'status': 'ENABLED'
+    };
+    return reqObj;
+};
+
+
+let createSequenceNode = function(device, command, value, callback) {
     const seqNode = {
         '@type': 'com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode',
         'operationPayload': {
@@ -221,6 +733,9 @@ let createSequenceNode = function(device, command, value, callback) {
             break;
         case 'tellstory':
             seqNode.type = 'Alexa.TellStory.Play';
+            break;
+        case 'playsearch':
+            seqNode.type = 'Alexa.Music.PlaySearchPhrase';
             break;
         case 'volume':
             seqNode.type = 'Alexa.DeviceControls.Volume';
@@ -299,459 +814,6 @@ let createSequenceNode = function(device, command, value, callback) {
 //     sendSequenceCommand(serialOrName, sequenceObj, callback);
 // };
 
-// let sendSequenceCommand = function(device, command, value, config, callback) {
-//     let seqCommandObj = {
-//         '@type': 'com.amazon.alexa.behaviors.model.Sequence',
-//         'startNode': this.createSequenceNode(command, value)
-//     };
-//     const reqObj = {
-//         'behaviorId': seqCommandObj.sequenceId ? command.automationId : 'PREVIEW',
-//         'sequenceJson': JSON.stringify(seqCommandObj),
-//         'status': 'ENABLED'
-//     };
-//     reqObj.sequenceJson = reqObj.sequenceJson.replace(/"deviceType":"ALEXA_CURRENT_DEVICE_TYPE"/g, `"deviceType":"${device.deviceType}"`);
-//     reqObj.sequenceJson = reqObj.sequenceJson.replace(/"deviceSerialNumber":"ALEXA_CURRENT_DSN"/g, `"deviceSerialNumber":"${device.deviceSerialNumber}"`);
-//     reqObj.sequenceJson = reqObj.sequenceJson.replace(/"customerId":"ALEXA_CUSTOMER_ID"/g, `"customerId":"${device.deviceOwnerCustomerId}"`);
-//     reqObj.sequenceJson = reqObj.sequenceJson.replace(/"locale":"ALEXA_CURRENT_LOCALE"/g, `"locale":"de-DE"`);
-//     request({
-//         method: 'POST',
-//         url: alexaUrl + '/api/behaviors/preview',
-//         headers: {
-//             'Cookie': config.cookies,
-//             'csrf': config.csrf
-//         },
-//         json: reqObj
-//     }, function(error, response) {
-//         if (!error && response.statusCode === 200) {
-//             callback(null, {
-//                 "message": "success"
-//             });
-//         } else {
-//             callback(error, response);
-//         }
-//     });
-// };
-
-function getDevicePreferences(_config, callback) {
-    return new Promise(resolve => {
-        reqPromise({
-                method: 'GET',
-                uri: '/api/device-preferences?cached=true&_=%t',
-                headers: {
-                    'Cookie': _config.cookies,
-                    'csrf': _config.csrf
-                },
-                json: true
-            })
-            .then(function(resp) {
-                // console.log('checkAuthentication resp: ', resp);
-                if (resp !== undefined) {
-                    return resolve(resp);
-                }
-                resolve(undefined);
-            })
-            .catch(function(err) {
-                logger.error("ERROR: Unable to get device preferences: " + err.message);
-                resolve(undefined);
-            });
-    });
-
-}
-
-let getAutomationRoutines = function(limit, callback) {
-    if (typeof limit === 'function') {
-        callback = limit;
-        limit = 0;
-    }
-    limit = limit || 2000;
-    httpsGet(`/api/behaviors/automations?limit=${limit}`, callback);
-};
-
-
-let executeAutomationRoutine = function(serialOrName, routine, callback) {
-    return this.sendSequenceCommand(serialOrName, routine, callback);
-};
-
-let getMusicProviders = function(callback) {
-    this.httpsGet('/api/behaviors/entities?skillId=amzn1.ask.1p.music',
-        callback, {
-            headers: {
-                'Routines-Version': '1.1.210292'
-            }
-        }
-    );
-};
-
-let playMusicProvider = function(serialOrName, providerId, searchPhrase, callback) {
-    let dev = this.find(serialOrName);
-    if (!dev) return callback && callback(new Error('Unknown Device or Serial number', null));
-    if (searchPhrase === '') return callback && callback(new Error('Searchphrase empty', null));
-
-    const operationPayload = {
-        'deviceType': dev.deviceType,
-        'deviceSerialNumber': dev.serialNumber,
-        'locale': 'de-DE', // TODO!!
-        'customerId': dev.deviceOwnerCustomerId,
-        'musicProviderId': providerId,
-        'searchPhrase': searchPhrase
-    };
-
-    const validateObj = {
-        'type': 'Alexa.Music.PlaySearchPhrase',
-        'operationPayload': JSON.stringify(operationPayload)
-    };
-
-    httpsGet(`/api/behaviors/operation/validate`,
-        (err, res) => {
-            if (err) {
-                return callback && callback(err, res);
-            }
-            if (res.result !== 'VALID') {
-                return callback && callback(new Error('Request invalid'), res);
-            }
-            validateObj.operationPayload = res.operationPayload;
-
-            const seqCommandObj = {
-                '@type': 'com.amazon.alexa.behaviors.model.Sequence',
-                'startNode': validateObj
-            };
-            seqCommandObj.startNode['@type'] = 'com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode';
-
-            return sendSequenceCommand(serialOrName, seqCommandObj, callback);
-        }, {
-            method: 'POST',
-            data: JSON.stringify(validateObj)
-        }
-    );
-};
-
-
-var setReminder = function(message, datetime, deviceSerialNumber, config, callback) {
-    var now = new Date();
-    var createdDate = now.getTime();
-    var addSeconds = new Date(createdDate + 1 * 60000); // one minute afer the current time
-    var alarmTime = addSeconds.getTime();
-    if (datetime) {
-        var datetimeDate = new Date(dateFormat(datetime));
-        alarmTime = datetimeDate.getTime();
-    }
-    var originalTime = dateFormat(alarmTime, 'HH:MM:00.000');
-    var originalDate = dateFormat(alarmTime, 'yyyy-mm-dd');
-    var device = {};
-    config.devicesArray.devices.forEach(function(dev) {
-        if (dev.serialNumber === deviceSerialNumber) {
-            device.deviceSerialNumber = dev.serialNumber;
-            device.deviceType = dev.deviceType;
-            device.deviceOwnerCustomerId = dev.deviceOwnerCustomerId;
-        }
-    });
-
-    request({
-        method: 'PUT',
-        url: alexaUrl + '/api/notifications/createReminder',
-        headers: {
-            'Cookie': config.cookies,
-            'csrf': config.csrf
-        },
-        json: {
-            type: 'Reminder',
-            status: 'ON',
-            alarmTime: alarmTime,
-            originalTime: originalTime,
-            originalDate: originalDate,
-            timeZoneId: null,
-            reminderIndex: null,
-            sound: null,
-            deviceSerialNumber: device.deviceSerialNumber,
-            deviceType: device.deviceType,
-            recurringPattern: '',
-            reminderLabel: message,
-            isSaveInFlight: true,
-            id: 'createReminder',
-            isRecurring: false,
-            createdDate: createdDate
-        }
-    }, function(error, response) {
-        if (!error && response.statusCode === 200) {
-            callback(null, {
-                "status": "success"
-            });
-        } else {
-            callback(error, {
-                "status": "failure"
-            });
-        }
-    });
-};
-
-var executeCommand = function(_cmdOpts, callback) {
-    // console.log('Method: ' + _cmdOpts.method);
-    // console.log('URL:' + _cmdOpts.url);
-    // console.log('Query: ', _cmdOpts.qs);
-    // console.log('Body: ', _cmdOpts.json);
-    request(_cmdOpts, function(error, response, body) {
-        // console.log('body:', body);
-        console.log('executeCommand Status: (' + response.statusCode + ')');
-        if (!error && response.statusCode === 200) {
-            callback(null, {
-                "statusCode": response.statusCode,
-                "deviceId": _cmdOpts.deviceId,
-                "message": "success",
-                "queueKey": _cmdOpts.queueKey,
-                "msgDelay": _cmdOpts.msgDelay
-            });
-        } else {
-            // console.log('error: ', error.message);
-            callback(error, {
-                "statusCode": response.statusCode,
-                "deviceId": _cmdOpts.deviceId,
-                "message": body.message || null,
-                "queueKey": _cmdOpts.queueKey,
-                "msgDelay": _cmdOpts.msgDelay
-            });
-        }
-    });
-};
-
-var setMedia = function(command, deviceSerialNumber, config, callback) {
-    var device = {};
-    config.devicesArray.devices.forEach(function(dev) {
-        if (dev.serialNumber === deviceSerialNumber) {
-            device.deviceSerialNumber = dev.serialNumber;
-            device.deviceType = dev.deviceType;
-            device.deviceOwnerCustomerId = dev.deviceOwnerCustomerId;
-        }
-    });
-    request({
-        method: 'POST',
-        url: alexaUrl + '/api/np/command?deviceSerialNumber=' +
-            device.deviceSerialNumber + '&deviceType=' + device.deviceType,
-        headers: {
-            'Cookie': config.cookies,
-            'csrf': config.csrf
-        },
-        json: command
-    }, function(error, response) {
-        if (!error && response.statusCode === 200) {
-            callback(null, {
-                "status": "success"
-            });
-        } else {
-            callback(error, response);
-        }
-    });
-};
-
-var getDevices = function(config, callback) {
-    // console.log('config: ', JSON.stringify(config));
-    request({
-        method: 'GET',
-        url: alexaUrl + '/api/devices-v2/device',
-        headers: {
-            'Cookie': config.cookies,
-            'csrf': config.csrf
-        }
-    }, function(error, response, body) {
-        if (!error && response.statusCode === 200) {
-            try {
-                // console.log('getDevices Body: ', body);
-                config.devicesArray = JSON.parse(body);
-            } catch (e) {
-                logger.error('getDevices Error: ' + e.message);
-                config.devicesArray = [];
-            }
-            callback(null, config.devicesArray);
-        } else {
-            if (response && response.statusCode !== undefined) {
-                // console.log('getDevices status: ', response || "", 'Code: (' + response.statusCode || 'error' + ')');
-            }
-            callback(error, response);
-        }
-    });
-};
-
-var getState = function(device, _config, callback) {
-    request({
-        method: 'GET',
-        url: alexaUrl + '/api/np/player?deviceSerialNumber=' + device.serialNumber + '&deviceType=' + device.deviceType + '&screenWidth=2560',
-        headers: {
-            'Cookie': _config.cookies,
-            'csrf': _config.csrf
-        }
-    }, function(error, response, body) {
-        if (!error && response.statusCode === 200) {
-            callback(null, JSON.parse(body));
-        } else {
-            callback(error, response);
-        }
-    });
-};
-
-var getDndStatus = function(_config, callback) {
-    request({
-        method: 'GET',
-        url: alexaUrl + '/api/dnd/device-status-list',
-        headers: {
-            'Cookie': _config.cookies,
-            'csrf': _config.csrf
-        }
-    }, function(error, response, body) {
-        if (!error && response.statusCode === 200) {
-            let items = [];
-            try {
-                let res = JSON.parse(body);
-                if (Object.keys(res).length) {
-                    if (res.doNotDisturbDeviceStatusList.length) {
-                        items = res.doNotDisturbDeviceStatusList;
-                    }
-                }
-            } catch (e) {
-                logger.error('getDevices Error: ' + e.message);
-            }
-            callback(null, items);
-        } else {
-            callback(error, response);
-        }
-    });
-};
-
-var getNotifications = function(_config, callback) {
-    request({
-        method: 'GET',
-        url: alexaUrl + '/api/notifications',
-        headers: {
-            'Cookie': _config.cookies,
-            'csrf': _config.csrf
-        }
-    }, function(error, response, body) {
-        if (!error && response.statusCode === 200) {
-            let items = [];
-            try {
-                let res = JSON.parse(body);
-                if (Object.keys(res).length) {
-                    if (res.notifications.length) {
-                        items = res.notifications;
-                    }
-                }
-            } catch (e) {
-                logger.error('getNotifications Error: ' + e.message);
-            }
-            callback(null, items);
-        } else {
-            callback(error, response);
-        }
-    });
-};
-
-var getPlaylists = function(device, _config, callback) {
-    request({
-        method: 'GET',
-        url: alexaUrl + '/api/cloudplayer/playlists?deviceSerialNumber=' + device.serialNumber + '&deviceType=' + device.deviceType + '&mediaOwnerCustomerId=' + device.deviceOwnerCustomerId + '&screenWidth=2560',
-        headers: {
-            'Cookie': _config.cookies,
-            'csrf': _config.csrf
-        }
-    }, function(error, response, body) {
-        if (!error && response.statusCode === 200) {
-            callback(null, JSON.parse(body));
-        } else {
-            callback(error, response);
-        }
-    });
-};
-
-var getWakeWords = function(_config, callback) {
-    request({
-        method: 'GET',
-        url: alexaUrl + '/api/wake-word',
-        headers: {
-            'Cookie': _config.cookies,
-            'csrf': _config.csrf
-        }
-    }, function(error, response, body) {
-        if (!error && response.statusCode === 200) {
-            callback(null, JSON.parse(body));
-        } else {
-            callback(error, response);
-        }
-    });
-};
-
-
-var getBluetoothDevices = function(config, callback) {
-    request({
-        method: 'GET',
-        url: alexaUrl + '/api/bluetooth?cached=false',
-        headers: {
-            'Cookie': config.cookies,
-            'csrf': config.csrf
-        }
-    }, function(error, response, body) {
-        if (!error && response.statusCode === 200) {
-            callback(null, JSON.parse(body));
-        } else {
-            callback(error, response);
-        }
-    });
-};
-
-var setBluetoothDevice = function(mac, deviceSerialNumber, config, callback) {
-    var device = {};
-    config.devicesArray.devices.forEach(function(dev) {
-        if (dev.serialNumber === deviceSerialNumber) {
-            device.deviceSerialNumber = dev.serialNumber;
-            device.deviceType = dev.deviceType;
-            device.deviceOwnerCustomerId = dev.deviceOwnerCustomerId;
-        }
-    });
-    request({
-        method: 'POST',
-        url: alexaUrl + '/api/bluetooth/pair-sink/' + device.deviceType + '/' + device.deviceSerialNumber,
-        headers: {
-            'Cookie': config.cookies,
-            'csrf': config.csrf
-        },
-        json: {
-            bluetoothDeviceAddress: mac
-        }
-    }, function(error, response) {
-        if (!error && response.statusCode === 200) {
-            callback(null, {
-                "message": "success"
-            });
-        } else {
-            callback(error, response);
-        }
-    });
-};
-
-var disconnectBluetoothDevice = function(deviceSerialNumber, config, callback) {
-    var device = {};
-    config.devicesArray.devices.forEach(function(dev) {
-        if (dev.serialNumber === deviceSerialNumber) {
-            device.deviceSerialNumber = dev.serialNumber;
-            device.deviceType = dev.deviceType;
-            device.deviceOwnerCustomerId = dev.deviceOwnerCustomerId;
-        }
-    });
-    request({
-        method: 'POST',
-        url: alexaUrl + '/api/bluetooth/disconnect-sink/' + device.deviceType + '/' + device.deviceSerialNumber,
-        headers: {
-            'Cookie': config.cookies,
-            'csrf': config.csrf
-        },
-    }, function(error, response) {
-        if (!error && response.statusCode === 200) {
-            callback(null, {
-                "message": "success"
-            });
-        } else {
-            callback(error, response);
-        }
-    });
-};
-
 exports.alexaLogin = alexaLogin;
 exports.clearSession = clearSession;
 exports.setReminder = setReminder;
@@ -761,6 +823,7 @@ exports.getWakeWords = getWakeWords;
 exports.getState = getState;
 exports.getDndStatus = getDndStatus;
 exports.getPlaylists = getPlaylists;
+exports.getLists = getLists;
 exports.getNotifications = getNotifications;
 exports.executeCommand = executeCommand;
 exports.getDevicePreferences = getDevicePreferences;
@@ -768,6 +831,8 @@ exports.getBluetoothDevices = getBluetoothDevices;
 exports.setBluetoothDevice = setBluetoothDevice;
 exports.disconnectBluetoothDevice = disconnectBluetoothDevice;
 exports.checkAuthentication = checkAuthentication;
+exports.getAccount = getAccount;
+exports.sequenceJsonBuilder = sequenceJsonBuilder;
 exports.createSequenceNode = createSequenceNode;
 // exports.sendSequenceCommand = sendSequenceCommand;
 // exports.sendMultiSequenceCommand = sendMultiSequenceCommand;

@@ -235,7 +235,21 @@ function startWebServer(checkForCookie = false) {
                 .then(function(devOk) {
                     logger.silly('Echo Speaks Alexa API is Actively Running at (IP: ' + getIPAddress() + ' | Port: ' + configData.settings.serverPort + ') | ProcessId: ' + process.pid);
 
-                    webApp.post('/alexa-getDevices', urlencodedParser, function(req, res) {
+                    webApp.get('/heartbeat', urlencodedParser, function(req, res) {
+                        logger.verbose('++ Received a heartbeat Request... ++');
+                        res.send({
+                            result: "i am alive"
+                        });
+                    });
+
+                    webApp.get('/checkAuth', urlencodedParser, function(req, res) {
+                        console.log('received checkAuth request');
+                        alexa_api.checkAuthentication(savedConfig, function(error, response) {
+                            res.send(response);
+                        });
+                    });
+
+                    webApp.get('/getDevices', urlencodedParser, function(req, res) {
                         logger.verbose('++ Received a getDevices Request... ++');
                         alexa_api.getDevices(savedConfig, function(error, response) {
                             buildEchoDeviceMap(response.devices)
@@ -248,29 +262,42 @@ function startWebServer(checkForCookie = false) {
                         });
                     });
 
-                    webApp.get('/alexa-devices', urlencodedParser, function(req, res) {
-                        logger.verbose('++ Received a alexa-devices Request... ++');
-                        alexa_api.getDevices(savedConfig, function(error, response) {
-                            buildEchoDeviceMap(response.devices)
-                                .then(function(devOk) {
-                                    res.send(echoDevices);
-                                })
-                                .catch(function(err) {
-                                    res.send(null);
-                                });
+                    webApp.get('/musicProviders', urlencodedParser, function(req, res) {
+                        console.log('received musicProviders request');
+                        alexa_api.getMusicProviders(savedConfig, function(error, response) {
+                            res.send(response);
                         });
                     });
 
-                    webApp.get('/alexa-testDevices', urlencodedParser, function(req, res) {
-                        console.log('++ Received a testDevices Request... ++');
-                        let ttsMsg = 'Yay!!!!,  This device is Successfully receiving tts messages.';
-                        for (const echo in echoDevices) {
-                            console.log(echoDevices[echo]);
-                            alexa_api.setTTS(ttsMsg, echoDevices[echo].serialNumber, savedConfig, function(error, response) {
-                                console.log('sent testmsg to ' + echoDevices[echo].serialNumber);
-                            });
-                        }
-                        res.send('done');
+                    webApp.get('/devicePreferences', urlencodedParser, function(req, res) {
+                        console.log('received devicePreferences request');
+                        alexa_api.getDevicePreferences(false, savedConfig, function(error, response) {
+                            res.send(response);
+                        });
+                    });
+
+                    webApp.get('/alexaRoutines', urlencodedParser, function(req, res) {
+                        console.log('received alexaRoutines request');
+                        alexa_api.getAutomationRoutines(undefined, savedConfig, function(error, response) {
+                            res.send(response);
+                        });
+                    });
+
+                    webApp.get('/getAccount', urlencodedParser, function(req, res) {
+                        console.log('received getAccount request');
+                        alexa_api.getAccount(savedConfig, function(error, response) {
+                            res.send(response);
+                        });
+                    });
+
+                    webApp.get('/getDeviceLists', urlencodedParser, function(req, res) {
+                        let serialNumber = req.headers.deviceserialnumber;
+                        let deviceType = req.headers.devicetype;
+                        let listOpts = req.headers.listOption || {};
+                        console.log('received getDeviceLists request');
+                        alexa_api.getLists({ deviceSerialNumber: serialNumber, deviceType: deviceType }, listOpts, savedConfig, function(error, response) {
+                            res.send(response);
+                        });
                     });
 
                     webApp.post('/alexa-command', urlencodedParser, function(req, res) {
@@ -305,14 +332,14 @@ function startWebServer(checkForCookie = false) {
                             case 'SendTTS':
                                 cmdOpts.method = 'POST';
                                 cmdOpts.url = alexaUrl + '/api/behaviors/preview';
-                                cmdOpts.json = sequenceJsonBuilder(serialNumber, deviceType, deviceOwnerCustomerId, "speak", message);
+                                cmdOpts.json = alexa_api.sequenceJsonBuilder(serialNumber, deviceType, deviceOwnerCustomerId, "speak", message);
                                 break;
                             case 'ExecuteSequence':
                                 let seqCmdKey = req.headers.seqcmdkey || undefined;
                                 let seqCmdVal = req.headers.seqcmdval || undefined;
                                 cmdOpts.method = 'POST';
                                 cmdOpts.url = alexaUrl + '/api/behaviors/preview';
-                                cmdOpts.json = sequenceJsonBuilder(serialNumber, deviceType, deviceOwnerCustomerId, seqCmdKey, seqCmdVal);
+                                cmdOpts.json = alexa_api.sequenceJsonBuilder(serialNumber, deviceType, deviceOwnerCustomerId, seqCmdKey, seqCmdVal);
                                 break;
                             default:
                                 cmdOpts.method = 'POST';
@@ -341,45 +368,31 @@ function startWebServer(checkForCookie = false) {
                         }
                     });
 
-                    // webApp.post('/alexa-getState', urlencodedParser, function(req, res) {
-                    //     let hubAct = (req.headers.deviceserialnumber != undefined);
-                    //     let deviceSerialNumber = req.body.deviceSerialNumber || req.headers.echodeviceid;
-                    //     console.log('++ Received a Device State Request for Device: ' + deviceSerialNumber + (hubAct ? ' | Source: (ST HubAction)' : '') + ' ++');
-                    //     alexa_api.getState(deviceSerialNumber, savedConfig, function(error, response) {
-                    //         res.send(response);
-                    //     });
-                    // });
-
-                    // webApp.post('/alexa-getActivities', urlencodedParser, function(req, res) {
-                    //     logger.verbose('got request for getActivities');
-                    //     alexa_api.getActivities(savedConfig, function(error, response) {
-                    //         res.send(response);
-                    //     });
-                    // });
-
-                    // webApp.post('/alexa-setBluetooth', urlencodedParser, function(req, res) {
-                    //     var mac = req.body.mac;
-                    //     var deviceSerialNumber = req.body.deviceSerialNumber;
-                    //     console.log('got set bluetooth  message with mac: ' + mac + ' for device: ' + deviceSerialNumber);
-                    //     alexa_api.setBluetoothDevice(mac, deviceSerialNumber, savedConfig, function(error, response) {
-                    //         res.send(response);
-                    //     });
-                    // });
-
-                    // webApp.post('/alexa-getBluetooth', urlencodedParser, function(req, res) {
-                    //     console.log('got get bluetootha message');
-                    //     alexa_api.getBluetoothDevices(savedConfig, function(error, response) {
-                    //         res.send(response);
-                    //     });
-                    // });
-
-                    // webApp.post('/alexa-disconnectBluetooth', urlencodedParser, function(req, res) {
-                    //     var deviceSerialNumber = req.body.deviceSerialNumber;
-                    //     console.log('got set bluetooth disconnect for device: ' + deviceSerialNumber);
-                    //     alexa_api.disconnectBluetoothDevice(deviceSerialNumber, savedConfig, function(error, response) {
-                    //         res.send(response);
-                    //     });
-                    // });
+                    webApp.post('/musicSearch', urlencodedParser, function(req, res) {
+                        // console.log('command headers: ', req.headers);
+                        let hubAct = (req.headers.deviceserialnumber !== undefined && !configData.settings.useHeroku);
+                        let serialNumber = req.headers.deviceserialnumber;
+                        let deviceType = req.headers.devicetype;
+                        let deviceOwnerCustomerId = req.headers.deviceownercustomerid;
+                        let searchPhrase = req.headers.searchphrase || undefined;
+                        let providerId = req.headers.providerid || undefined;
+                        let options = {
+                            deviceSerialNumber: serialNumber,
+                            deviceType: deviceType,
+                            deviceOwnerCustomerId: deviceOwnerCustomerId,
+                            locale: 'en-US',
+                            searchPhrase: searchPhrase,
+                            providerId: providerId
+                        };
+                        if (serialNumber) {
+                            logger.debug('++ Received an Music Search Play Request for Device: ' + serialNumber + ' | Search Phrase: ' + searchPhrase + ' | MusicProviderId: ' + providerId + (hubAct && !configData.settings.useHeroku ? ' | Source: (ST HubAction)' : (configData.settings.useHeroku ? ' | Source: (ST C2C)' : '')) + ' ++');
+                            alexa_api.playMusicProvider(options, savedConfig, (error, response) => {
+                                res.send(response);
+                            });
+                        } else {
+                            res.send('failed');
+                        }
+                    });
 
                     //Returns Status of Service
                     webApp.post('/sendStatusUpdate', urlencodedParser, function(req, res) {
@@ -406,11 +419,6 @@ function startWebServer(checkForCookie = false) {
                         configFile.save();
                     });
 
-                    webApp.get('/heartbeat', urlencodedParser, function(req, res) {
-                        logger.verbose('++ Received a heartbeat Request... ++');
-                        res.send({ result: "i am alive" });
-                    });
-
                     sendDeviceDataToST(echoDevices);
                     logger.debug("** Device Data Refresh Scheduled for Every (" + configData.settings.refreshSeconds + ' sec) **');
                     setInterval(scheduledDataUpdates, configData.settings.refreshSeconds * 1000);
@@ -423,24 +431,6 @@ function startWebServer(checkForCookie = false) {
     });
 }
 
-let sequenceJsonBuilder = function(serial, devType, custId, cmdKey, cmdVal) {
-    let device = {
-        deviceSerialNumber: serial,
-        deviceType: devType,
-        deviceOwnerCustomerId: custId,
-        locale: 'en-US'
-    };
-    const reqObj = {
-        'behaviorId': 'PREVIEW',
-        'sequenceJson': JSON.stringify({
-            '@type': 'com.amazon.alexa.behaviors.model.Sequence',
-            'startNode': alexa_api.createSequenceNode(device, cmdKey, cmdVal)
-        }),
-        'status': 'ENABLED'
-    };
-    return reqObj;
-};
-
 async function buildEchoDeviceMap(eDevData) {
     // console.log('eDevData: ', eDevData);
     try {
@@ -448,6 +438,7 @@ async function buildEchoDeviceMap(eDevData) {
         // let notifs = await getNotificationInfo();
         let wakeWords = await getWakeWordInfo();
         let dndState = await getDeviceDndInfo();
+        let musicProvs = await getMusicProviderInfo();
         for (const dev in eDevData) {
             if (eDevData[dev].deviceFamily === 'ECHO' || eDevData[dev].deviceFamily === 'KNIGHT' || eDevData[dev].deviceFamily === 'ROOK' || eDevData[dev].deviceFamily === 'TABLET') {
                 for (const item in removeKeys) {
@@ -458,6 +449,7 @@ async function buildEchoDeviceMap(eDevData) {
                 echoDevices[eDevData[dev].serialNumber].playerState = devState;
                 let playlist = await getPlaylistInfo(eDevData[dev]);
                 echoDevices[eDevData[dev].serialNumber].playlists = playlist;
+                echoDevices[eDevData[dev].serialNumber].musicProviders = musicProvs;
                 let wakeWord = wakeWords.filter((item) => item.deviceSerialNumber === eDevData[dev].serialNumber).shift();
                 echoDevices[eDevData[dev].serialNumber].wakeWord = wakeWord ? wakeWord.wakeWord : "";
 
@@ -503,6 +495,17 @@ function getWakeWordInfo() {
     return new Promise(resolve => {
         alexa_api.getWakeWords(savedConfig, function(err, resp) {
             resolve(resp.wakeWords || []);
+        });
+    });
+}
+
+function getMusicProviderInfo() {
+    return new Promise(resolve => {
+        alexa_api.getMusicProviders(savedConfig, function(err, resp) {
+            resolve(resp ? resp.map((item) => (item.availability === 'AVAILABLE') ? {
+                displayName: item.displayName,
+                id: item.id
+            } : {}) : {});
         });
     });
 }
