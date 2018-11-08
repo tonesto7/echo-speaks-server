@@ -290,9 +290,6 @@ function startWebServer(checkForCookie = false) {
                             },
                             json: {}
                         };
-                        cmdOpts.deviceId = req.headers.deviceid || undefined;
-                        cmdOpts.queueKey = req.headers.queuekey || undefined;
-                        cmdOpts.msgDelay = req.headers.msgdelay || undefined;
 
                         switch (cmdType) {
                             case 'SetDnd':
@@ -306,14 +303,19 @@ function startWebServer(checkForCookie = false) {
                             case 'SendTTS':
                                 cmdOpts.method = 'POST';
                                 cmdOpts.url = alexaUrl + '/api/behaviors/preview';
+                                cmdOpts.deviceId = req.headers.deviceid || undefined;
+                                cmdOpts.queueKey = req.headers.queuekey || undefined;
+                                cmdOpts.msgDelay = req.headers.msgdelay || undefined;
                                 cmdOpts.json = sequenceJsonBuilder("Alexa.Speak", serialNumber, deviceType, deviceOwnerCustomerId, "textToSpeak", message);
                                 break;
                             case 'ExecuteSequence':
-                                // let seqType = req.headers.sequencetype || undefined;
                                 let seqCmdKey = req.headers.seqcmdkey || undefined;
                                 let seqCmdVal = req.headers.seqcmdval || undefined;
                                 cmdOpts.method = 'POST';
                                 cmdOpts.url = alexaUrl + '/api/behaviors/preview';
+                                cmdOpts.deviceId = req.headers.deviceid || undefined;
+                                cmdOpts.queueKey = req.headers.queuekey || undefined;
+                                cmdOpts.msgDelay = req.headers.msgdelay || undefined;
 
                                 let seqCommandObj = {
                                     '@type': 'com.amazon.alexa.behaviors.model.Sequence',
