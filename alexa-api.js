@@ -167,7 +167,7 @@ function getCookiesFromST(url) {
     });
 };
 
-let checkAuthentication = function(_config, callback) {
+let checkAuthentication = function(_config) {
     return new Promise(resolve => {
         reqPromise({
                 method: 'GET',
@@ -181,7 +181,7 @@ let checkAuthentication = function(_config, callback) {
             .then(function(resp) {
                 // console.log('checkAuthentication resp: ', resp);
                 if (resp && resp.authentication && resp.authentication.authenticated !== undefined) {
-                    return resolve(resp.authentication.authenticated);
+                    resolve(resp.authentication.authenticated);
                 }
                 resolve(false);
             })
@@ -193,6 +193,7 @@ let checkAuthentication = function(_config, callback) {
 };
 
 let createSequenceNode = function(device, command, value, callback) {
+
     const seqNode = {
         '@type': 'com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode',
         'operationPayload': {

@@ -442,14 +442,16 @@ let sequenceJsonBuilder = function(cmdType, serial, devType, custId, cmdKey, cmd
         deviceOwnerCustomerId: custId,
         locale: 'en-US'
     };
+    let seqCommandObj = {
+        '@type': 'com.amazon.alexa.behaviors.model.Sequence',
+        'startNode': alexa_api.createSequenceNode(device, cmdKey, cmdVal)
+    };
     const reqObj = {
         'behaviorId': 'PREVIEW',
-        'sequenceJson': JSON.stringify({
-            '@type': 'com.amazon.alexa.behaviors.model.Sequence',
-            'startNode': alexa_api.createSequenceNode(device, cmdKey, cmdVal)
-        }),
+        'sequenceJson': JSON.stringify(seqCommandObj),
         'status': 'ENABLED'
     };
+    console.log(reqObj);
     return reqObj;
 };
 
