@@ -309,12 +309,26 @@ function startWebServer(checkForCookie = false) {
                                 cmdOpts.json = sequenceJsonBuilder("Alexa.Speak", serialNumber, deviceType, deviceOwnerCustomerId, "textToSpeak", message);
                                 break;
                             case 'ExecuteSequence':
-                                let seqType = req.headers.sequencetype || undefined;
+                                // let seqType = req.headers.sequencetype || undefined;
                                 let seqCmdKey = req.headers.seqcmdkey || undefined;
                                 let seqCmdVal = req.headers.seqcmdval || undefined;
                                 cmdOpts.method = 'POST';
                                 cmdOpts.url = alexaUrl + '/api/behaviors/preview';
-                                cmdOpts.json = sequenceJsonBuilder(seqType, serialNumber, deviceType, deviceOwnerCustomerId, seqCmdKey, seqCmdVal);
+
+                                let seqCommandObj = {
+                                    '@type': 'com.amazon.alexa.behaviors.model.Sequence',
+                                    'startNode': this.createSequenceNode(seqCmdKey, seqCmdVal)
+                                };
+                                const reqObj = {
+                                    'behaviorId': seqCommandObj.sequenceId ? seqCommandObj.automationId : 'PREVIEW',
+                                    'sequenceJson': JSON.stringify(seqCommandObj),
+                                    'status': 'ENABLED'
+                                };
+                                reqObj.sequenceJson = reqObj.sequenceJson.replace(/"deviceType":"ALEXA_CURRENT_DEVICE_TYPE"/g, `"deviceType":"${deviceType}"`);
+                                reqObj.sequenceJson = reqObj.sequenceJson.replace(/"deviceSerialNumber":"ALEXA_CURRENT_DSN"/g, `"deviceSerialNumber":"${serialNumber}"`);
+                                reqObj.sequenceJson = reqObj.sequenceJson.replace(/"customerId":"ALEXA_CUSTOMER_ID"/g, `"customerId":"${deviceOwnerCustomerId}"`);
+                                reqObj.sequenceJson = reqObj.sequenceJson.replace(/"locale":"ALEXA_CURRENT_LOCALE"/g, `"locale":"en-US"`);
+                                cmdOpts.json = JSON.stringify(reqObj);
                                 console.log('ExecuteSequence json: ', cmdOpts.json);
                                 break;
                             default:

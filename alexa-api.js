@@ -166,17 +166,208 @@ function getCookiesFromST(url) {
     });
 };
 
-let sequenceJsonBuilder = function(cmdType, serial, devType, custId, cmdKey, cmdVal) {
-    return {
-        "behaviorId": "PREVIEW",
-        "sequenceJson": "{\"@type\":\"com.amazon.alexa.behaviors.model.Sequence\", \
-                                    \"startNode\":{\"@type\":\"com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode\", \
-                                    \"type\":\"" + cmdType + "\",\"operationPayload\":{\"deviceType\":\"" + devType + "\", \
-                                    \"deviceSerialNumber\":\"" + serial + "\",\"locale\":\"en-US\", \
-                                    \"customerId\":\"" + custId + "\", \"" + cmdKey + "\": \"" + cmdVal + "\"}}}",
-        "status": "ENABLED"
+let createSequenceNode = function(command, value, callback) {
+    const seqNode = {
+        '@type': 'com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode',
+        'operationPayload': {
+            'deviceType': 'ALEXA_CURRENT_DEVICE_TYPE',
+            'deviceSerialNumber': 'ALEXA_CURRENT_DSN',
+            'locale': 'ALEXA_CURRENT_LOCALE',
+            'customerId': 'ALEXA_CUSTOMER_ID'
+        }
     };
+    switch (command) {
+        case 'weather':
+            seqNode.type = 'Alexa.Weather.Play';
+            break;
+        case 'traffic':
+            seqNode.type = 'Alexa.Traffic.Play';
+            break;
+        case 'flashbriefing':
+            seqNode.type = 'Alexa.FlashBriefing.Play';
+            break;
+        case 'goodmorning':
+            seqNode.type = 'Alexa.GoodMorning.Play';
+            break;
+        case 'singasong':
+            seqNode.type = 'Alexa.SingASong.Play';
+            break;
+        case 'tellstory':
+            seqNode.type = 'Alexa.TellStory.Play';
+            break;
+        case 'volume':
+            seqNode.type = 'Alexa.DeviceControls.Volume';
+            value = ~~value;
+            if (value < 0 || value > 100) {
+                return callback(new Error('Volume needs to be between 0 and 100'));
+            }
+            seqNode.operationPayload.value = value;
+            break;
+        case 'speak':
+            seqNode.type = 'Alexa.Speak';
+            if (typeof value !== 'string') value = String(value);
+            // if (!this._options.amazonPage || !this._options.amazonPage.endsWith('.com')) {
+            //     value = value.replace(/([^0-9]?[0-9]+)\.([0-9]+[^0-9])?/g, '$1,$2');
+            // }
+            value = value
+                .replace(/Â|À|Å|Ã/g, 'A')
+                .replace(/á|â|à|å|ã/g, 'a')
+                .replace(/Ä/g, 'Ae')
+                .replace(/ä/g, 'ae')
+                .replace(/Ç/g, 'C')
+                .replace(/ç/g, 'c')
+                .replace(/É|Ê|È|Ë/g, 'E')
+                .replace(/é|ê|è|ë/g, 'e')
+                .replace(/Ó|Ô|Ò|Õ|Ø/g, 'O')
+                .replace(/ó|ô|ò|õ/g, 'o')
+                .replace(/Ö/g, 'Oe')
+                .replace(/ö/g, 'oe')
+                .replace(/Š/g, 'S')
+                .replace(/š/g, 's')
+                .replace(/ß/g, 'ss')
+                .replace(/Ú|Û|Ù/g, 'U')
+                .replace(/ú|û|ù/g, 'u')
+                .replace(/Ü/g, 'Ue')
+                .replace(/ü/g, 'ue')
+                .replace(/Ý|Ÿ/g, 'Y')
+                .replace(/ý|ÿ/g, 'y')
+                .replace(/Ž/g, 'Z')
+                .replace(/ž/, 'z')
+                .replace(/&/, 'und')
+                .replace(/[^-a-zA-Z0-9_,.?! ]/g, '')
+                .replace(/ /g, '_');
+            if (value.length === 0) {
+                return callback && callback(new Error('Can not speak empty string', null));
+            }
+            if (value.length > 250) {
+                return callback && callback(new Error('text too long, limit are 250 characters', null));
+            }
+            seqNode.operationPayload.textToSpeak = value;
+            break;
+        default:
+            return;
+    }
+    return seqNode;
 };
+
+let sendMultiSequenceCommand = function(serialOrName, commands, sequenceType, callback) {
+    if (typeof sequenceType === 'function') {
+        callback = sequenceType;
+        sequenceType = null;
+    }
+    if (!sequenceType) sequenceType = 'SerialNode'; // or ParallelNode
+
+    let nodes = [];
+    for (let command of commands) {
+        const commandNode = this.createSequenceNode(command.command, command.value, callback);
+        if (commandNode) nodes.push(commandNode);
+    }
+
+    const sequenceObj = {
+        'sequence': {
+            '@type': 'com.amazon.alexa.behaviors.model.Sequence',
+            'startNode': {
+                '@type': 'com.amazon.alexa.behaviors.model.' + sequenceType,
+                'name': null,
+                'nodesToExecute': nodes
+            }
+        }
+    };
+
+    sendSequenceCommand(serialOrName, sequenceObj, callback);
+};
+
+let sendSequenceCommand = function(device, command, value, callback) {
+    let seqCommandObj = {
+        '@type': 'com.amazon.alexa.behaviors.model.Sequence',
+        'startNode': this.createSequenceNode(command, value)
+    };
+
+    const reqObj = {
+        'behaviorId': seqCommandObj.sequenceId ? command.automationId : 'PREVIEW',
+        'sequenceJson': JSON.stringify(seqCommandObj),
+        'status': 'ENABLED'
+    };
+    reqObj.sequenceJson = reqObj.sequenceJson.replace(/"deviceType":"ALEXA_CURRENT_DEVICE_TYPE"/g, `"deviceType":"${dev.deviceType}"`);
+    reqObj.sequenceJson = reqObj.sequenceJson.replace(/"deviceSerialNumber":"ALEXA_CURRENT_DSN"/g, `"deviceSerialNumber":"${dev.serialNumber}"`);
+    reqObj.sequenceJson = reqObj.sequenceJson.replace(/"customerId":"ALEXA_CUSTOMER_ID"/g, `"customerId":"${dev.deviceOwnerCustomerId}"`);
+    reqObj.sequenceJson = reqObj.sequenceJson.replace(/"locale":"ALEXA_CURRENT_LOCALE"/g, `"locale":"de-DE"`);
+
+    httpsGet(`/api/behaviors/preview`,
+        callback, {
+            method: 'POST',
+            data: JSON.stringify(reqObj)
+        }
+    );
+};
+
+let getAutomationRoutines = function(limit, callback) {
+    if (typeof limit === 'function') {
+        callback = limit;
+        limit = 0;
+    }
+    limit = limit || 2000;
+    httpsGet(`/api/behaviors/automations?limit=${limit}`, callback);
+};
+
+
+let executeAutomationRoutine = function(serialOrName, routine, callback) {
+    return this.sendSequenceCommand(serialOrName, routine, callback);
+};
+
+let getMusicProviders = function(callback) {
+    this.httpsGet('/api/behaviors/entities?skillId=amzn1.ask.1p.music',
+        callback, {
+            headers: {
+                'Routines-Version': '1.1.210292'
+            }
+        }
+    );
+};
+
+let playMusicProvider = function(serialOrName, providerId, searchPhrase, callback) {
+    let dev = this.find(serialOrName);
+    if (!dev) return callback && callback(new Error('Unknown Device or Serial number', null));
+    if (searchPhrase === '') return callback && callback(new Error('Searchphrase empty', null));
+
+    const operationPayload = {
+        'deviceType': dev.deviceType,
+        'deviceSerialNumber': dev.serialNumber,
+        'locale': 'de-DE', // TODO!!
+        'customerId': dev.deviceOwnerCustomerId,
+        'musicProviderId': providerId,
+        'searchPhrase': searchPhrase
+    };
+
+    const validateObj = {
+        'type': 'Alexa.Music.PlaySearchPhrase',
+        'operationPayload': JSON.stringify(operationPayload)
+    };
+
+    httpsGet(`/api/behaviors/operation/validate`,
+        (err, res) => {
+            if (err) {
+                return callback && callback(err, res);
+            }
+            if (res.result !== 'VALID') {
+                return callback && callback(new Error('Request invalid'), res);
+            }
+            validateObj.operationPayload = res.operationPayload;
+
+            const seqCommandObj = {
+                '@type': 'com.amazon.alexa.behaviors.model.Sequence',
+                'startNode': validateObj
+            };
+            seqCommandObj.startNode['@type'] = 'com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode';
+
+            return sendSequenceCommand(serialOrName, seqCommandObj, callback);
+        }, {
+            method: 'POST',
+            data: JSON.stringify(validateObj)
+        }
+    );
+};
+
 
 var setReminder = function(message, datetime, deviceSerialNumber, config, callback) {
     var now = new Date();
@@ -518,3 +709,11 @@ exports.executeCommand = executeCommand;
 exports.getBluetoothDevices = getBluetoothDevices;
 exports.setBluetoothDevice = setBluetoothDevice;
 exports.disconnectBluetoothDevice = disconnectBluetoothDevice;
+
+exports.createSequenceNode = createSequenceNode;
+exports.sendSequenceCommand = sendSequenceCommand;
+exports.sendMultiSequenceCommand = sendMultiSequenceCommand;
+exports.getAutomationRoutines = getAutomationRoutines;
+exports.executeAutomationRoutine = executeAutomationRoutine;
+exports.playMusicProvider = playMusicProvider;
+exports.getMusicProviders = getMusicProviders;
