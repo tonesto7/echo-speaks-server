@@ -406,7 +406,8 @@ let getNotifications = function(_config, callback) {
         headers: {
             'Cookie': _config.cookies,
             'csrf': _config.csrf
-        }
+        },
+        json: true
     }, function(error, response, body) {
         if (!error && response.statusCode === 200) {
             let items = [];

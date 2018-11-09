@@ -438,7 +438,7 @@ async function buildEchoDeviceMap(eDevData) {
         let removeKeys = ['appDeviceList', 'charging', 'clusterMembers', 'essid', 'macAddress', 'parentClusters', 'deviceTypeFriendlyName', 'registrationId', 'remainingBatteryLevel', 'postalCode', 'language'];
         // let notifs = await getNotificationInfo();
         let wakeWords = await getWakeWordInfo();
-        let dndState = await getDeviceDndInfo();
+        let dndStates = await getDeviceDndInfo();
         let musicProvs = await getMusicProviderInfo();
         for (const dev in eDevData) {
             if (eDevData[dev].deviceFamily === 'ECHO' || eDevData[dev].deviceFamily === 'KNIGHT' || eDevData[dev].deviceFamily === 'ROOK' || eDevData[dev].deviceFamily === 'TABLET') {
@@ -454,13 +454,13 @@ async function buildEchoDeviceMap(eDevData) {
                 let wakeWord = wakeWords.filter((item) => item.deviceSerialNumber === eDevData[dev].serialNumber).shift();
                 echoDevices[eDevData[dev].serialNumber].wakeWord = wakeWord ? wakeWord.wakeWord : "";
 
+                let dnd = dndStates.filter((item) => item.deviceSerialNumber === eDevData[dev].serialNumber).shift();
+                echoDevices[eDevData[dev].serialNumber].dndEnabled = dnd ? dnd.enabled : false;
+                echoDevices[eDevData[dev].serialNumber].canPlayMusic = (eDevData[dev].capabilities.includes('AUDIO_PLAYER') || eDevData[dev].capabilities.includes('AMAZON_MUSIC') || eDevData[dev].capabilities.includes('TUNE_IN')) || false;
+                // echoDevices[eDevData[dev].serialNumber].isMultiroomDevice = (echoDevices[eDevData[dev].serialNumber].clusterMembers.length > 0);
+                // echoDevices[eDevData[dev].serialNumber].isMultiroomMember = (echoDevices[eDevData[dev].serialNumber].parentClusters.length > 0);
+
                 // echoDevices[eDevData[dev].serialNumber].notifications = notifs.filter(item => item.deviceSerialNumber === eDevData[dev].serialNumber) || [];
-            }
-        }
-        // let dndState = await getDeviceDndInfo();
-        for (const ds in dndState) {
-            if (echoDevices[dndState[ds].deviceSerialNumber] !== undefined) {
-                echoDevices[dndState[ds].deviceSerialNumber].dndEnabled = dndState[ds].enabled || false;
             }
         }
     } catch (err) {
@@ -540,7 +540,7 @@ function handleDataUpload(deviceData, src) {
                             'echoDevices': echoDevices,
                             'useHeroku': (configData.settings.useHeroku === true),
                             'hostUrl': configData.settings.hostUrl || null,
-                            'cloudUrl': (configData.settings.useHeroku === true) ? 'https://' + configData.settings.hostUrl : null,
+                            'cloudUrl': (configData.settings.useHeroku === true) ? `https://${configData.settings.hostUrl}` : null,
                             'timestamp': Date.now(),
                             'serviceInfo': {
                                 'version': appVer,
