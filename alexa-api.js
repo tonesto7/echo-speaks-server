@@ -1,6 +1,8 @@
 const request = require('request');
 const reqPromise = require("request-promise");
 const logger = require('./logger');
+const querystring = require('querystring');
+const extend = require('extend');
 const alexaCookie = require('./alexa-cookie/alexa-cookie');
 const dateFormat = require('dateformat');
 const editJsonFile = require("edit-json-file", {
@@ -223,11 +225,11 @@ let getAutomationRoutines = function(limit, config, callback) {
     });
 };
 
-let executeAutomationRoutine = function(serialOrName, routine, callback) {
-    return this.sendSequenceCommand(serialOrName, routine, callback);
-};
+// let executeAutomationRoutine = function(serialOrName, routine, callback) {
+//     return this.sendSequenceCommand(serialOrName, routine, callback);
+// };
 
-let setReminder = function(message, datetime, device, config, callback) {
+let setReminder = function(device, datetime, message, config, callback) {
     let now = new Date();
     let createdDate = now.getTime();
     let addSeconds = new Date(createdDate + 1 * 60000); // one minute afer the current time
@@ -397,6 +399,28 @@ let getDndStatus = function(_config, callback) {
             callback(error, response);
         }
     });
+};
+
+let tuneinSearchRaw = function(query, config, callback) {
+    request({
+        method: 'GET',
+        url: `${alexaUrl}/api/tunein/search?query=${query}&mediaOwnerCustomerId=${config.deviceOwnerCustomerId}`,
+        headers: {
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        }
+    }, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            callback(null, JSON.parse(body));
+        } else {
+            callback(error, response);
+        }
+    });
+};
+
+let tuneinSearch = function(query, ownerId, config, callback) {
+    query = querystring.escape(query);
+    tuneinSearchRaw(query, ownerId, config, callback);
 };
 
 let getNotifications = function(_config, callback) {
@@ -578,6 +602,205 @@ let disconnectBluetoothDevice = function(device, config, callback) {
     });
 };
 
+// let setReminder = function(device, timestamp, label, callback) {
+//     const notification = createNotificationObject(device, 'Reminder', label, new Date(timestamp));
+//     createNotification(notification, callback);
+// };
+
+let createNotificationObject = function(device, type, label, value, status, sound) { // type = Reminder, Alarm
+    if (status && typeof status === 'object') {
+        sound = status;
+        status = 'ON';
+    }
+    if (value === null || value === undefined) {
+        value = new Date().getTime() + 5000;
+    }
+
+    const now = new Date();
+    const notification = {
+        'alarmTime': now.getTime(), // will be overwritten
+        'createdDate': now.getTime(),
+        'type': type, // Alarm ...
+        'deviceSerialNumber': device.serialNumber,
+        'deviceType': device.deviceType,
+        'reminderLabel': label || null,
+        'sound': sound || null,
+        /*{
+            'displayName': 'Countertop',
+            'folder': null,
+            'id': 'system_alerts_repetitive_04',
+            'providerId': 'ECHO',
+            'sampleUrl': 'https://s3.amazonaws.com/deeappservice.prod.notificationtones/system_alerts_repetitive_04.mp3'
+        }*/
+        'originalDate': `${now.getFullYear()}-${_00(now.getMonth() + 1)}-${_00(now.getDate())}`,
+        'originalTime': `${_00(now.getHours())}:${_00(now.getMinutes())}:${_00(now.getSeconds())}.000`,
+        'id': 'create' + type,
+
+        'isRecurring': false,
+        'recurringPattern': null,
+
+        'timeZoneId': null,
+        'reminderIndex': null,
+
+        'isSaveInFlight': true,
+
+        'status': 'ON' // OFF
+    };
+    /*if (type === 'Timer') {
+        notification.originalDate = null;
+        notification.originalTime = null;
+        notification.alarmTime = 0;
+    }*/
+    return parseValue4Notification(notification, value);
+};
+
+function parseValue4Notification(notification, value) {
+    switch (typeof value) {
+        case 'object':
+            notification = extend(notification, value); // we combine the objects
+            /*
+            {
+                'alarmTime': 0,
+                'createdDate': 1522585752734,
+                'deferredAtTime': null,
+                'deviceSerialNumber': 'G090LF09643202VS',
+                'deviceType': 'A3S5BH2HU6VAYF',
+                'geoLocationTriggerData': null,
+                'id': 'A3S5BH2HU6VAYF-G090LF09643202VS-17ef9b04-cb1d-31ed-ab2c-245705d904be',
+                'musicAlarmId': null,
+                'musicEntity': null,
+                'notificationIndex': '17ef9b04-cb1d-31ed-ab2c-245705d904be',
+                'originalDate': '2018-04-01',
+                'originalTime': '20:00:00.000',
+                'provider': null,
+                'recurringPattern': null,
+                'remainingTime': 0,
+                'reminderLabel': null,
+                'sound': {
+                    'displayName': 'Countertop',
+                    'folder': null,
+                    'id': 'system_alerts_repetitive_04',
+                    'providerId': 'ECHO',
+                    'sampleUrl': 'https://s3.amazonaws.com/deeappservice.prod.notificationtones/system_alerts_repetitive_04.mp3'
+                },
+                'status': 'OFF',
+                'timeZoneId': null,
+                'timerLabel': null,
+                'triggerTime': 0,
+                'type': 'Alarm',
+                'version': '4'
+            }
+            */
+            break;
+        case 'number':
+            if (notification.type !== 'Timer') {
+                value = new Date(value);
+                notification.alarmTime = value.getTime();
+                notification.originalTime = `${_00 (value.getHours ())}:${_00 (value.getMinutes ())}:${_00 (value.getSeconds ())}.000`;
+            } else {
+                //notification.remainingTime = value;
+            }
+            break;
+        case 'date':
+            if (notification.type !== 'Timer') {
+                notification.alarmTime = value.getTime();
+                notification.originalTime = `${_00 (value.getHours ())}:${_00 (value.getMinutes ())}:${_00 (value.getSeconds ())}.000`;
+            } else {
+                /*let duration = value.getTime() - Date.now();
+                if (duration < 0) duration = value.getTime();
+                notification.remainingTime = duration;*/
+            }
+            break;
+        case 'boolean':
+            notification.status = value ? 'ON' : 'OFF';
+            break;
+        case 'string':
+            let ar = value.split(':');
+            if (notification.type !== 'Timer') {
+                let date = new Date(notification.alarmTime);
+                date.setHours(parseInt(ar[0], 10), ar.length > 1 ? parseInt(ar[1], 10) : 0, ar.length > 2 ? parseInt(ar[2], 10) : 0);
+                notification.alarmTime = date.getTime();
+                notification.originalTime = `${_00(date.getHours())}:${_00(date.getMinutes())}:${_00(date.getSeconds())}.000`;
+            } else {
+                /*let duration = 0;
+                let multi = 1;
+                for (let i = ar.length -1; i > 0; i--) {
+                    duration += ar[i] * multi;
+                    multi *= 60;
+                }
+                notification.remainingTime = duration;*/
+            }
+            break;
+    }
+
+    const originalDateTime = notification.originalDate + ' ' + notification.originalTime;
+    const bits = originalDateTime.split(/\D/);
+    let date = new Date(bits[0], --bits[1], bits[2], bits[3], bits[4], bits[5]);
+    if (date.getTime() < Date.now()) {
+        date = new Date(date.getTime() + 24 * 60 * 60 * 1000);
+        notification.originalDate = `${date.getFullYear()}-${_00(date.getMonth() + 1)}-${_00(date.getDate())}`;
+        notification.originalTime = `${_00(date.getHours())}:${_00(date.getMinutes())}:${_00(date.getSeconds())}.000`;
+    }
+
+    return notification;
+}
+
+let createNotification = function(notification, config, callback) {
+    request({
+        method: 'PUT',
+        url: `${alexaUrl}/api/notifications/createReminder`,
+        headers: {
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        },
+        json: JSON.stringify(notification)
+    }, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            callback(null, JSON.parse(body));
+        } else {
+            callback(error, response);
+        }
+    });
+};
+
+let changeNotification = function(notification, value, config, callback) {
+    notification = parseValue4Notification(notification, value);
+    request({
+        method: 'PUT',
+        url: `${alexaUrl}/api/notifications/${notification.id}`,
+        headers: {
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        },
+        json: JSON.stringify(notification)
+    }, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            callback(null, JSON.parse(body));
+        } else {
+            callback(error, response);
+        }
+    });
+};
+
+let deleteNotification = function(notification, config, callback) {
+    request({
+        method: 'DELETE',
+        url: `${alexaUrl}/api/notifications/${notification.id}`,
+        headers: {
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        },
+        json: JSON.stringify(notification)
+    }, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            callback(null, JSON.parse(body));
+        } else {
+            callback(error, response);
+        }
+    });
+};
+
+
 let getMusicProviders = function(config, callback) {
     request({
         method: 'GET',
@@ -741,30 +964,6 @@ let createSequenceNode = function(device, command, value, callback) {
             //     value = value.replace(/([^0-9]?[0-9]+)\.([0-9]+[^0-9])?/g, '$1,$2');
             // }
             // value = value
-            //     .replace(/Â|À|Å|Ã/g, 'A')
-            //     .replace(/á|â|à|å|ã/g, 'a')
-            //     .replace(/Ä/g, 'Ae')
-            //     .replace(/ä/g, 'ae')
-            //     .replace(/Ç/g, 'C')
-            //     .replace(/ç/g, 'c')
-            //     .replace(/É|Ê|È|Ë/g, 'E')
-            //     .replace(/é|ê|è|ë/g, 'e')
-            //     .replace(/Ó|Ô|Ò|Õ|Ø/g, 'O')
-            //     .replace(/ó|ô|ò|õ/g, 'o')
-            //     .replace(/Ö/g, 'Oe')
-            //     .replace(/ö/g, 'oe')
-            //     .replace(/Š/g, 'S')
-            //     .replace(/š/g, 's')
-            //     .replace(/ß/g, 'ss')
-            //     .replace(/Ú|Û|Ù/g, 'U')
-            //     .replace(/ú|û|ù/g, 'u')
-            //     .replace(/Ü/g, 'Ue')
-            //     .replace(/ü/g, 'ue')
-            //     .replace(/Ý|Ÿ/g, 'Y')
-            //     .replace(/ý|ÿ/g, 'y')
-            //     .replace(/Ž/g, 'Z')
-            //     .replace(/ž/, 'z')
-            //     .replace(/&/, 'und')
             //     .replace(/[^-a-zA-Z0-9_,.?! ]/g, '')
             //     .replace(/ /g, '_');
             if (value.length === 0) {
@@ -805,7 +1004,7 @@ let createSequenceNode = function(device, command, value, callback) {
 
 exports.alexaLogin = alexaLogin;
 exports.clearSession = clearSession;
-exports.setReminder = setReminder;
+// exports.setReminder = setReminder;
 exports.setMedia = setMedia;
 exports.getDevices = getDevices;
 exports.getWakeWords = getWakeWords;
@@ -813,7 +1012,8 @@ exports.getState = getState;
 exports.getDndStatus = getDndStatus;
 exports.getPlaylists = getPlaylists;
 exports.getLists = getLists;
-exports.getNotifications = getNotifications;
+exports.tuneinSearch = tuneinSearch;
+
 exports.executeCommand = executeCommand;
 exports.getDevicePreferences = getDevicePreferences;
 exports.getBluetoothDevices = getBluetoothDevices;
@@ -823,9 +1023,13 @@ exports.checkAuthentication = checkAuthentication;
 exports.getAccount = getAccount;
 exports.sequenceJsonBuilder = sequenceJsonBuilder;
 exports.createSequenceNode = createSequenceNode;
-// exports.sendSequenceCommand = sendSequenceCommand;
-// exports.sendMultiSequenceCommand = sendMultiSequenceCommand;
+
 exports.getAutomationRoutines = getAutomationRoutines;
-exports.executeAutomationRoutine = executeAutomationRoutine;
+// exports.executeAutomationRoutine = executeAutomationRoutine;
+
 exports.playMusicProvider = playMusicProvider;
 exports.getMusicProviders = getMusicProviders;
+exports.setReminder = setReminder;
+exports.getNotifications = getNotifications;
+exports.changeNotification = changeNotification;
+exports.deleteNotification = deleteNotification;

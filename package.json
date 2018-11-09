@@ -1,6 +1,6 @@
 {
     "name": "echo-speaks-server",
-    "version": "1.1.1",
+    "version": "1.1.2",
     "author": "Anthony Santilli",
     "contributors": [{
             "name": "Corey L.",
@@ -30,6 +30,7 @@
         "moment": "^2.22.2",
         "node-datetime": "^2.1.0",
         "os": "^0.1.1",
+        "extend": "^3.0.2",
         "querystring": "^0.2.0",
         "request": "^2.88.0",
         "request-promise": "^4.2.2",

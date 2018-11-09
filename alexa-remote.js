@@ -716,7 +716,6 @@ class AlexaRemote extends EventEmitter {
         });
     }
 
-
     getDevices(callback) {
         this.httpsGet('/api/devices-v2/device?cached=true&_=%t', callback);
     }
