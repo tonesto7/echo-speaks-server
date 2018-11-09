@@ -71,18 +71,18 @@ function alexaLogin(username, password, alexaOptions, webapp, callback) {
     let config = {};
     config.devicesArray = devicesArray;
     config.alexaURL = alexaOptions.amazonDomain;
-    if (!config.userAgent) {
-        let platform = os.platform();
-        if (platform === 'win32') {
-            config.userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:99.0) Gecko/20100101 Firefox/99.0';
-        }
-        /*else if (platform === 'darwin') {
-            config.userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36';
-        }*/
-        else {
-            config.userAgent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36';
-        }
-    }
+    // if (!config.userAgent) {
+    //     let platform = os.platform();
+    //     if (platform === 'win32') {
+    //         config.userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:99.0) Gecko/20100101 Firefox/99.0';
+    //     }
+    //     /*else if (platform === 'darwin') {
+    //         config.userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36';
+    //     }*/
+    //     else {
+    //         config.userAgent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36';
+    //     }
+    // }
 
     getRemoteCookie(alexaOptions)
         .then(function(remoteCookies) {
@@ -231,13 +231,9 @@ let getAutomationRoutines = function(limit, config, callback) {
     });
 };
 
-
 let executeAutomationRoutine = function(serialOrName, routine, callback) {
     return this.sendSequenceCommand(serialOrName, routine, callback);
 };
-
-
-
 
 let setReminder = function(message, datetime, device, config, callback) {
     let now = new Date();
