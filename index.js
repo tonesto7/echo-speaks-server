@@ -236,7 +236,8 @@ function startWebServer(checkForCookie = false) {
                     logger.silly('Echo Speaks Alexa API is Actively Running at (IP: ' + getIPAddress() + ' | Port: ' + configData.settings.serverPort + ') | ProcessId: ' + process.pid);
 
                     webApp.get('/heartbeat', urlencodedParser, function(req, res) {
-                        logger.verbose('++ Received a heartbeat Request... ++');
+                        let appVer = req.headers.appversion;
+                        logger.verbose('++ Received a Heartbeat Request...' + (appVer ? ' | Client Version: (v' + appVer + ')' : '') + ' ++');
                         res.send({
                             result: "i am alive"
                         });
