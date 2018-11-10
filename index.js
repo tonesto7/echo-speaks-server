@@ -561,7 +561,11 @@ async function buildEchoDeviceMap(eDevData) {
 
                 let dnd = dndStates.filter((item) => item.deviceSerialNumber === eDevData[dev].serialNumber).shift();
                 echoDevices[eDevData[dev].serialNumber].dndEnabled = dnd ? dnd.enabled : false;
-                echoDevices[eDevData[dev].serialNumber].canPlayMusic = (eDevData[dev].capabilities.includes('AUDIO_PLAYER') || eDevData[dev].capabilities.includes('AMAZON_MUSIC') || eDevData[dev].capabilities.includes('TUNE_IN') || eDevData[dev].capabilities.includes('PANDORA')) || false;
+                echoDevices[eDevData[dev].serialNumber].canPlayMusic = (eDevData[dev].capabilities.includes('AUDIO_PLAYER') || eDevData[dev].capabilities.includes('AMAZON_MUSIC') || eDevData[dev].capabilities.includes('TUNE_IN') || eDevData[dev].capabilities.includes('PANDORA') || eDevData[dev].capabilities.includes('I_HEART_RADIO')) || false;
+                echoDevices[eDevData[dev].serialNumber].hasAmazonMusic = (eDevData[dev].capabilities.includes('AMAZON_MUSIC')) || false;
+                echoDevices[eDevData[dev].serialNumber].hasTuneInRadio = (eDevData[dev].capabilities.includes('TUNE_IN')) || false;
+                echoDevices[eDevData[dev].serialNumber].hasIheartRadio = (eDevData[dev].capabilities.includes('I_HEART_RADIO')) || false;
+                echoDevices[eDevData[dev].serialNumber].hasPandora = (eDevData[dev].capabilities.includes('PANDORA')) || false;
                 // echoDevices[eDevData[dev].serialNumber].isMultiroomDevice = (echoDevices[eDevData[dev].serialNumber].clusterMembers.length > 0);
                 // echoDevices[eDevData[dev].serialNumber].isMultiroomMember = (echoDevices[eDevData[dev].serialNumber].parentClusters.length > 0);
 
