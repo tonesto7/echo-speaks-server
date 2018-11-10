@@ -20,7 +20,7 @@ const webApp = express();
 const urlencodedParser = bodyParser.urlencoded({
     extended: false
 });
-// process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 // These the config variables
 let configData = {};
@@ -561,7 +561,7 @@ async function buildEchoDeviceMap(eDevData) {
 
                 let dnd = dndStates.filter((item) => item.deviceSerialNumber === eDevData[dev].serialNumber).shift();
                 echoDevices[eDevData[dev].serialNumber].dndEnabled = dnd ? dnd.enabled : false;
-                echoDevices[eDevData[dev].serialNumber].canPlayMusic = (eDevData[dev].capabilities.includes('AUDIO_PLAYER') || eDevData[dev].capabilities.includes('AMAZON_MUSIC') || eDevData[dev].capabilities.includes('TUNE_IN')) || false;
+                echoDevices[eDevData[dev].serialNumber].canPlayMusic = (eDevData[dev].capabilities.includes('AUDIO_PLAYER') || eDevData[dev].capabilities.includes('AMAZON_MUSIC') || eDevData[dev].capabilities.includes('TUNE_IN') || eDevData[dev].capabilities.includes('PANDORA')) || false;
                 // echoDevices[eDevData[dev].serialNumber].isMultiroomDevice = (echoDevices[eDevData[dev].serialNumber].clusterMembers.length > 0);
                 // echoDevices[eDevData[dev].serialNumber].isMultiroomMember = (echoDevices[eDevData[dev].serialNumber].parentClusters.length > 0);
 

@@ -120,7 +120,9 @@ function alexaLogin(username, password, alexaOptions, webapp, callback) {
                             callback(null, 'Login Successful', config);
                         } else {
                             callback(true, 'There was an error getting authentication', null);
-                            clearSession(alexaOptions.stEndpoint, alexaOptions.useHeroku);
+                            if (alexaOptions.stEndpoint && alexaOptions.useHeroku) {
+                                clearSession(alexaOptions.stEndpoint, alexaOptions.useHeroku);
+                            }
                         }
                     }
                 });
