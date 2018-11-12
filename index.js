@@ -400,7 +400,7 @@ function startWebServer(checkForCookie = false) {
                         }
                     });
 
-                    webApp.post('/createNotification', urlencodedParser, function(req, res) {
+                    webApp.get('/createNotification', urlencodedParser, function(req, res) {
                         let type = req.query.type;
                         let params = {};
                         params.serialNumber = req.query.serialNumber || '';
@@ -414,7 +414,7 @@ function startWebServer(checkForCookie = false) {
                         });
                     });
 
-                    webApp.post('/removeNotification', urlencodedParser, function(req, res) {
+                    webApp.get('/removeNotification', urlencodedParser, function(req, res) {
                         let params = {};
                         params.id = req.query.id || '';
                         console.log(`received removeNotification request | query: ${params}`);
