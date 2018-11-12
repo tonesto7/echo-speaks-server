@@ -241,7 +241,7 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
     _options.debug && console.log('Alexa-Cookie: Step 1: get first cookie and authentication redirect');
     request(options, (error, response, body, info) => {
 
-        let lastRequestOptions = info.requests[info.requests.length - 1].options;
+        let lastRequestOptions = info.requests[info.requests.length - 1].options || undefined;
         // login empty to generate session
         Cookie = addCookies(Cookie, response.headers);
         let options = {

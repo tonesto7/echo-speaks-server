@@ -55,7 +55,7 @@ function loadConfig() {
     }
     if (process.env.hostUrl) { configFile.set('settings.hostUrl', process.env.hostUrl); }
     configFile.set('settings.useHeroku', (process.env.useHeroku === true || process.env.useHeroku === 'true'));
-    configFile.set('settings.amazonDomain', process.env.amazonDomain || configData.settings.amazonDomain);
+    configFile.set('settings.amazonDomain', process.env.amazonDomain || (configData.settings.amazonDomain || 'amazon.com'));
     configFile.set('settings.smartThingsUrl', process.env.smartThingsUrl || configData.settings.smartThingsUrl);
     // configFile.set('settings.serviceDebug', true);
     configFile.set('settings.serviceDebug', (process.env.serviceDebug === true));
@@ -133,10 +133,12 @@ function startWebConfig() {
                 startWebServer();
                 res.send({ result: 'Clear Complete' });
             });
+
             webApp.get('/configData', function(req, res) {
                 // console.log(configData)
                 res.send(JSON.stringify(configData));
             });
+
             webApp.post('/configData', function(req, res) {
                 let saveFile = false;
                 if (req.headers.user) {
@@ -175,13 +177,18 @@ function startWebConfig() {
                     configFile.save();
                     const ls = loadConfig();
                     res.send('done');
-                    if (configCheckOk()) {
-                        // console.log('configData(set): ', configData);
-                        logger.debug('** Settings File Updated via Web Config **');
-                        if (!scheduledUpdatesActive || !loginProxyActive) {
-                            startWebServer();
-                        }
-                    }
+
+                    configCheckOk()
+                        .then(function(res) {
+                            console.log('configCheckOK 2:', res);
+                            if (res === true) {
+                                // console.log('configData(set): ', configData);
+                                logger.debug('** Settings File Updated via Web Config **');
+                                if (!scheduledUpdatesActive || !loginProxyActive) {
+                                    startWebServer();
+                                }
+                            }
+                        });
                 } else {
                     res.send('failed');
                 }
@@ -497,11 +504,11 @@ async function buildEchoDeviceMap(eDevData) {
 
                 let dnd = dndStates.filter((item) => item.deviceSerialNumber === eDevData[dev].serialNumber).shift();
                 echoDevices[eDevData[dev].serialNumber].dndEnabled = dnd ? dnd.enabled : false;
-                // echoDevices[eDevData[dev].serialNumber].canPlayMusic = (eDevData[dev].capabilities.includes('AUDIO_PLAYER') || eDevData[dev].capabilities.includes('AMAZON_MUSIC') || eDevData[dev].capabilities.includes('TUNE_IN') || eDevData[dev].capabilities.includes('PANDORA') || eDevData[dev].capabilities.includes('I_HEART_RADIO')) || false;
-                // echoDevices[eDevData[dev].serialNumber].allowAmazonMusic = (eDevData[dev].capabilities.includes('AMAZON_MUSIC')) || false;
-                // echoDevices[eDevData[dev].serialNumber].allowTuneIn = (eDevData[dev].capabilities.includes('TUNE_IN')) || false;
-                // echoDevices[eDevData[dev].serialNumber].allowIheart = (eDevData[dev].capabilities.includes('I_HEART_RADIO')) || false;
-                // echoDevices[eDevData[dev].serialNumber].allowPandora = (eDevData[dev].capabilities.includes('PANDORA')) || false;
+                echoDevices[eDevData[dev].serialNumber].canPlayMusic = (eDevData[dev].capabilities.includes('AUDIO_PLAYER') || eDevData[dev].capabilities.includes('AMAZON_MUSIC') || eDevData[dev].capabilities.includes('TUNE_IN') || eDevData[dev].capabilities.includes('PANDORA') || eDevData[dev].capabilities.includes('I_HEART_RADIO')) || false;
+                echoDevices[eDevData[dev].serialNumber].allowAmazonMusic = (eDevData[dev].capabilities.includes('AMAZON_MUSIC')) || false;
+                echoDevices[eDevData[dev].serialNumber].allowTuneIn = (eDevData[dev].capabilities.includes('TUNE_IN')) || false;
+                echoDevices[eDevData[dev].serialNumber].allowIheart = (eDevData[dev].capabilities.includes('I_HEART_RADIO')) || false;
+                echoDevices[eDevData[dev].serialNumber].allowPandora = (eDevData[dev].capabilities.includes('PANDORA')) || false;
                 // echoDevices[eDevData[dev].serialNumber].isMultiroomDevice = (echoDevices[eDevData[dev].serialNumber].clusterMembers.length > 0);
                 // echoDevices[eDevData[dev].serialNumber].isMultiroomMember = (echoDevices[eDevData[dev].serialNumber].parentClusters.length > 0);
 
@@ -663,8 +670,11 @@ function clearDataUpdates() {
 }
 
 function configCheckOk() {
-    return ((configData.settings.useHeroku === true && !configData.settings.smartThingsUrl) || configData.settings.amazonDomain === '' || (!configData.settings.useHeroku && !configData.settings.smartThingsHubIP)) ? false : true;
-}
+    return new Promise(function(resolve) {
+        let res = (((configData.settings.useHeroku === true && !configData.settings.smartThingsUrl) || !configData.settings.amazonDomain || (!configData.settings.useHeroku && !configData.settings.smartThingsHubIP)) !== true);
+        resolve(res);
+    });
+};
 
 initConfig()
     .then(function(res) {
@@ -672,14 +682,17 @@ initConfig()
             startWebConfig()
                 .then(function(res) {
                     // console.log('webconfig up');
-                    // console.log('configCheckOk: ' + configCheckOk());
-                    if (configCheckOk()) {
-                        // console.log('loginComplete: ' + configData.state.loginComplete, 'hostUrl: ' + configData.settings.hostUrl, 'smartThingsUrl: ' + configData.settings.smartThingsUrl);
-                        if (configData.state.loginComplete === true || (configData.settings.hostUrl && configData.settings.smartThingsUrl)) {
-                            // logger.info('-- Echo Speaks Web Service Starting Up! Takes about 10 seconds before it\'s available... --');
-                            startWebServer((configData.settings.useHeroku === true && configData.settings.smartThingsUrl !== undefined));
-                        }
-                    }
+                    configCheckOk()
+                        .then(function(res) {
+                            if (res === true) {
+                                // console.log('loginComplete: ' + configData.state.loginComplete, 'hostUrl: ' + configData.settings.hostUrl, 'smartThingsUrl: ' + configData.settings.smartThingsUrl);
+                                if (configData.state.loginComplete === true || (configData.settings.hostUrl && configData.settings.smartThingsUrl)) {
+                                    logger.info('-- Echo Speaks Web Service Starting Up! Takes about 10 seconds before it\'s available... --');
+                                    startWebServer((configData.settings.useHeroku === true && configData.settings.smartThingsUrl !== undefined));
+                                }
+                            }
+                        });
+
                 })
                 .catch(function(err) {
                     logger.error("## Start Web Config Error: " + err.message);
