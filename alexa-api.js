@@ -231,55 +231,6 @@ let getAutomationRoutines = function(limit, config, callback) {
 //     return this.sendSequenceCommand(serialOrName, routine, callback);
 // };
 
-let setReminder = function(device, datetime, message, config, callback) {
-    let now = new Date();
-    let createdDate = now.getTime();
-    let addSeconds = new Date(createdDate + 1 * 60000); // one minute afer the current time
-    let alarmTime = addSeconds.getTime();
-    if (datetime) {
-        let datetimeDate = new Date(dateFormat(datetime));
-        alarmTime = datetimeDate.getTime();
-    }
-    let originalTime = dateFormat(alarmTime, 'HH:MM:00.000');
-    let originalDate = dateFormat(alarmTime, 'yyyy-mm-dd');
-    request({
-        method: 'PUT',
-        url: alexaUrl + '/api/notifications/createReminder',
-        headers: {
-            'Cookie': config.cookies,
-            'csrf': config.csrf
-        },
-        json: {
-            type: 'Reminder',
-            status: 'ON',
-            alarmTime: alarmTime,
-            originalTime: originalTime,
-            originalDate: originalDate,
-            timeZoneId: null,
-            reminderIndex: null,
-            sound: null,
-            deviceSerialNumber: device.deviceSerialNumber,
-            deviceType: device.deviceType,
-            recurringPattern: '',
-            reminderLabel: message,
-            isSaveInFlight: true,
-            id: 'createReminder',
-            isRecurring: false,
-            createdDate: createdDate
-        }
-    }, function(error, response) {
-        if (!error && response.statusCode === 200) {
-            callback(null, {
-                "status": "success"
-            });
-        } else {
-            callback(error, {
-                "status": "failure"
-            });
-        }
-    });
-};
-
 let executeCommand = function(_cmdOpts, callback) {
     // console.log('Method: ' + _cmdOpts.method);
     // console.log('URL:' + _cmdOpts.url);
@@ -425,34 +376,7 @@ let tuneinSearch = function(query, ownerId, config, callback) {
     tuneinSearchRaw(query, ownerId, config, callback);
 };
 
-let getNotifications = function(_config, callback) {
-    request({
-        method: 'GET',
-        url: alexaUrl + '/api/notifications',
-        headers: {
-            'Cookie': _config.cookies,
-            'csrf': _config.csrf
-        },
-        json: true
-    }, function(error, response, body) {
-        if (!error && response.statusCode === 200) {
-            let items = [];
-            try {
-                let res = JSON.parse(body);
-                if (Object.keys(res).length) {
-                    if (res.notifications.length) {
-                        items = res.notifications;
-                    }
-                }
-            } catch (e) {
-                logger.error('getNotifications Error: ' + e.message);
-            }
-            callback(null, items);
-        } else {
-            callback(error, response);
-        }
-    });
-};
+
 
 let getPlaylists = function(device, _config, callback) {
     request({
@@ -604,113 +528,138 @@ let disconnectBluetoothDevice = function(device, config, callback) {
     });
 };
 
-// let setReminder = function(device, timestamp, label, callback) {
-//     const notification = createNotificationObject(device, 'Reminder', label, new Date(timestamp));
-//     createNotification(notification, callback);
-// };
+let getNotifications = function(config, callback) {
+    let cached = true;
+    request({
+        method: 'GET',
+        url: `${alexaUrl}/api/notifications?cached=${cached}`,
+        headers: {
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        },
+        json: true
+    }, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            callback(null, body);
+        } else {
+            callback(error, response);
+        }
+    });
+};
 
-let createNotificationObject = function(device, type, label, value, status, sound) { // type = Reminder, Alarm
-    if (status && typeof status === 'object') {
-        sound = status;
-        status = 'ON';
-    }
-    if (value === null || value === undefined) {
-        value = new Date().getTime() + 5000;
-    }
+let createNotification = function(type, params, config, callback) {
+    let now = new Date();
+    let createdDate = now.getTime();
+    let addSeconds = new Date(createdDate + 1 * 60000); // one minute after the current time
+    let alarmTime = addSeconds.getTime();
+    request({
+        method: 'PUT',
+        url: `${alexaUrl}/api/notifications/create${type}`,
+        headers: {
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        },
+        json: {
+            type: type,
+            status: 'ON',
+            alarmTime: alarmTime,
+            originalTime: params.time + ':00.000',
+            originalDate: params.date,
+            timeZoneId: null,
+            reminderIndex: null,
+            sound: null,
+            deviceSerialNumber: params.serialNumber,
+            deviceType: params.deviceType,
+            recurringPattern: '',
+            reminderLabel: params.label,
+            isSaveInFlight: true,
+            id: `create${type}`,
+            isRecurring: false,
+            createdDate: createdDate
+        }
+    }, function(error, response) {
+        if (!error && response.statusCode === 200) {
+            callback(null, {
+                status: "success",
+                code: response.statusCode,
+                response: response.body || ''
+            });
+        } else {
+            callback(error, {
+                status: "failure",
+                code: response.statusCode,
+                response: response.body || ''
+            });
+        }
+    });
+};
 
-    const now = new Date();
-    const notification = {
-        'alarmTime': now.getTime(), // will be overwritten
-        'createdDate': now.getTime(),
-        'type': type, // Alarm ...
-        'deviceSerialNumber': device.serialNumber,
-        'deviceType': device.deviceType,
-        'reminderLabel': label || null,
-        'sound': sound || null,
-        /*{
-            'displayName': 'Countertop',
-            'folder': null,
-            'id': 'system_alerts_repetitive_04',
-            'providerId': 'ECHO',
-            'sampleUrl': 'https://s3.amazonaws.com/deeappservice.prod.notificationtones/system_alerts_repetitive_04.mp3'
-        }*/
-        'originalDate': `${now.getFullYear()}-${_00(now.getMonth() + 1)}-${_00(now.getDate())}`,
-        'originalTime': `${_00(now.getHours())}:${_00(now.getMinutes())}:${_00(now.getSeconds())}.000`,
-        'id': 'create' + type,
-
-        'isRecurring': false,
-        'recurringPattern': null,
-
-        'timeZoneId': null,
-        'reminderIndex': null,
-
-        'isSaveInFlight': true,
-
-        'status': 'ON' // OFF
-    };
-    /*if (type === 'Timer') {
-        notification.originalDate = null;
-        notification.originalTime = null;
-        notification.alarmTime = 0;
-    }*/
-    return parseValue4Notification(notification, value);
+let setTimer = function(params, config, callback) {
+    let now = new Date();
+    request({
+        method: 'PUT',
+        url: alexaUrl + '/api/notifications/createTimer',
+        headers: {
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        },
+        json: {
+            type: 'Timer',
+            status: 'ON',
+            alarmTime: 0,
+            originalTime: null,
+            originalDate: null,
+            timeZoneId: null,
+            sound: null,
+            deviceSerialNumber: params.serialNumber,
+            deviceType: params.deviceType,
+            recurringPattern: '',
+            timerLabel: params.label,
+            isSaveInFlight: true,
+            id: 'createTimer',
+            isRecurring: false,
+            createdDate: now.getTime(),
+            remainingDuration: params.timerValue
+        }
+    }, function(error, response) {
+        if (!error && response.statusCode === 200) {
+            callback(null, {
+                status: "success",
+                code: response.statusCode,
+                response: response.body || ''
+            });
+        } else {
+            callback(error, {
+                status: "failure",
+                code: response.statusCode,
+                response: response.body || ''
+            });
+        }
+    });
 };
 
 function parseValue4Notification(notification, value) {
     switch (typeof value) {
         case 'object':
             notification = extend(notification, value); // we combine the objects
-            /*
-            {
-                'alarmTime': 0,
-                'createdDate': 1522585752734,
-                'deferredAtTime': null,
-                'deviceSerialNumber': 'G090LF09643202VS',
-                'deviceType': 'A3S5BH2HU6VAYF',
-                'geoLocationTriggerData': null,
-                'id': 'A3S5BH2HU6VAYF-G090LF09643202VS-17ef9b04-cb1d-31ed-ab2c-245705d904be',
-                'musicAlarmId': null,
-                'musicEntity': null,
-                'notificationIndex': '17ef9b04-cb1d-31ed-ab2c-245705d904be',
-                'originalDate': '2018-04-01',
-                'originalTime': '20:00:00.000',
-                'provider': null,
-                'recurringPattern': null,
-                'remainingTime': 0,
-                'reminderLabel': null,
-                'sound': {
-                    'displayName': 'Countertop',
-                    'folder': null,
-                    'id': 'system_alerts_repetitive_04',
-                    'providerId': 'ECHO',
-                    'sampleUrl': 'https://s3.amazonaws.com/deeappservice.prod.notificationtones/system_alerts_repetitive_04.mp3'
-                },
-                'status': 'OFF',
-                'timeZoneId': null,
-                'timerLabel': null,
-                'triggerTime': 0,
-                'type': 'Alarm',
-                'version': '4'
-            }
-            */
             break;
         case 'number':
             if (notification.type !== 'Timer') {
                 value = new Date(value);
                 notification.alarmTime = value.getTime();
-                notification.originalTime = `${_00 (value.getHours ())}:${_00 (value.getMinutes ())}:${_00 (value.getSeconds ())}.000`;
+                notification.originalTime = dateFormat(value, 'HH:MM:00.000');
             } else {
-                //notification.remainingTime = value;
+                notification.remainingTime = value;
             }
             break;
         case 'date':
             if (notification.type !== 'Timer') {
                 notification.alarmTime = value.getTime();
-                notification.originalTime = `${_00 (value.getHours ())}:${_00 (value.getMinutes ())}:${_00 (value.getSeconds ())}.000`;
+                notification.originalTime = dateFormat(value, 'HH:MM:00.000');
             } else {
-                /*let duration = value.getTime() - Date.now();
+                let duration = value.getTime() - Date.now();
                 if (duration < 0) duration = value.getTime();
-                notification.remainingTime = duration;*/
+                notification.remainingTime = duration;
             }
             break;
         case 'boolean':
@@ -722,15 +671,15 @@ function parseValue4Notification(notification, value) {
                 let date = new Date(notification.alarmTime);
                 date.setHours(parseInt(ar[0], 10), ar.length > 1 ? parseInt(ar[1], 10) : 0, ar.length > 2 ? parseInt(ar[2], 10) : 0);
                 notification.alarmTime = date.getTime();
-                notification.originalTime = `${_00(date.getHours())}:${_00(date.getMinutes())}:${_00(date.getSeconds())}.000`;
+                notification.originalTime = dateFormat(value, 'HH:MM:00.000');
             } else {
-                /*let duration = 0;
+                let duration = 0;
                 let multi = 1;
-                for (let i = ar.length -1; i > 0; i--) {
+                for (let i = ar.length - 1; i > 0; i--) {
                     duration += ar[i] * multi;
                     multi *= 60;
                 }
-                notification.remainingTime = duration;*/
+                notification.remainingTime = duration;
             }
             break;
     }
@@ -740,30 +689,11 @@ function parseValue4Notification(notification, value) {
     let date = new Date(bits[0], --bits[1], bits[2], bits[3], bits[4], bits[5]);
     if (date.getTime() < Date.now()) {
         date = new Date(date.getTime() + 24 * 60 * 60 * 1000);
-        notification.originalDate = `${date.getFullYear()}-${_00(date.getMonth() + 1)}-${_00(date.getDate())}`;
-        notification.originalTime = `${_00(date.getHours())}:${_00(date.getMinutes())}:${_00(date.getSeconds())}.000`;
+        notification.originalDate = dateFormat(date, 'yyyy-mm-dd');
+        notification.originalTime = dateFormat(value, 'HH:MM:00.000');
     }
-
     return notification;
 }
-
-let createNotification = function(notification, config, callback) {
-    request({
-        method: 'PUT',
-        url: `${alexaUrl}/api/notifications/createReminder`,
-        headers: {
-            'Cookie': config.cookies,
-            'csrf': config.csrf
-        },
-        json: JSON.stringify(notification)
-    }, function(error, response, body) {
-        if (!error && response.statusCode === 200) {
-            callback(null, JSON.parse(body));
-        } else {
-            callback(error, response);
-        }
-    });
-};
 
 let changeNotification = function(notification, value, config, callback) {
     notification = parseValue4Notification(notification, value);
@@ -774,10 +704,10 @@ let changeNotification = function(notification, value, config, callback) {
             'Cookie': config.cookies,
             'csrf': config.csrf
         },
-        json: JSON.stringify(notification)
+        json: notification
     }, function(error, response, body) {
         if (!error && response.statusCode === 200) {
-            callback(null, JSON.parse(body));
+            callback(null, body);
         } else {
             callback(error, response);
         }
@@ -792,12 +722,16 @@ let deleteNotification = function(notification, config, callback) {
             'Cookie': config.cookies,
             'csrf': config.csrf
         },
-        json: JSON.stringify(notification)
+        json: notification
     }, function(error, response, body) {
         if (!error && response.statusCode === 200) {
-            callback(null, JSON.parse(body));
+            callback(null, {
+                "status": "success"
+            });
         } else {
-            callback(error, response);
+            callback(error, {
+                "status": "failure"
+            });
         }
     });
 };
@@ -1031,7 +965,8 @@ exports.getAutomationRoutines = getAutomationRoutines;
 
 exports.playMusicProvider = playMusicProvider;
 exports.getMusicProviders = getMusicProviders;
-exports.setReminder = setReminder;
+exports.createNotification = createNotification;
+exports.setTimer = setTimer;
 exports.getNotifications = getNotifications;
 exports.changeNotification = changeNotification;
 exports.deleteNotification = deleteNotification;
