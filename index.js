@@ -75,17 +75,13 @@ function startWebConfig() {
         try {
             webApp.listen(configData.settings.serverPort, function() {
                 logger.info('** Echo Speaks Config Service (v' + appVer + ') is Running at (IP: ' + getIPAddress() + ' | Port: ' + configData.settings.serverPort + ') | ProcessId: ' + process.pid + ' **');
-                // if (!configCheckOk()) {
-                // logger.warn('** Configurations Settings Missing... Please visit https://' + getIPAddress() + ':' + configData.settings.serverPort + '/config to configure settings...');
-                // } else {
-                // logger.info('** Configurations Page available at (https://' + getIPAddress() + ':' + configData.settings.serverPort + '/config)');
-                // }
             });
             webApp.use(function(req, res, next) {
                 res.header("Access-Control-Allow-Origin", "*");
                 res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
                 next();
             });
+
             webApp.get('/', function(req, res) {
                 if (req.hostname) {
                     if (configData.settings.hostUrl === undefined || configData.settings.hostUrl !== req.hostname) {
@@ -101,6 +97,7 @@ function startWebConfig() {
                 logger.debug('config(/) page requested');
                 res.sendFile(__dirname + '/public/index.html');
             });
+
             webApp.get('/config', function(req, res) {
                 if (req.hostname) {
                     if (configData.settings.hostUrl === undefined || configData.settings.hostUrl !== req.hostname) {
@@ -116,6 +113,7 @@ function startWebConfig() {
                 logger.debug('/config page requested');
                 res.sendFile(__dirname + '/public/index.html');
             });
+
             webApp.get('/clearAuth', urlencodedParser, function(req, res) {
                 logger.verbose('got request for to clear authentication');
                 let clearUrl = configData.settings.smartThingsUrl ? String(configData.settings.smartThingsUrl).replace("/receiveData?", "/cookie?") : null;
@@ -180,8 +178,7 @@ function startWebConfig() {
 
                     configCheckOk()
                         .then(function(res) {
-                            console.log('configCheckOK 2:', res);
-                            if (res === true) {
+                            if (res) {
                                 // console.log('configData(set): ', configData);
                                 logger.debug('** Settings File Updated via Web Config **');
                                 if (!scheduledUpdatesActive || !loginProxyActive) {
