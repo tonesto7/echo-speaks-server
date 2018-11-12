@@ -246,7 +246,7 @@ let executeCommand = function(_cmdOpts, callback) {
                 "message": "success",
                 "queueKey": _cmdOpts.queueKey,
                 "msgDelay": _cmdOpts.msgDelay,
-                "speechCmd": _cmdOpts.speechCmd
+                "cmdDesc": _cmdOpts.cmdDesc || null
             });
         } else {
             // console.log('error: ', error.message);
@@ -256,7 +256,7 @@ let executeCommand = function(_cmdOpts, callback) {
                 "message": body.message || null,
                 "queueKey": _cmdOpts.queueKey,
                 "msgDelay": _cmdOpts.msgDelay,
-                "speechCmd": _cmdOpts.speechCmd
+                "cmdDesc": _cmdOpts.cmdDesc || null
             });
         }
     });
