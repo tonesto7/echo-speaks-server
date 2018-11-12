@@ -931,9 +931,9 @@ let createSequenceNode = function(device, command, value, callback) {
             if (value.length === 0) {
                 return callback && callback(new Error('Can not speak empty string', null));
             }
-            if (value.length > 250) {
-                return callback && callback(new Error('text too long, limit are 250 characters', null));
-            }
+            // if (value.length > 250) {
+            //     return callback && callback(new Error('text too long, limit are 250 characters', null));
+            // }
             seqNode.operationPayload.textToSpeak = value;
             break;
         default:
