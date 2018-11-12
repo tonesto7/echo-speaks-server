@@ -20,7 +20,7 @@ const webApp = express();
 const urlencodedParser = bodyParser.urlencoded({
     extended: false
 });
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+// process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 // These the config variables
 let configData = {};
@@ -470,6 +470,49 @@ function startWebServer(checkForCookie = false) {
     });
 }
 
+async function buildEchoDeviceMap(eDevData) {
+    // console.log('eDevData: ', eDevData);
+    try {
+        let removeKeys = ['appDeviceList', 'charging', 'clusterMembers', 'essid', 'macAddress', 'parentClusters', 'deviceTypeFriendlyName', 'registrationId', 'remainingBatteryLevel', 'postalCode', 'language'];
+        // let notifs = await getNotificationInfo();
+        let wakeWords = await getWakeWordInfo();
+        let dndStates = await getDeviceDndInfo();
+        let musicProvs = await getMusicProviderInfo();
+        // let routines = await getRoutinesInfo();
+
+        for (const dev in eDevData) {
+            if (eDevData[dev].deviceFamily === 'ECHO' || eDevData[dev].deviceFamily === 'KNIGHT' || eDevData[dev].deviceFamily === 'ROOK' || eDevData[dev].deviceFamily === 'TABLET') {
+                for (const item in removeKeys) {
+                    delete eDevData[dev][removeKeys[item]];
+                }
+                if (eDevData[dev].deviceOwnerCustomerId) { savedConfig.deviceOwnerCustomerId = eDevData[dev].deviceOwnerCustomerId; }
+                echoDevices[eDevData[dev].serialNumber] = eDevData[dev];
+                let devState = await getDeviceStateInfo(eDevData[dev]);
+                echoDevices[eDevData[dev].serialNumber].playerState = devState;
+                let playlist = await getPlaylistInfo(eDevData[dev]);
+                echoDevices[eDevData[dev].serialNumber].playlists = playlist;
+                echoDevices[eDevData[dev].serialNumber].musicProviders = musicProvs;
+                let wakeWord = wakeWords.filter((item) => item.deviceSerialNumber === eDevData[dev].serialNumber).shift();
+                echoDevices[eDevData[dev].serialNumber].wakeWord = wakeWord ? wakeWord.wakeWord : "";
+
+                let dnd = dndStates.filter((item) => item.deviceSerialNumber === eDevData[dev].serialNumber).shift();
+                echoDevices[eDevData[dev].serialNumber].dndEnabled = dnd ? dnd.enabled : false;
+                // echoDevices[eDevData[dev].serialNumber].canPlayMusic = (eDevData[dev].capabilities.includes('AUDIO_PLAYER') || eDevData[dev].capabilities.includes('AMAZON_MUSIC') || eDevData[dev].capabilities.includes('TUNE_IN') || eDevData[dev].capabilities.includes('PANDORA') || eDevData[dev].capabilities.includes('I_HEART_RADIO')) || false;
+                // echoDevices[eDevData[dev].serialNumber].allowAmazonMusic = (eDevData[dev].capabilities.includes('AMAZON_MUSIC')) || false;
+                // echoDevices[eDevData[dev].serialNumber].allowTuneIn = (eDevData[dev].capabilities.includes('TUNE_IN')) || false;
+                // echoDevices[eDevData[dev].serialNumber].allowIheart = (eDevData[dev].capabilities.includes('I_HEART_RADIO')) || false;
+                // echoDevices[eDevData[dev].serialNumber].allowPandora = (eDevData[dev].capabilities.includes('PANDORA')) || false;
+                // echoDevices[eDevData[dev].serialNumber].isMultiroomDevice = (echoDevices[eDevData[dev].serialNumber].clusterMembers.length > 0);
+                // echoDevices[eDevData[dev].serialNumber].isMultiroomMember = (echoDevices[eDevData[dev].serialNumber].parentClusters.length > 0);
+
+                // echoDevices[eDevData[dev].serialNumber].notifications = notifs.filter(item => item.deviceSerialNumber === eDevData[dev].serialNumber) || [];
+            }
+        }
+    } catch (err) {
+        logger.error('buildEchoDeviceMap ERROR:', err);
+    }
+}
+
 function getDeviceStateInfo(device) {
     return new Promise(resolve => {
         alexa_api.getState(device, savedConfig, function(err, resp) {
@@ -532,49 +575,6 @@ function getNotificationInfo() {
             resolve(resp || []);
         });
     });
-}
-
-async function buildEchoDeviceMap(eDevData) {
-    // console.log('eDevData: ', eDevData);
-    try {
-        let removeKeys = ['appDeviceList', 'charging', 'clusterMembers', 'essid', 'macAddress', 'parentClusters', 'deviceTypeFriendlyName', 'registrationId', 'remainingBatteryLevel', 'postalCode', 'language'];
-        // let notifs = await getNotificationInfo();
-        let wakeWords = await getWakeWordInfo();
-        let dndStates = await getDeviceDndInfo();
-        let musicProvs = await getMusicProviderInfo();
-        // let routines = await getRoutinesInfo();
-
-        for (const dev in eDevData) {
-            if (eDevData[dev].deviceFamily === 'ECHO' || eDevData[dev].deviceFamily === 'KNIGHT' || eDevData[dev].deviceFamily === 'ROOK' || eDevData[dev].deviceFamily === 'TABLET') {
-                for (const item in removeKeys) {
-                    delete eDevData[dev][removeKeys[item]];
-                }
-                if (eDevData[dev].deviceOwnerCustomerId) { savedConfig.deviceOwnerCustomerId = eDevData[dev].deviceOwnerCustomerId; }
-                echoDevices[eDevData[dev].serialNumber] = eDevData[dev];
-                let devState = await getDeviceStateInfo(eDevData[dev]);
-                echoDevices[eDevData[dev].serialNumber].playerState = devState;
-                let playlist = await getPlaylistInfo(eDevData[dev]);
-                echoDevices[eDevData[dev].serialNumber].playlists = playlist;
-                echoDevices[eDevData[dev].serialNumber].musicProviders = musicProvs;
-                let wakeWord = wakeWords.filter((item) => item.deviceSerialNumber === eDevData[dev].serialNumber).shift();
-                echoDevices[eDevData[dev].serialNumber].wakeWord = wakeWord ? wakeWord.wakeWord : "";
-
-                let dnd = dndStates.filter((item) => item.deviceSerialNumber === eDevData[dev].serialNumber).shift();
-                echoDevices[eDevData[dev].serialNumber].dndEnabled = dnd ? dnd.enabled : false;
-                echoDevices[eDevData[dev].serialNumber].canPlayMusic = (eDevData[dev].capabilities.includes('AUDIO_PLAYER') || eDevData[dev].capabilities.includes('AMAZON_MUSIC') || eDevData[dev].capabilities.includes('TUNE_IN') || eDevData[dev].capabilities.includes('PANDORA') || eDevData[dev].capabilities.includes('I_HEART_RADIO')) || false;
-                echoDevices[eDevData[dev].serialNumber].hasAmazonMusic = (eDevData[dev].capabilities.includes('AMAZON_MUSIC')) || false;
-                echoDevices[eDevData[dev].serialNumber].hasTuneInRadio = (eDevData[dev].capabilities.includes('TUNE_IN')) || false;
-                echoDevices[eDevData[dev].serialNumber].hasIheartRadio = (eDevData[dev].capabilities.includes('I_HEART_RADIO')) || false;
-                echoDevices[eDevData[dev].serialNumber].hasPandora = (eDevData[dev].capabilities.includes('PANDORA')) || false;
-                // echoDevices[eDevData[dev].serialNumber].isMultiroomDevice = (echoDevices[eDevData[dev].serialNumber].clusterMembers.length > 0);
-                // echoDevices[eDevData[dev].serialNumber].isMultiroomMember = (echoDevices[eDevData[dev].serialNumber].parentClusters.length > 0);
-
-                // echoDevices[eDevData[dev].serialNumber].notifications = notifs.filter(item => item.deviceSerialNumber === eDevData[dev].serialNumber) || [];
-            }
-        }
-    } catch (err) {
-        logger.error('buildEchoDeviceMap ERROR:', err);
-    }
 }
 
 function handleDataUpload(deviceData, src) {
