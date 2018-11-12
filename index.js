@@ -356,6 +356,21 @@ function startWebServer(checkForCookie = false) {
                         });
                     });
 
+                    webApp.get('/speakText', urlencodedParser, function(req, res) {
+                        let cmdOpts = {};
+                        let serialNumber = (req.query.serialNumber || req.headers.deviceserialnumber) || '';
+                        let deviceType = (req.query.deviceType || req.headers.devicetype) || '';
+                        let deviceOwnerCustomerId = (req.query.ownerId || req.headers.deviceownercustomerid) || '';
+                        let message = (req.query.message || req.headers.message) || undefined;
+                        cmdOpts.url = `${alexaUrl}/api/behaviors/preview`;
+                        cmdOpts.method = 'POST';
+                        cmdOpts.json = alexa_api.sequenceJsonBuilder(serialNumber, deviceType, deviceOwnerCustomerId, "speak", message);
+                        console.log("received speakText request | query: ", cmdOpts);
+                        alexa_api.executeCommand(cmdOpts, function(error, response) {
+                            res.send(response);
+                        });
+                    });
+
                     webApp.get('/getDeviceLists', urlencodedParser, function(req, res) {
                         let serialNumber = req.headers.deviceserialnumber;
                         let deviceType = req.headers.devicetype;
@@ -389,22 +404,28 @@ function startWebServer(checkForCookie = false) {
                         switch (cmdType) {
                             case 'SetDnd':
                                 cmdOpts.method = 'PUT';
-                                cmdOpts.url = alexaUrl + '/api/dnd/status';
+                                cmdOpts.url = `${alexaUrl}/api/dnd/status`;
                                 cmdOpts.json = {
                                     deviceSerialNumber: serialNumber,
                                     deviceType: deviceType
                                 };
                                 break;
+                            case 'SendTTS':
+                                cmdOpts.method = 'POST';
+                                cmdOpts.url = `${alexaUrl}/api/behaviors/preview`;
+                                cmdOpts.json = alexa_api.sequenceJsonBuilder(serialNumber, deviceType, deviceOwnerCustomerId, "speak", message);
+                                break;
                             case 'ExecuteSequence':
                                 let seqCmdKey = req.headers.seqcmdkey || undefined;
                                 let seqCmdVal = req.headers.seqcmdval || undefined;
+                                cmdOpts.speechCmd = (req.headers.seqCmdKey === 'speak') || false;
                                 cmdOpts.method = 'POST';
-                                cmdOpts.url = alexaUrl + '/api/behaviors/preview';
+                                cmdOpts.url = `${alexaUrl}/api/behaviors/preview`;
                                 cmdOpts.json = alexa_api.sequenceJsonBuilder(serialNumber, deviceType, deviceOwnerCustomerId, seqCmdKey, seqCmdVal);
                                 break;
                             default:
                                 cmdOpts.method = 'POST';
-                                cmdOpts.url = alexaUrl + '/api/np/command';
+                                cmdOpts.url = `${alexaUrl}/api/np/command`;
                                 cmdOpts.qs = {
                                     deviceSerialNumber: serialNumber,
                                     deviceType: deviceType

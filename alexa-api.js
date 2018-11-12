@@ -245,7 +245,8 @@ let executeCommand = function(_cmdOpts, callback) {
                 "deviceId": _cmdOpts.deviceId,
                 "message": "success",
                 "queueKey": _cmdOpts.queueKey,
-                "msgDelay": _cmdOpts.msgDelay
+                "msgDelay": _cmdOpts.msgDelay,
+                "speechCmd": _cmdOpts.speechCmd
             });
         } else {
             // console.log('error: ', error.message);
@@ -254,7 +255,8 @@ let executeCommand = function(_cmdOpts, callback) {
                 "deviceId": _cmdOpts.deviceId,
                 "message": body.message || null,
                 "queueKey": _cmdOpts.queueKey,
-                "msgDelay": _cmdOpts.msgDelay
+                "msgDelay": _cmdOpts.msgDelay,
+                "speechCmd": _cmdOpts.speechCmd
             });
         }
     });
@@ -799,7 +801,37 @@ let playMusicProvider = function(options, config, callback) {
     });
 };
 
+let sendMultiSequenceCommand = function(device, commands, sequenceType, callback) {
+    if (typeof sequenceType === 'function') {
+        callback = sequenceType;
+        sequenceType = null;
+    }
+    if (!sequenceType) sequenceType = 'SerialNode'; // or ParallelNode
+    let nodes = [];
+    for (let command of commands) {
+        const commandNode = this.createSequenceNode(command.command, command.value, callback);
+        if (commandNode) nodes.push(commandNode);
+    }
+
+    const sequenceObj = {
+        'sequence': {
+            '@type': 'com.amazon.alexa.behaviors.model.Sequence',
+            'startNode': {
+                '@type': 'com.amazon.alexa.behaviors.model.' + sequenceType,
+                'name': null,
+                'nodesToExecute': nodes
+            }
+        }
+    };
+
+    sendSequenceCommand(device, sequenceObj, callback);
+};
+
 let sendSequenceCommand = function(device, command, value, config, callback) {
+    if (typeof value === 'function') {
+        callback = value;
+        value = null;
+    }
     let seqCommandObj;
     if (typeof command === 'object') {
         seqCommandObj = command.sequence || command;
@@ -896,12 +928,6 @@ let createSequenceNode = function(device, command, value, callback) {
         case 'speak':
             seqNode.type = 'Alexa.Speak';
             if (typeof value !== 'string') value = String(value);
-            // if (!this._options.amazonPage || !this._options.amazonPage.endsWith('.com')) {
-            //     value = value.replace(/([^0-9]?[0-9]+)\.([0-9]+[^0-9])?/g, '$1,$2');
-            // }
-            // value = value
-            //     .replace(/[^-a-zA-Z0-9_,.?! ]/g, '')
-            //     .replace(/ /g, '_');
             if (value.length === 0) {
                 return callback && callback(new Error('Can not speak empty string', null));
             }
@@ -916,27 +942,7 @@ let createSequenceNode = function(device, command, value, callback) {
     return seqNode;
 };
 
-// let sendMultiSequenceCommand = function(serialOrName, commands, sequenceType, callback) {
-//     if (!sequenceType) sequenceType = 'SerialNode'; // or ParallelNode
-//     let nodes = [];
-//     for (let command of commands) {
-//         const commandNode = this.createSequenceNode(command.command, command.value, callback);
-//         if (commandNode) nodes.push(commandNode);
-//     }
 
-//     const sequenceObj = {
-//         'sequence': {
-//             '@type': 'com.amazon.alexa.behaviors.model.Sequence',
-//             'startNode': {
-//                 '@type': 'com.amazon.alexa.behaviors.model.' + sequenceType,
-//                 'name': null,
-//                 'nodesToExecute': nodes
-//             }
-//         }
-//     };
-
-//     sendSequenceCommand(serialOrName, sequenceObj, callback);
-// };
 
 exports.alexaLogin = alexaLogin;
 exports.clearSession = clearSession;
