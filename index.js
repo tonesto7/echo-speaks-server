@@ -321,56 +321,6 @@ function startWebServer(checkForCookie = false) {
                         });
                     });
 
-                    webApp.get('/createNotification', urlencodedParser, function(req, res) {
-                        let type = req.query.type;
-                        let params = {};
-                        params.serialNumber = req.query.serialNumber || '';
-                        params.deviceType = req.query.deviceType || '';
-                        params.label = req.query.label || '';
-                        params.time = req.query.time || '';
-                        params.date = req.query.date || '';
-                        console.log(`received createNotification($type) request | query: ${params}`);
-                        alexa_api.createNotification(type, params, savedConfig, function(error, response) {
-                            res.send(response);
-                        });
-                    });
-
-                    webApp.get('/removeNotification', urlencodedParser, function(req, res) {
-                        let params = {};
-                        params.id = req.query.id || '';
-                        console.log(`received removeNotification request | query: ${params}`);
-                        alexa_api.deleteNotification(params, savedConfig, function(error, response) {
-                            res.send(response);
-                        });
-                    });
-
-                    webApp.get('/setTimer', urlencodedParser, function(req, res) {
-                        let params = {};
-                        params.serialNumber = req.query.serialNumber || '';
-                        params.deviceType = req.query.deviceType || '';
-                        params.label = req.query.label || '';
-                        params.timerValue = req.query.value || 60;
-                        console.log(`received setTimer request | query: ${params}`);
-                        alexa_api.setTimer(params, savedConfig, function(error, response) {
-                            res.send(response);
-                        });
-                    });
-
-                    webApp.get('/speakText', urlencodedParser, function(req, res) {
-                        let cmdOpts = {};
-                        let serialNumber = (req.query.serialNumber || req.headers.deviceserialnumber) || '';
-                        let deviceType = (req.query.deviceType || req.headers.devicetype) || '';
-                        let deviceOwnerCustomerId = (req.query.ownerId || req.headers.deviceownercustomerid) || '';
-                        let message = (req.query.message || req.headers.message) || undefined;
-                        cmdOpts.url = `${alexaUrl}/api/behaviors/preview`;
-                        cmdOpts.method = 'POST';
-                        cmdOpts.json = alexa_api.sequenceJsonBuilder(serialNumber, deviceType, deviceOwnerCustomerId, "speak", message);
-                        console.log("received speakText request | query: ", cmdOpts);
-                        alexa_api.executeCommand(cmdOpts, function(error, response) {
-                            res.send(response);
-                        });
-                    });
-
                     webApp.get('/getDeviceLists', urlencodedParser, function(req, res) {
                         let serialNumber = req.headers.deviceserialnumber;
                         let deviceType = req.headers.devicetype;
@@ -448,6 +398,29 @@ function startWebServer(checkForCookie = false) {
                         } else {
                             res.send('failed');
                         }
+                    });
+
+                    webApp.post('/createNotification', urlencodedParser, function(req, res) {
+                        let type = req.query.type;
+                        let params = {};
+                        params.serialNumber = req.query.serialNumber || '';
+                        params.deviceType = req.query.deviceType || '';
+                        params.label = req.query.label || '';
+                        params.time = req.query.time || '';
+                        params.date = req.query.date || '';
+                        console.log(`received createNotification($type) request | query: ${params}`);
+                        alexa_api.createNotification(type, params, savedConfig, function(error, response) {
+                            res.send(response);
+                        });
+                    });
+
+                    webApp.post('/removeNotification', urlencodedParser, function(req, res) {
+                        let params = {};
+                        params.id = req.query.id || '';
+                        console.log(`received removeNotification request | query: ${params}`);
+                        alexa_api.deleteNotification(params, savedConfig, function(error, response) {
+                            res.send(response);
+                        });
                     });
 
                     webApp.post('/musicSearch', urlencodedParser, function(req, res) {
@@ -541,7 +514,7 @@ async function buildEchoDeviceMap(eDevData) {
                 echoDevices[devSerialNumber].wakeWord = wakeWord ? wakeWord.wakeWord : "";
 
                 let dnd = dndStates.filter((item) => item.deviceSerialNumber === devSerialNumber).shift();
-                echoDevices[devSerialNumber].notifications = notifs.filter(item => item.deviceSerialNumber === devSerialNumber) || [];
+
                 echoDevices[devSerialNumber].dndEnabled = dnd ? dnd.enabled : false;
                 echoDevices[devSerialNumber].canPlayMusic = (eDevData[dev].capabilities.includes('AUDIO_PLAYER') || eDevData[dev].capabilities.includes('AMAZON_MUSIC') || eDevData[dev].capabilities.includes('TUNE_IN') || eDevData[dev].capabilities.includes('PANDORA') || eDevData[dev].capabilities.includes('I_HEART_RADIO')) || false;
                 echoDevices[devSerialNumber].allowAmazonMusic = (eDevData[dev].capabilities.includes('AMAZON_MUSIC')) || false;
@@ -550,6 +523,8 @@ async function buildEchoDeviceMap(eDevData) {
                 echoDevices[devSerialNumber].allowPandora = (eDevData[dev].capabilities.includes('PANDORA')) || false;
                 echoDevices[devSerialNumber].isMultiroomDevice = (eDevData[dev].clusterMembers && eDevData[dev].clusterMembers.length > 0) || false;
                 echoDevices[devSerialNumber].isMultiroomMember = (eDevData[dev].parentClusters && eDevData[dev].parentClusters.length > 0) || false;
+
+                echoDevices[devSerialNumber].notifications = notifs.filter(item => item.deviceSerialNumber === devSerialNumber) || [];
             }
         }
     } catch (err) {
@@ -617,6 +592,10 @@ function getNotificationInfo() {
     return new Promise(resolve => {
         alexa_api.getNotifications(savedConfig, function(err, resp) {
             let items = resp && resp.notifications ? resp.notifications.filter((item) => item.status === 'ON') : [];
+            let keys2Keep = ['id', 'reminderLabel', 'originalDate', 'originalTime', 'deviceSerialNumber'];
+            for (const i in items) {
+                Object.keys(items[i]).forEach((key) => keys2Keep.includes(key) || delete items[i][key]);
+            }
             resolve(items || []);
         });
     });
