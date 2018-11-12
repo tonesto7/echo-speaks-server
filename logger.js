@@ -44,9 +44,9 @@ let logger = createLogger({
         format.timestamp({
             format: 'M-D-YYYY - h:mm:ssa'
         }),
-        format.colorize({
-            all: true
-        }),
+        // format.colorize({
+        //     all: true
+        // }),
         winston.format.simple(),
         format.align(),
         format.prettyPrint(),
