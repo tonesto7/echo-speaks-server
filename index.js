@@ -419,9 +419,8 @@ function startWebServer(checkForCookie = false) {
                             case 'ExecuteSequence':
                                 let seqCmdKey = req.headers.seqcmdkey || undefined;
                                 let seqCmdVal = req.headers.seqcmdval || undefined;
-
                                 cmdOpts.method = 'POST';
-                                cmdOpts.url = `${alexaUrl}/api/behaviors/preview`;
+                                cmdOpts.url = alexaUrl + "/api/behaviors/preview";
                                 cmdOpts.json = alexa_api.sequenceJsonBuilder(serialNumber, deviceType, deviceOwnerCustomerId, seqCmdKey, seqCmdVal);
                                 break;
                             default:
