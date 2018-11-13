@@ -601,7 +601,7 @@ function getNotificationInfo() {
     return new Promise(resolve => {
         alexa_api.getNotifications(savedConfig, function(err, resp) {
             let items = resp && resp.notifications ? resp.notifications.filter((item) => item.status === 'ON') : [];
-            let keys2Keep = ['id', 'reminderLabel', 'originalDate', 'originalTime', 'deviceSerialNumber', 'type'];
+            let keys2Keep = ['id', 'reminderLabel', 'originalDate', 'originalTime', 'deviceSerialNumber', 'type', 'remainingDuration'];
             for (const i in items) {
                 Object.keys(items[i]).forEach((key) => keys2Keep.includes(key) || delete items[i][key]);
             }
