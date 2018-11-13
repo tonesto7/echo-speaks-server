@@ -208,6 +208,24 @@ let getDevicePreferences = function(cached = true, config, callback) {
     });
 };
 
+let getAlarmVolume = function(device, config, callback) {
+    request({
+        method: 'GET',
+        url: `${alexaUrl}/api/device-notification-state/${device.deviceType}/${device.softwareVersion}/${device.serialNumber}`,
+        headers: {
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        },
+        json: true
+    }, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            callback(null, body);
+        } else {
+            callback(error, response);
+        }
+    });
+};
+
 let getAutomationRoutines = function(limit, config, callback) {
     limit = limit || 2000;
     request({
@@ -860,7 +878,7 @@ exports.getDndStatus = getDndStatus;
 exports.getPlaylists = getPlaylists;
 exports.getLists = getLists;
 exports.tuneinSearch = tuneinSearch;
-
+exports.getAlarmVolume = getAlarmVolume;
 exports.executeCommand = executeCommand;
 exports.getDevicePreferences = getDevicePreferences;
 exports.getBluetoothDevices = getBluetoothDevices;

@@ -375,10 +375,16 @@ function startWebServer(checkForCookie = false) {
                                     deviceType: deviceType
                                 };
                                 break;
-                            case 'SendTTS':
-                                cmdOpts.method = 'POST';
-                                cmdOpts.url = `${alexaUrl}/api/behaviors/preview`;
-                                cmdOpts.json = alexa_api.sequenceJsonBuilder(serialNumber, deviceType, deviceOwnerCustomerId, "speak", message);
+                            case 'AlarmVolume':
+                                cmdOpts.method = 'PUT';
+                                let device = {
+                                    deviceSerialNumber: req.headers.deviceserialnumber,
+                                    deviceType: req.headers.devicetype,
+                                    softwareVersion: req.headers.softwareversion,
+                                    volumeLevel: req.headers.volumeLevel
+                                };
+                                cmdOpts.url = `${alexaUrl}/api/device-notification-state/${device.deviceType}/${device.softwareVersion}/${device.deviceSerialNumber}`;
+                                cmdOpts.json = device;
                                 break;
                             case 'ExecuteSequence':
                                 let seqCmdKey = req.headers.seqcmdkey || undefined;
@@ -557,6 +563,14 @@ function getRoutinesInfo() {
     });
 }
 
+function getAlarmVolume(device) {
+    return new Promise(resolve => {
+        alexa_api.getAlarmVolume(device, savedConfig, function(err, resp) {
+            resolve(resp.playerInfo || {});
+        });
+    });
+}
+
 function getNotificationInfo() {
     return new Promise(resolve => {
         alexa_api.getNotifications(savedConfig, function(err, resp) {
@@ -597,15 +611,17 @@ async function buildEchoDeviceMap(eDevData) {
                 echoDevices[devSerialNumber].musicProviders = musicProvs;
                 let wakeWord = wakeWords.filter((item) => item.deviceSerialNumber === devSerialNumber).shift();
                 echoDevices[devSerialNumber].wakeWord = wakeWord ? wakeWord.wakeWord : "";
-
+                let alarmVolume = await getAlarmVolume(eDevData[dev]);
+                echoDevices[devSerialNumber].alarmVolume = alarmVolume || null;
                 let dnd = dndStates.filter((item) => item.deviceSerialNumber === devSerialNumber).shift();
 
                 echoDevices[devSerialNumber].dndEnabled = dnd ? dnd.enabled : false;
-                echoDevices[devSerialNumber].canPlayMusic = (eDevData[dev].capabilities.includes('AUDIO_PLAYER') || eDevData[dev].capabilities.includes('AMAZON_MUSIC') || eDevData[dev].capabilities.includes('TUNE_IN') || eDevData[dev].capabilities.includes('PANDORA') || eDevData[dev].capabilities.includes('I_HEART_RADIO')) || false;
+                echoDevices[devSerialNumber].canPlayMusic = (eDevData[dev].capabilities.includes('AUDIO_PLAYER') || eDevData[dev].capabilities.includes('AMAZON_MUSIC') || eDevData[dev].capabilities.includes('TUNE_IN') || eDevData[dev].capabilities.includes('PANDORA') || eDevData[dev].capabilities.includes('I_HEART_RADIO') || eDevData[dev].capabilities.includes('SPOTIFY')) || false;
                 echoDevices[devSerialNumber].allowAmazonMusic = (eDevData[dev].capabilities.includes('AMAZON_MUSIC')) || false;
                 echoDevices[devSerialNumber].allowTuneIn = (eDevData[dev].capabilities.includes('TUNE_IN')) || false;
                 echoDevices[devSerialNumber].allowIheart = (eDevData[dev].capabilities.includes('I_HEART_RADIO')) || false;
                 echoDevices[devSerialNumber].allowPandora = (eDevData[dev].capabilities.includes('PANDORA')) || false;
+                echoDevices[devSerialNumber].allowSpotify = (eDevData[dev].capabilities.includes('SPOTIFY')) || false;
                 echoDevices[devSerialNumber].isMultiroomDevice = (eDevData[dev].clusterMembers && eDevData[dev].clusterMembers.length > 0) || false;
                 echoDevices[devSerialNumber].isMultiroomMember = (eDevData[dev].parentClusters && eDevData[dev].parentClusters.length > 0) || false;
 
