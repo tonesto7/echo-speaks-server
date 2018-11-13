@@ -574,8 +574,9 @@ let createNotification = function(type, params, config, callback) {
             deviceType: params.deviceType,
             timeZoneId: null,
             recurringPattern: type !== 'Timer' ? '' : null,
-            reminderLabel: type !== 'Timer' ? params.label : null,
-            timerLabel: type !== 'Timer' ? null : params.label,
+            alarmLabel: type === 'Alarm' ? params.label : null,
+            reminderLabel: type === 'Reminder' ? params.label : null,
+            timerLabel: type === 'Timer' ? params.label : null,
             skillInfo: null,
             isSaveInFlight: type !== 'Timer' ? true : null,
             triggerTime: 0,
@@ -601,125 +602,24 @@ let createNotification = function(type, params, config, callback) {
     });
 };
 
-let setTimer = function(params, config, callback) {
-    let now = new Date();
-    request({
-        method: 'PUT',
-        url: alexaUrl + '/api/notifications/createTimer',
-        headers: {
-            'Cookie': config.cookies,
-            'csrf': config.csrf
-        },
-        json: {
-            type: 'Timer',
-            status: 'ON',
-            alarmTime: 0,
-            originalTime: null,
-            originalDate: null,
-            timeZoneId: null,
-            sound: null,
-            deviceSerialNumber: params.serialNumber,
-            deviceType: params.deviceType,
-            recurringPattern: '',
-            timerLabel: params.label,
-            isSaveInFlight: true,
-            id: 'createTimer',
-            isRecurring: false,
-            createdDate: now.getTime(),
-            remainingDuration: params.timerValue
-        }
-    }, function(error, response) {
-        if (!error && response.statusCode === 200) {
-            callback(null, {
-                status: "success",
-                code: response.statusCode,
-                response: response.body || ''
-            });
-        } else {
-            callback(error, {
-                status: "failure",
-                code: response.statusCode,
-                response: response.body || ''
-            });
-        }
-    });
-};
-
-function parseValue4Notification(notification, value) {
-    switch (typeof value) {
-        case 'object':
-            notification = extend(notification, value); // we combine the objects
-            break;
-        case 'number':
-            if (notification.type !== 'Timer') {
-                value = new Date(value);
-                notification.alarmTime = value.getTime();
-                notification.originalTime = dateFormat(value, 'HH:MM:00.000');
-            } else {
-                notification.remainingTime = value;
-            }
-            break;
-        case 'date':
-            if (notification.type !== 'Timer') {
-                notification.alarmTime = value.getTime();
-                notification.originalTime = dateFormat(value, 'HH:MM:00.000');
-            } else {
-                let duration = value.getTime() - Date.now();
-                if (duration < 0) duration = value.getTime();
-                notification.remainingTime = duration;
-            }
-            break;
-        case 'boolean':
-            notification.status = value ? 'ON' : 'OFF';
-            break;
-        case 'string':
-            let ar = value.split(':');
-            if (notification.type !== 'Timer') {
-                let date = new Date(notification.alarmTime);
-                date.setHours(parseInt(ar[0], 10), ar.length > 1 ? parseInt(ar[1], 10) : 0, ar.length > 2 ? parseInt(ar[2], 10) : 0);
-                notification.alarmTime = date.getTime();
-                notification.originalTime = dateFormat(value, 'HH:MM:00.000');
-            } else {
-                let duration = 0;
-                let multi = 1;
-                for (let i = ar.length - 1; i > 0; i--) {
-                    duration += ar[i] * multi;
-                    multi *= 60;
-                }
-                notification.remainingTime = duration;
-            }
-            break;
-    }
-
-    const originalDateTime = notification.originalDate + ' ' + notification.originalTime;
-    const bits = originalDateTime.split(/\D/);
-    let date = new Date(bits[0], --bits[1], bits[2], bits[3], bits[4], bits[5]);
-    if (date.getTime() < Date.now()) {
-        date = new Date(date.getTime() + 24 * 60 * 60 * 1000);
-        notification.originalDate = dateFormat(date, 'yyyy-mm-dd');
-        notification.originalTime = dateFormat(value, 'HH:MM:00.000');
-    }
-    return notification;
-}
-
-let changeNotification = function(notification, value, config, callback) {
-    notification = parseValue4Notification(notification, value);
-    request({
-        method: 'PUT',
-        url: `${alexaUrl}/api/notifications/${notification.id}`,
-        headers: {
-            'Cookie': config.cookies,
-            'csrf': config.csrf
-        },
-        json: notification
-    }, function(error, response, body) {
-        if (!error && response.statusCode === 200) {
-            callback(null, body);
-        } else {
-            callback(error, response);
-        }
-    });
-};
+// let changeNotification = function(notification, value, config, callback) {
+//     notification = parseValue4Notification(notification, value);
+//     request({
+//         method: 'PUT',
+//         url: `${alexaUrl}/api/notifications/${notification.id}`,
+//         headers: {
+//             'Cookie': config.cookies,
+//             'csrf': config.csrf
+//         },
+//         json: notification
+//     }, function(error, response, body) {
+//         if (!error && response.statusCode === 200) {
+//             callback(null, body);
+//         } else {
+//             callback(error, response);
+//         }
+//     });
+// };
 
 let deleteNotification = function(notification, config, callback) {
     request({
@@ -977,7 +877,5 @@ exports.getAutomationRoutines = getAutomationRoutines;
 exports.playMusicProvider = playMusicProvider;
 exports.getMusicProviders = getMusicProviders;
 exports.createNotification = createNotification;
-exports.setTimer = setTimer;
 exports.getNotifications = getNotifications;
-exports.changeNotification = changeNotification;
 exports.deleteNotification = deleteNotification;
