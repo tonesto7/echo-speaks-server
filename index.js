@@ -250,7 +250,7 @@ function startWebServer(checkForCookie = false) {
             configData.state.loginComplete = true;
             configFile.save();
             alexa_api.checkAuthentication(savedConfig, function(error, response) {
-                if (response && response.authentication && response.authentication.authenticated === true) {
+                if (response && response.authentication && response.authentication.authenticated !== true) {
                     authenticated = true;
                     buildEchoDeviceMap(config.devicesArray.devices)
                         .then(function(devOk) {
