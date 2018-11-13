@@ -219,7 +219,7 @@ let getAlarmVolume = function(device, config, callback) {
         json: true
     }, function(error, response, body) {
         if (!error && response.statusCode === 200) {
-            callback(null, body);
+            callback(null, { alarmVolume: body.volumeLevel || null });
         } else {
             callback(error, response);
         }

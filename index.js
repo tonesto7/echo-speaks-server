@@ -378,7 +378,7 @@ function startWebServer(checkForCookie = false) {
                             case 'AlarmVolume':
                                 cmdOpts.method = 'PUT';
                                 let device = {
-                                    deviceSerialNumber: req.headers.deviceserialnumber,
+                                    serialNumber: req.headers.deviceserialnumber,
                                     deviceType: req.headers.devicetype,
                                     softwareVersion: req.headers.softwareversion,
                                     volumeLevel: req.headers.volumeLevel
@@ -566,7 +566,7 @@ function getRoutinesInfo() {
 function getAlarmVolume(device) {
     return new Promise(resolve => {
         alexa_api.getAlarmVolume(device, savedConfig, function(err, resp) {
-            resolve(resp.playerInfo || {});
+            resolve(resp.alarmVolume || null);
         });
     });
 }
