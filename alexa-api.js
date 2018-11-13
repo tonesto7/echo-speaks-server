@@ -396,8 +396,6 @@ let tuneinSearch = function(query, ownerId, config, callback) {
     tuneinSearchRaw(query, ownerId, config, callback);
 };
 
-
-
 let getPlaylists = function(device, _config, callback) {
     request({
         method: 'GET',
@@ -405,10 +403,11 @@ let getPlaylists = function(device, _config, callback) {
         headers: {
             'Cookie': _config.cookies,
             'csrf': _config.csrf
-        }
+        },
+        json: true
     }, function(error, response, body) {
         if (!error && response.statusCode === 200) {
-            callback(null, JSON.parse(body));
+            callback(null, body || {});
         } else {
             callback(error, response);
         }

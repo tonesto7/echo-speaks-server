@@ -518,7 +518,7 @@ function getDeviceStateInfo(device) {
 function getPlaylistInfo(device) {
     return new Promise(resolve => {
         alexa_api.getPlaylists(device, savedConfig, function(err, resp) {
-            resolve(resp.getPlaylists || {});
+            resolve(resp.playlists || {});
         });
     });
 }
