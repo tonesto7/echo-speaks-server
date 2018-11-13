@@ -383,7 +383,7 @@ function startWebServer(checkForCookie = false) {
                                     softwareVersion: req.headers.softwareversion,
                                     volumeLevel: req.headers.volumeLevel
                                 };
-                                cmdOpts.url = `${alexaUrl}/api/device-notification-state/${device.deviceType}/${device.softwareVersion}/${device.deviceSerialNumber}`;
+                                cmdOpts.url = `${alexaUrl}/api/device-notification-state/${device.deviceType}/${device.softwareVersion}/${device.serialNumber}`;
                                 cmdOpts.json = device;
                                 break;
                             case 'ExecuteSequence':
