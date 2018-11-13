@@ -526,6 +526,7 @@ async function buildEchoDeviceMap(eDevData) {
                 echoDevices[devSerialNumber].isMultiroomMember = (eDevData[dev].parentClusters && eDevData[dev].parentClusters.length > 0) || false;
 
                 echoDevices[devSerialNumber].notifications = notifs.filter(item => item.deviceSerialNumber === devSerialNumber) || [];
+                delete eDevData[dev]['capabilities'];
             }
         }
     } catch (err) {
