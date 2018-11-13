@@ -408,6 +408,7 @@ function startWebServer(checkForCookie = false) {
                         params.label = req.query.label || '';
                         params.time = req.query.time || '';
                         params.date = req.query.date || '';
+                        params.timerDuration = req.query.timerDuration || null;
                         console.log(`received createNotification($type) request | query: ${params}`);
                         alexa_api.createNotification(type, params, savedConfig, function(error, response) {
                             res.send(response);

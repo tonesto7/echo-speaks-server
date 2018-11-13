@@ -581,7 +581,8 @@ let createNotification = function(type, params, config, callback) {
             triggerTime: 0,
             id: `create${type}`,
             isRecurring: false,
-            createdDate: createdDate
+            createdDate: createdDate,
+            remainingDuration: type !== 'Timer' ? 0 : params.timerDuration
         }
     }, function(error, response) {
         if (!error && response.statusCode === 200) {
