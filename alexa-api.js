@@ -552,8 +552,8 @@ let getNotifications = function(config, callback) {
 let createNotification = function(type, params, config, callback) {
     let now = new Date();
     let createdDate = now.getTime();
-    let addSeconds = new Date(createdDate + 1 * 60000); // one minute after the current time
-    let alarmTime = addSeconds.getTime();
+    let addSeconds = new Date(createdDate + 1 * 60000);
+    let alarmTime = type !== 'Timer' ? addSeconds.getTime() : 0;
     request({
         method: 'PUT',
         url: `${alexaUrl}/api/notifications/create${type}`,
@@ -565,16 +565,20 @@ let createNotification = function(type, params, config, callback) {
             type: type,
             status: 'ON',
             alarmTime: alarmTime,
-            originalTime: params.time + ':00.000',
-            originalDate: params.date,
+            originalTime: type !== 'Timer' ? params.time + ':00.000' : null,
+            originalDate: type !== 'Timer' ? params.date : null,
             timeZoneId: null,
             reminderIndex: null,
             sound: null,
             deviceSerialNumber: params.serialNumber,
             deviceType: params.deviceType,
-            recurringPattern: '',
-            reminderLabel: params.label,
-            isSaveInFlight: true,
+            timeZoneId: null,
+            recurringPattern: type !== 'Timer' ? '' : null,
+            reminderLabel: type !== 'Timer' ? params.label : null,
+            timerLabel: type !== 'Timer' ? null : params.label,
+            skillInfo: null,
+            isSaveInFlight: type !== 'Timer' ? true : null,
+            triggerTime: 0,
             id: `create${type}`,
             isRecurring: false,
             createdDate: createdDate
