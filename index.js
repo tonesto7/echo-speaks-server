@@ -249,10 +249,9 @@ function startWebServer(checkForCookie = false) {
             configFile.set('state.loginComplete', true);
             configData.state.loginComplete = true;
             configFile.save();
-            alexa_api.checkAuthentication(savedConfig, function(error, response) {
-                if (response && response.authentication && response.authentication.authenticated === true) {
-                    authenticated = true;
-                    buildEchoDeviceMap(config.devicesArray.devices)
+            authenticationCheck()
+                .then(function(res) {
+                    buildEchoDeviceMap()
                         .then(function(devOk) {
                             logger.silly('Echo Speaks Alexa API is Actively Running at (IP: ' + getIPAddress() + ' | Port: ' + configData.settings.serverPort + ') | ProcessId: ' + process.pid);
 
@@ -273,15 +272,15 @@ function startWebServer(checkForCookie = false) {
 
                             webApp.get('/getDevices', urlencodedParser, function(req, res) {
                                 logger.verbose('++ Received a getDevices Request... ++');
-                                alexa_api.getDevices(savedConfig, function(error, response) {
-                                    buildEchoDeviceMap(response.devices)
-                                        .then(function(devOk) {
-                                            res.send(echoDevices);
-                                        })
-                                        .catch(function(err) {
-                                            res.send(null);
-                                        });
-                                });
+                                // alexa_api.getDevices(savedConfig, function(error, response) {
+                                buildEchoDeviceMap()
+                                    .then(function(devOk) {
+                                        res.send(echoDevices);
+                                    })
+                                    .catch(function(err) {
+                                        res.send(null);
+                                    });
+                                // });
                             });
 
                             webApp.get('/getPlaylists', urlencodedParser, function(req, res) {
@@ -519,16 +518,11 @@ function startWebServer(checkForCookie = false) {
                         .catch(function(err) {
                             console.log(err);
                         });
-                } else {
-                    authenticated = false;
+                })
+                .catch(function(err) {
                     logger.debug('** Amazon Cookie is no longer valid!!! Please login again using the config page. **');
-                    clearAuth()
-                        .then(function() {
-                            handleDataUpload([], 'authFailed');
-                            startWebServer();
-                        });
-                }
-            });
+
+                });
         }
     });
 }
@@ -610,9 +604,31 @@ function getNotificationInfo() {
     });
 }
 
-async function buildEchoDeviceMap(eDevData) {
+function authenticationCheck() {
+    return new Promise((resolve, reject) => {
+        alexa_api.checkAuthentication(savedConfig, function(error, response) {
+            if (response && response.authentication && response.authentication.authenticated === true) {
+                authenticated = true;
+                resolve(true);
+            } else {
+                authenticated = false;
+                logger.debug('** Amazon Cookie is no longer valid!!! Please login again using the config page. **');
+                clearAuth()
+                    .then(function() {
+                        handleDataUpload([], 'checkAuthentication');
+                        startWebServer();
+
+                    });
+                reject(false);
+            }
+        });
+    });
+}
+
+async function buildEchoDeviceMap() {
     // console.log('eDevData: ', eDevData);
     try {
+        let eDevData = await alexa_api.getDevices2(savedConfig);
         let removeKeys = ['appDeviceList', 'charging', 'clusterMembers', 'essid', 'macAddress', 'parentClusters', 'deviceTypeFriendlyName', 'registrationId', 'remainingBatteryLevel', 'postalCode', 'language'];
         let wakeWords = await getWakeWordInfo();
         let dndStates = await getDeviceDndInfo();
@@ -657,6 +673,7 @@ async function buildEchoDeviceMap(eDevData) {
                 ignoredDevices[devSerialNumber] = eDevData[dev];
             }
         }
+        return echoDevices;
     } catch (err) {
         logger.error('buildEchoDeviceMap ERROR:', err);
     }
@@ -666,10 +683,11 @@ function handleDataUpload(deviceData, src) {
     try {
         let url = (configData.settings.useHeroku && configData.settings.smartThingsUrl) ? `${configData.settings.smartThingsUrl}` : `http://${configData.settings.smartThingsHubIP}:39500/event`;
         // logger.info('ST URL: ' + url);
-        if (deviceData === undefined) {
-            logger.error('device data missing');
-        } else if (configData.settings && ((configData.settings.useHeroku && configData.settings.smartThingsUrl) || (configData.settings.smartThingsHubIP !== "" && configData.settings.smartThingsHubIP !== undefined))) {
-            buildEchoDeviceMap(deviceData)
+        // if (deviceData === undefined) {
+        //     logger.error('device data missing');
+        // } else
+        if (configData.settings && ((configData.settings.useHeroku && configData.settings.smartThingsUrl) || (configData.settings.smartThingsHubIP !== "" && configData.settings.smartThingsHubIP !== undefined))) {
+            buildEchoDeviceMap()
                 .then(function() {
                     let options = {
                         method: 'POST',
@@ -729,13 +747,13 @@ function sendDeviceDataToST(eDevData) {
 }
 
 function sendStatusUpdateToST(self) {
-    self.getDevices(savedConfig, function(error, response) {
-        if (response && response.devices) {
-            handleDataUpload(response.devices, 'sendStatusUpdateToST');
-        } else {
-            logger.error("sendStatusUpdateToST Response was empty... | error: " + error);
-        }
-    });
+    // self.getDevices(savedConfig, function(error, response) {
+    // if (response && response.devices) {
+    handleDataUpload('sendStatusUpdateToST');
+    // } else {
+    // logger.error("sendStatusUpdateToST Response was empty... | error: " + error);
+    // }
+    // });
 }
 
 function scheduledDataUpdates() {

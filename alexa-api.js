@@ -301,8 +301,30 @@ let setMedia = function(command, device, config, callback) {
     });
 };
 
+let getDevices2 = function(config) {
+    return new Promise(resolve => {
+        reqPromise({
+                method: 'GET',
+                uri: `${alexaUrl}/api/devices-v2/device`,
+                headers: {
+                    'Cookie': config.cookies,
+                    'csrf': config.csrf
+                },
+                json: true
+            })
+            .then(function(resp) {
+                // console.log('getCookiesFromST resp: ', resp);
+                if (resp && resp.devices && resp.devices.length > 0)
+                    resolve(resp.devices);
+            })
+            .catch(function(err) {
+                logger.error("ERROR: Unable to retrieve Alexa Devices: " + err.message);
+                resolve([]);
+            });
+    });
+};
+
 let getDevices = function(config, callback) {
-    // console.log('config: ', JSON.stringify(config));
     request({
         method: 'GET',
         url: alexaUrl + '/api/devices-v2/device',
@@ -865,13 +887,11 @@ let createSequenceNode = function(device, command, value, callback) {
     return seqNode;
 };
 
-
-
 exports.alexaLogin = alexaLogin;
 exports.clearSession = clearSession;
-// exports.setReminder = setReminder;
 exports.setMedia = setMedia;
 exports.getDevices = getDevices;
+exports.getDevices2 = getDevices2;
 exports.getWakeWords = getWakeWords;
 exports.getState = getState;
 exports.getDndStatus = getDndStatus;
