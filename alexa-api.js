@@ -301,7 +301,7 @@ let setMedia = function(command, device, config, callback) {
     });
 };
 
-let getDevices2 = function(config) {
+let getDevices = function(config) {
     return new Promise(resolve => {
         reqPromise({
                 method: 'GET',
@@ -314,40 +314,12 @@ let getDevices2 = function(config) {
             })
             .then(function(resp) {
                 // console.log('getCookiesFromST resp: ', resp);
-                if (resp && resp.devices && resp.devices.length > 0)
-                    resolve(resp.devices);
+                resolve(resp.devices || []);
             })
             .catch(function(err) {
                 logger.error("ERROR: Unable to retrieve Alexa Devices: " + err.message);
                 resolve([]);
             });
-    });
-};
-
-let getDevices = function(config, callback) {
-    request({
-        method: 'GET',
-        url: alexaUrl + '/api/devices-v2/device',
-        headers: {
-            'Cookie': config.cookies,
-            'csrf': config.csrf
-        }
-    }, function(error, response, body) {
-        if (!error && response.statusCode === 200) {
-            try {
-                // console.log('getDevices Body: ', body);
-                config.devicesArray = JSON.parse(body);
-            } catch (e) {
-                logger.error('getDevices Error: ' + e.message);
-                config.devicesArray = [];
-            }
-            callback(null, config.devicesArray);
-        } else {
-            if (response && response.statusCode !== undefined) {
-                // console.log('getDevices status: ', response || "", 'Code: (' + response.statusCode || 'error' + ')');
-            }
-            callback(error, response);
-        }
     });
 };
 
@@ -387,7 +359,7 @@ let getDndStatus = function(_config, callback) {
                     }
                 }
             } catch (e) {
-                logger.error('getDevices Error: ' + e.message);
+                logger.error('getDndStatus Error: ' + e.message);
             }
             callback(null, items);
         } else {
@@ -891,7 +863,6 @@ exports.alexaLogin = alexaLogin;
 exports.clearSession = clearSession;
 exports.setMedia = setMedia;
 exports.getDevices = getDevices;
-exports.getDevices2 = getDevices2;
 exports.getWakeWords = getWakeWords;
 exports.getState = getState;
 exports.getDndStatus = getDndStatus;

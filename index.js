@@ -250,7 +250,7 @@ function startWebServer(checkForCookie = false) {
             configData.state.loginComplete = true;
             configFile.save();
             authenticationCheck()
-                .then(function(res) {
+                .then(function() {
                     buildEchoDeviceMap()
                         .then(function(devOk) {
                             logger.silly('Echo Speaks Alexa API is Actively Running at (IP: ' + getIPAddress() + ' | Port: ' + configData.settings.serverPort + ') | ProcessId: ' + process.pid);
@@ -628,13 +628,13 @@ function authenticationCheck() {
 async function buildEchoDeviceMap() {
     // console.log('eDevData: ', eDevData);
     try {
-        let eDevData = await alexa_api.getDevices2(savedConfig);
+        let eDevData = await alexa_api.getDevices(savedConfig);
         let removeKeys = ['appDeviceList', 'charging', 'clusterMembers', 'essid', 'macAddress', 'parentClusters', 'deviceTypeFriendlyName', 'registrationId', 'remainingBatteryLevel', 'postalCode', 'language'];
         let wakeWords = await getWakeWordInfo();
         let dndStates = await getDeviceDndInfo();
         let musicProvs = await getMusicProviderInfo();
         let notifs = await getNotificationInfo();
-        // let routines = await getRoutinesInfo();
+        let routines = await getRoutinesInfo();
 
         for (const dev in eDevData) {
             let devSerialNumber = eDevData[dev].serialNumber;
@@ -683,9 +683,6 @@ function handleDataUpload(deviceData, src) {
     try {
         let url = (configData.settings.useHeroku && configData.settings.smartThingsUrl) ? `${configData.settings.smartThingsUrl}` : `http://${configData.settings.smartThingsHubIP}:39500/event`;
         // logger.info('ST URL: ' + url);
-        // if (deviceData === undefined) {
-        //     logger.error('device data missing');
-        // } else
         if (configData.settings && ((configData.settings.useHeroku && configData.settings.smartThingsUrl) || (configData.settings.smartThingsHubIP !== "" && configData.settings.smartThingsHubIP !== undefined))) {
             buildEchoDeviceMap()
                 .then(function() {
@@ -747,13 +744,7 @@ function sendDeviceDataToST(eDevData) {
 }
 
 function sendStatusUpdateToST(self) {
-    // self.getDevices(savedConfig, function(error, response) {
-    // if (response && response.devices) {
     handleDataUpload('sendStatusUpdateToST');
-    // } else {
-    // logger.error("sendStatusUpdateToST Response was empty... | error: " + error);
-    // }
-    // });
 }
 
 function scheduledDataUpdates() {
