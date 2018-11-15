@@ -60,6 +60,7 @@ function loadConfig() {
     configFile.set('settings.amazonDomain', process.env.amazonDomain || (configData.settings.amazonDomain || 'amazon.com'));
     configFile.set('settings.smartThingsUrl', process.env.smartThingsUrl || configData.settings.smartThingsUrl);
     // configFile.set('settings.serviceDebug', true);
+    if (process.env.serviceDebug === true) logger.debug('** SERVICE DEBUG IS ACTIVE **');
     configFile.set('settings.serviceDebug', (process.env.serviceDebug === true));
     configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
     configFile.set('settings.refreshSeconds', process.env.refreshSeconds ? parseInt(process.env.refreshSeconds) : (configData.settings.refreshSeconds || 60));
@@ -77,7 +78,6 @@ function startWebConfig() {
         try {
             webApp.listen(configData.settings.serverPort, function() {
                 logger.info('** Echo Speaks Config Service (v' + appVer + ') is Running at (IP: ' + getIPAddress() + ' | Port: ' + configData.settings.serverPort + ') | ProcessId: ' + process.pid + ' **');
-                if (process.env.serviceDebug === true) logger.debug('** SERVICE DEBUG IS ACTIVE **');
             });
             webApp.use(function(req, res, next) {
                 res.header("Access-Control-Allow-Origin", "*");
