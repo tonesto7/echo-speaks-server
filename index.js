@@ -393,6 +393,8 @@ function startWebServer(checkForCookie = false) {
                                     cmdOpts.cmdDesc = req.headers.cmddesc || undefined;
                                     switch (cmdType) {
                                         case 'SetDnd':
+                                        case 'SetDoNotDisturbOn':
+                                        case 'SetDoNotDisturbOff':
                                             cmdOpts.method = 'PUT';
                                             cmdOpts.url = `${runTimeData.alexaUrl}/api/dnd/status`;
                                             cmdOpts.json = {
