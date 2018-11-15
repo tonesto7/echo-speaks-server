@@ -260,7 +260,8 @@ function startWebServer(checkForCookie = false) {
                                 let appVer = req.headers.appversion;
                                 logger.verbose('++ Received a Heartbeat Request...' + (appVer ? ' | Client Version: (v' + appVer + ')' : '') + ' ++');
                                 res.send({
-                                    result: "i am alive"
+                                    result: "i am alive",
+                                    authenticated: authenticated
                                 });
                             });
 
