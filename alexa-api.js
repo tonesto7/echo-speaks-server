@@ -441,7 +441,7 @@ let setWakeWord = function(prevWord, newWord, device, config, callback) {
             'csrf': config.csrf
         },
         json: {
-            active: true,
+            // active: true,
             deviceSerialNumber: device.serialNumber,
             deviceType: device.deviceType,
             displayName: prevWord,
