@@ -455,7 +455,7 @@ let setWakeWord = function(prevWord, newWord, device, config, callback) {
             });
         } else {
             callback(error, {
-                "message": response
+                "message": body.message
             });
         }
     });
