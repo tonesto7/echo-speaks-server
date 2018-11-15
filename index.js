@@ -353,7 +353,7 @@ function startWebServer(checkForCookie = false) {
                                     let query = req.query.search || '';
                                     console.log(`received tuneInSearch request | query: ${query}`);
                                     alexa_api.tuneinSearch(query, runTimeData.savedConfig, function(error, response) {
-                                        res.send(response);
+                                        res.send(JSON.stringify(response, undefined, 4));
                                     });
                                 });
 
@@ -703,8 +703,8 @@ async function buildEchoDeviceMap() {
                 for (const item in removeKeys) {
                     delete eDevData[dev][removeKeys[item]];
                 }
-                if (eDevData[dev].deviceOwnerCustomerId) {
-                    runTimeData.deviceOwnerCustomerId = eDevData[dev].deviceOwnerCustomerId;
+                if (eDevData[dev].deviceOwnerCustomerId !== undefined) {
+                    runTimeData.savedConfig.deviceOwnerCustomerId = eDevData[dev].deviceOwnerCustomerId;
                 }
                 runTimeData.echoDevices[devSerialNumber] = eDevData[dev];
                 let devState = await getDeviceStateInfo(eDevData[dev]);
