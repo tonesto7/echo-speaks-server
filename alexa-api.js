@@ -450,9 +450,13 @@ let setWakeWord = function(prevWord, newWord, device, config, callback) {
         }
     }, function(error, response, body) {
         if (!error && response.statusCode === 200) {
-            callback(null, body || null);
+            callback(null, {
+                "message": "success"
+            });
         } else {
-            callback(error, response);
+            callback(error, {
+                "message": error.message
+            });
         }
     });
 };
