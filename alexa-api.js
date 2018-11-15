@@ -13,6 +13,7 @@ const sessionFile = editJsonFile(dataFolder + '/session.json');
 
 let alexaUrl = 'https://alexa.amazon.com';
 let sessionData = sessionFile.get() || {};
+let serviceDebug = false;
 sessionFile.save();
 
 var clearSession = function(url, useHeroku) {
@@ -77,6 +78,7 @@ function alexaLogin(username, password, alexaOptions, webapp, callback) {
     config.deviceType = deviceType;
     config.deviceOwnerCustomerId = deviceOwnerCustomerId;
     config.alexaURL = alexaOptions.amazonDomain;
+    serviceDebug = (alexaOptions.debug === true);
 
     getRemoteCookie(alexaOptions)
         .then(function(remoteCookies) {
@@ -251,11 +253,11 @@ let getAutomationRoutines = function(limit, config, callback) {
 
 let executeCommand = function(_cmdOpts, callback) {
     // console.log('Method: ' + _cmdOpts.method);
-    // console.log('URL:' + _cmdOpts.url);
-    // console.log('Query: ', _cmdOpts.qs);
-    // console.log('Body: ', _cmdOpts.json);
+    serviceDebug && console.log('URL:' + _cmdOpts.url);
+    serviceDebug && console.log('Query: ', _cmdOpts.qs);
+    serviceDebug && console.log('JsonBody: ', _cmdOpts.json);
     request(_cmdOpts, function(error, response, body) {
-        // console.log('body:', body);
+        serviceDebug && console.log('Response Body:', body);
         console.log('executeCommand Status: (' + response.statusCode + ')');
         if (!error && response.statusCode === 200) {
             callback(null, {
@@ -267,7 +269,7 @@ let executeCommand = function(_cmdOpts, callback) {
                 "cmdDesc": _cmdOpts.cmdDesc || null
             });
         } else {
-            // console.log('error: ', error.message);
+            serviceDebug && error.message && console.log('error: ', error.message);
             callback(error, {
                 "statusCode": response.statusCode,
                 "deviceId": _cmdOpts.deviceId,
