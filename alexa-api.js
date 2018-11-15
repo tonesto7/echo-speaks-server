@@ -253,7 +253,7 @@ let getAutomationRoutines = function(limit, config, callback) {
 
 let executeCommand = function(_cmdOpts, callback) {
     // console.log('Method: ' + _cmdOpts.method);
-    serviceDebug && console.log('URL:' + _cmdOpts.url);
+    serviceDebug && console.log('URL: ' + _cmdOpts.url);
     serviceDebug && console.log('Query: ', _cmdOpts.qs);
     serviceDebug && console.log('JsonBody: ', _cmdOpts.json);
     request(_cmdOpts, function(error, response, body) {
