@@ -77,7 +77,7 @@ function startWebConfig() {
         try {
             webApp.listen(configData.settings.serverPort, function() {
                 logger.info('** Echo Speaks Config Service (v' + appVer + ') is Running at (IP: ' + getIPAddress() + ' | Port: ' + configData.settings.serverPort + ') | ProcessId: ' + process.pid + ' **');
-                if (configData.settings.serviceDebug === true) logger.debug('** SERVICE DEBUG IS ACTIVE **');
+                if (process.env.serviceDebug === true) logger.debug('** SERVICE DEBUG IS ACTIVE **');
             });
             webApp.use(function(req, res, next) {
                 res.header("Access-Control-Allow-Origin", "*");
