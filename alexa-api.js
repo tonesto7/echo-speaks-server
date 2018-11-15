@@ -201,10 +201,11 @@ let getDevicePreferences = function(cached = true, config, callback) {
         headers: {
             'Cookie': config.cookies,
             'csrf': config.csrf
-        }
+        },
+        json: true
     }, function(error, response, body) {
         if (!error && response.statusCode === 200) {
-            callback(null, JSON.parse(body));
+            callback(null, body);
         } else {
             callback(error, response);
         }
@@ -241,7 +242,7 @@ let getAutomationRoutines = function(limit, config, callback) {
         json: true
     }, function(error, response, body) {
         if (!error && response.statusCode === 200) {
-            callback(null, JSON.parse(JSON.stringify(body)));
+            callback(null, body);
         } else {
             callback(error, response);
         }
@@ -305,7 +306,7 @@ let setMedia = function(command, device, config, callback) {
 };
 
 let getDevices = function(config) {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
         reqPromise({
                 method: 'GET',
                 uri: `${alexaUrl}/api/devices-v2/device`,
@@ -316,12 +317,13 @@ let getDevices = function(config) {
                 json: true
             })
             .then(function(resp) {
-                // console.log('getCookiesFromST resp: ', resp);
-                resolve(resp.devices || []);
+                let devices = [];
+                if (resp && resp.devices) { devices = resp.devices; }
+                resolve(devices);
             })
             .catch(function(err) {
-                logger.error("ERROR: Unable to retrieve Alexa Devices: " + err.message);
-                resolve([]);
+                // logger.error("ERROR: Unable to retrieve Alexa Devices: " + err.message);
+                reject(err);
             });
     });
 };
@@ -350,12 +352,13 @@ let getDndStatus = function(_config, callback) {
         headers: {
             'Cookie': _config.cookies,
             'csrf': _config.csrf
-        }
+        },
+        json: true
     }, function(error, response, body) {
         if (!error && response.statusCode === 200) {
             let items = [];
             try {
-                let res = JSON.parse(body);
+                let res = body;
                 if (Object.keys(res).length) {
                     if (res.doNotDisturbDeviceStatusList.length) {
                         items = res.doNotDisturbDeviceStatusList;
@@ -429,6 +432,54 @@ let getWakeWords = function(_config, callback) {
     });
 };
 
+let setWakeWord = function(prevWord, newWord, device, config, callback) {
+    request({
+        method: 'PUT',
+        url: `${alexaUrl}/api/wake-word/${device.serialNumber}`,
+        headers: {
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        },
+        json: {
+            active: true,
+            deviceSerialNumber: device.serialNumber,
+            deviceType: device.deviceType,
+            displayName: prevWord,
+            midFieldState: null,
+            wakeWord: newWord
+        }
+    }, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            callback(null, body || null);
+        } else {
+            callback(error, response);
+        }
+    });
+};
+
+let getAvailWakeWords = function(device, config, callback) {
+    request({
+        method: 'GET',
+        url: `${alexaUrl}/api/wake-words-locale`,
+        qs: {
+            deviceSerialNumber: device.serialNumber,
+            deviceType: device.deviceType,
+            softwareVersion: device.softwareVersion
+        },
+        headers: {
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        },
+        json: true
+    }, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            callback(null, body || null);
+        } else {
+            callback(error, response);
+        }
+    });
+};
+
 function getList(device, listType, options, config, callback) {
     if (typeof options === 'function') {
         callback = options;
@@ -447,10 +498,11 @@ function getList(device, listType, options, config, callback) {
         headers: {
             'Cookie': config.cookies,
             'csrf': config.csrf
-        }
+        },
+        json: true
     }, function(error, response, body) {
         if (!error && response.statusCode === 200) {
-            callback(null, JSON.parse(body));
+            callback(null, body);
         } else {
             callback(error, response);
         }
@@ -514,6 +566,31 @@ let setBluetoothDevice = function(mac, device, config, callback) {
         },
         json: {
             bluetoothDeviceAddress: mac
+        }
+    }, function(error, response) {
+        if (!error && response.statusCode === 200) {
+            callback(null, {
+                "message": "success"
+            });
+        } else {
+            callback(error, response);
+        }
+    });
+};
+
+let setDeviceName = function(newName, device, config, callback) {
+    request({
+        method: 'PUT',
+        url: `${alexaUrl}/api/devices-v2/device/${device.serialNumber}`,
+        headers: {
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        },
+        json: {
+            accountName: newName,
+            serialNumber: device.serialNumber,
+            deviceAccountId: device.deviceOwnerCustomerId,
+            deviceType: device.deviceType
         }
     }, function(error, response) {
         if (!error && response.statusCode === 200) {
@@ -867,10 +944,13 @@ exports.clearSession = clearSession;
 exports.setMedia = setMedia;
 exports.getDevices = getDevices;
 exports.getWakeWords = getWakeWords;
+exports.setWakeWord = setWakeWord;
+exports.getAvailWakeWords = getAvailWakeWords;
 exports.getState = getState;
 exports.getDndStatus = getDndStatus;
 exports.getPlaylists = getPlaylists;
 exports.getLists = getLists;
+exports.setDeviceName = setDeviceName;
 exports.tuneinSearch = tuneinSearch;
 exports.getAlarmVolume = getAlarmVolume;
 exports.executeCommand = executeCommand;
