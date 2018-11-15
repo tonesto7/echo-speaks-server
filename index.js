@@ -37,7 +37,7 @@ let echoDevices = {};
 
 function initConfig() {
     return new Promise(function(resolve, reject) {
-        logger.debug('dataFolder: ' + dataFolder);
+        // logger.debug('dataFolder: ' + dataFolder);
         // Create the log directory if it does not exist
         if (!fs.existsSync(dataFolder)) {
             fs.mkdirSync(dataFolder);
@@ -77,7 +77,7 @@ function startWebConfig() {
         try {
             webApp.listen(configData.settings.serverPort, function() {
                 logger.info('** Echo Speaks Config Service (v' + appVer + ') is Running at (IP: ' + getIPAddress() + ' | Port: ' + configData.settings.serverPort + ') | ProcessId: ' + process.pid + ' **');
-                configData.settings.serviceDebug && logger.debug('** SERVICE DEBUG IS ACTIVE **');
+                if (configData.settings.serviceDebug === true) logger.debug('** SERVICE DEBUG IS ACTIVE **');
             });
             webApp.use(function(req, res, next) {
                 res.header("Access-Control-Allow-Origin", "*");
