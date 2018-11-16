@@ -182,7 +182,7 @@ let checkAuthentication = function(config, callback) {
         },
         json: true
     }, function(error, response, body) {
-        console.log("checkAuthentication resp: ", response, 'body:', body);
+        // console.log("checkAuthentication resp: ", response, 'body:', body);
         if (!error && response.statusCode === 200) {
             callback(null, {
                 result: (body && body.authentication && body.authentication.authenticated !== false)
