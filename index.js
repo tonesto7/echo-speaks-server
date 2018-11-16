@@ -692,9 +692,11 @@ async function buildEchoDeviceMap() {
 
                 if (err.message === '401 - undefined') {
                     logger.error("ERROR: Unable to getDevices() to buildEchoDeviceMap because you are not authenticated: " + err.message);
-                    authenticationCheck()
+                    clearAuth()
                         .then(function() {
-                            return {};
+                            logger.debug('** Amazon Cookie is no longer valid!!! Please login again using the config page. **');
+                            handleDataUpload([], 'checkAuthentication');
+                            startWebServer();
                         });
                 } else {
                     logger.error("ERROR: Unable to getDevices() to buildEchoDeviceMap: " + err.message);
