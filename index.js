@@ -688,7 +688,7 @@ async function buildEchoDeviceMap() {
     try {
         let eDevData = await alexa_api.getDevices(runTimeData.savedConfig)
             .catch(function(err) {
-                console.log('buildEchoDeviceMap getDevices Error: ', err);
+                // console.log('buildEchoDeviceMap getDevices Error: ', err);
                 logger.error("ERROR: Unable to getDevices() to buildEchoDeviceMap: " + err.message);
                 return runTimeData.echoDevices;
             });

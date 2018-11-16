@@ -322,7 +322,7 @@ let getDevices = function(config) {
                 resolve(devices);
             })
             .catch(function(err) {
-                // logger.error("ERROR: Unable to retrieve Alexa Devices: " + err.message);
+                logger.error("ERROR: Unable to retrieve Alexa Devices: " + err.message);
                 reject(err);
             });
     });
@@ -754,7 +754,7 @@ let getMusicProviders = function(config, callback) {
         json: true
     }, function(error, response, body) {
         if (!error && response.statusCode === 200) {
-            console.log('musicProvider:', body);
+            // console.log('musicProvider:', body);
             callback(null, body || {});
         } else {
             callback(error, response.statusMessage);
