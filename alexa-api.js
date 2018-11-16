@@ -754,9 +754,9 @@ let getMusicProviders = function(config, callback) {
         json: true
     }, function(error, response, body) {
         if (!error && response.statusCode === 200) {
-            callback(null, body ? JSON.parse(JSON.stringify(body)) : {});
+            callback(null, body || {});
         } else {
-            callback(error, response);
+            callback(error, response.statusMessage);
         }
     });
 };
