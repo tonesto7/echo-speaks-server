@@ -761,40 +761,41 @@ function handleDataUpload(deviceData, src) {
         if (configData.settings && ((configData.settings.useHeroku && configData.settings.smartThingsUrl) || (configData.settings.smartThingsHubIP !== "" && configData.settings.smartThingsHubIP !== undefined))) {
             buildEchoDeviceMap()
                 .then(function() {
-                        let options = {
-                            method: 'POST',
-                            uri: url,
-                            headers: {
-                                'evtSource': 'Echo_Speaks',
-                                'evtType': 'sendStatusData'
-                            },
-                            body: {
-                                'echoDevices': runTimeData.echoDevices,
-                                'authenticated': runTimeData.authenticated,
-                                'useHeroku': (configData.settings.useHeroku === true),
-                                'hostUrl': configData.settings.hostUrl || null,
-                                'cloudUrl': (configData.settings.useHeroku === true) ? `https://${configData.settings.hostUrl}` : null,
-                                'timestamp': Date.now(),
-                                'serviceInfo': {
-                                    'version': appVer,
-                                    'sessionEvts': runTimeData.eventCount,
-                                    'startupDt': getServiceUptime(),
-                                    'ip': getIPAddress(),
-                                    'port': configData.settings.serverPort,
-                                    'config': {
-                                        'refreshSeconds': configData.settings.refreshSeconds,
-                                        'smartThingsHubIP': configData.settings.smartThingsHubIP
-                                    }
+                    let options = {
+                        method: 'POST',
+                        uri: url,
+                        headers: {
+                            'evtSource': 'Echo_Speaks',
+                            'evtType': 'sendStatusData'
+                        },
+                        body: {
+                            'echoDevices': runTimeData.echoDevices,
+                            'authenticated': runTimeData.authenticated,
+                            'useHeroku': (configData.settings.useHeroku === true),
+                            'hostUrl': configData.settings.hostUrl || null,
+                            'cloudUrl': (configData.settings.useHeroku === true) ? `https://${configData.settings.hostUrl}` : null,
+                            'timestamp': Date.now(),
+                            'serviceInfo': {
+                                'version': appVer,
+                                'sessionEvts': runTimeData.eventCount,
+                                'startupDt': getServiceUptime(),
+                                'ip': getIPAddress(),
+                                'port': configData.settings.serverPort,
+                                'config': {
+                                    'refreshSeconds': configData.settings.refreshSeconds,
+                                    'smartThingsHubIP': configData.settings.smartThingsHubIP
                                 }
-                            },
-                            json: true
-                        };
-                        reqPromise(options)
-                            .then(function(resp) {
-                                    logger.debug('resp:', resp);
-                                    runTimeData.eventCount++;
-                                    if (configData.settings.useHeroku) {
-                                        logger.info(`** Sent Echo Speaks Data to SmartThings Cloud Endpoint Successfully! ${resp.version ? ` | Client Version: (${resp.version})` : ''}**`);
+                            }
+                        },
+                        json: true
+                    };
+                    reqPromise(options)
+                        .then(function(resp) {
+                            // logger.debug('resp:', resp);
+                            let cltVerStr = resp && resp.version ? ` | Client Version: (${resp.version})` : '';
+                            runTimeData.eventCount++;
+                            if (configData.settings.useHeroku) {
+                                logger.info(`** Sent Echo Speaks Data to SmartThings Cloud Endpoint Successfully!${cltVerStr} **`);
                             } else {
                                 logger.info(`** Sent Echo Speaks Data to SmartThings Hub Successfully! | Hub: (${url}) **`);
                             }
