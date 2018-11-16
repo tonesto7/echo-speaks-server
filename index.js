@@ -209,7 +209,7 @@ let clearAuth = function() {
         configFile.unset('password');
         configFile.save();
         // if (runTimeData.scheduledUpdatesActive) {
-        clearDataUpdates();
+        stopScheduledDataUpdates();
         // }
         resolve(true);
     });
@@ -533,7 +533,7 @@ function startWebServer(checkForCookie = false) {
                                         logger.debug('++ Changed Setting (refreshSeconds) | New Value: (' + req.headers.refreshseconds + ') | Old Value: (' + configData.settings.refreshSeconds + ') ++');
                                         configData.settings.refreshSeconds = parseInt(req.headers.refreshseconds);
                                         configFile.set('settings.refreshSeconds', parseInt(req.headers.refreshseconds));
-                                        clearDataUpdates();
+                                        stopScheduledDataUpdates();
                                         logger.debug("** Device Data Refresh Schedule Changed to Every (" + configData.settings.refreshSeconds + ' sec) **');
                                         setInterval(scheduledDataUpdates, configData.settings.refreshSeconds * 1000);
                                     }
@@ -688,8 +688,6 @@ async function buildEchoDeviceMap() {
     try {
         let eDevData = await alexa_api.getDevices(runTimeData.savedConfig)
             .catch(function(err) {
-                // console.log('buildEchoDeviceMap getDevices Error: ', err);
-
                 if (err.message === '401 - undefined') {
                     logger.error("ERROR: Unable to getDevices() to buildEchoDeviceMap because you are not authenticated: " + err.message);
                     clearAuth()
@@ -698,6 +696,7 @@ async function buildEchoDeviceMap() {
                             handleDataUpload([], 'checkAuthentication');
                             startWebServer();
                         });
+                    return {};
                 } else {
                     logger.error("ERROR: Unable to getDevices() to buildEchoDeviceMap: " + err.message);
                     return runTimeData.echoDevices;
@@ -762,40 +761,40 @@ function handleDataUpload(deviceData, src) {
         if (configData.settings && ((configData.settings.useHeroku && configData.settings.smartThingsUrl) || (configData.settings.smartThingsHubIP !== "" && configData.settings.smartThingsHubIP !== undefined))) {
             buildEchoDeviceMap()
                 .then(function() {
-                    let options = {
-                        method: 'POST',
-                        uri: url,
-                        headers: {
-                            'evtSource': 'Echo_Speaks',
-                            'evtType': 'sendStatusData'
-                        },
-                        body: {
-                            'echoDevices': runTimeData.echoDevices,
-                            'authenticated': runTimeData.authenticated,
-                            'useHeroku': (configData.settings.useHeroku === true),
-                            'hostUrl': configData.settings.hostUrl || null,
-                            'cloudUrl': (configData.settings.useHeroku === true) ? `https://${configData.settings.hostUrl}` : null,
-                            'timestamp': Date.now(),
-                            'serviceInfo': {
-                                'version': appVer,
-                                'sessionEvts': runTimeData.eventCount,
-                                'startupDt': getServiceUptime(),
-                                'ip': getIPAddress(),
-                                'port': configData.settings.serverPort,
-                                'config': {
-                                    'refreshSeconds': configData.settings.refreshSeconds,
-                                    'smartThingsHubIP': configData.settings.smartThingsHubIP
+                        let options = {
+                            method: 'POST',
+                            uri: url,
+                            headers: {
+                                'evtSource': 'Echo_Speaks',
+                                'evtType': 'sendStatusData'
+                            },
+                            body: {
+                                'echoDevices': runTimeData.echoDevices,
+                                'authenticated': runTimeData.authenticated,
+                                'useHeroku': (configData.settings.useHeroku === true),
+                                'hostUrl': configData.settings.hostUrl || null,
+                                'cloudUrl': (configData.settings.useHeroku === true) ? `https://${configData.settings.hostUrl}` : null,
+                                'timestamp': Date.now(),
+                                'serviceInfo': {
+                                    'version': appVer,
+                                    'sessionEvts': runTimeData.eventCount,
+                                    'startupDt': getServiceUptime(),
+                                    'ip': getIPAddress(),
+                                    'port': configData.settings.serverPort,
+                                    'config': {
+                                        'refreshSeconds': configData.settings.refreshSeconds,
+                                        'smartThingsHubIP': configData.settings.smartThingsHubIP
+                                    }
                                 }
-                            }
-                        },
-                        json: true
-                    };
-                    reqPromise(options)
-                        .then(function(resp) {
-                            // logger.debug('resp:', resp);
-                            runTimeData.eventCount++;
-                            if (configData.settings.useHeroku) {
-                                logger.info(`** Sent Echo Speaks Data to SmartThings Cloud Endpoint Successfully! **`);
+                            },
+                            json: true
+                        };
+                        reqPromise(options)
+                            .then(function(resp) {
+                                    logger.debug('resp:', resp);
+                                    runTimeData.eventCount++;
+                                    if (configData.settings.useHeroku) {
+                                        logger.info(`** Sent Echo Speaks Data to SmartThings Cloud Endpoint Successfully! ${resp.version ? ` | Client Version: (${resp.version})` : ''}**`);
                             } else {
                                 logger.info(`** Sent Echo Speaks Data to SmartThings Hub Successfully! | Hub: (${url}) **`);
                             }
@@ -827,10 +826,14 @@ function scheduledDataUpdates() {
     sendStatusUpdateToST(alexa_api);
 }
 
-function clearDataUpdates() {
+function stopScheduledDataUpdates() {
     runTimeData.scheduledUpdatesActive = false;
     logger.debug("Scheduled Updates Cancelled...");
-    clearInterval(scheduledDataUpdates);
+    try {
+        clearInterval(scheduledDataUpdates);
+    } catch (err) {
+        // console.log('clearUpdates Schedule: ')
+    }
 }
 
 function configCheckOk() {
@@ -980,7 +983,7 @@ process.on('uncaughtException', exitHandler.bind(null, {
 function exitHandler(options, exitCode) {
     // alexaCookie.stopProxyServer();
     if (runTimeData.scheduledUpdatesActive) {
-        clearDataUpdates();
+        stopScheduledDataUpdates();
     }
     if (options.cleanup) {
         console.log('clean');
