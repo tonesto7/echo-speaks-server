@@ -688,13 +688,15 @@ async function buildEchoDeviceMap() {
         let eDevData = await alexa_api.getDevices(runTimeData.savedConfig)
             .catch(function(err) {
                 // console.log('buildEchoDeviceMap getDevices Error: ', err);
-                logger.error("ERROR: Unable to getDevices() to buildEchoDeviceMap: " + err.message);
+
                 if (err.message === '401 - undefined') {
+                    logger.error("ERROR: Unable to getDevices() to buildEchoDeviceMap because you are not authenticated: " + err.message);
                     authenticationCheck()
                         .then(function() {
                             return {};
                         });
                 } else {
+                    logger.error("ERROR: Unable to getDevices() to buildEchoDeviceMap: " + err.message);
                     return runTimeData.echoDevices;
                 }
             });
