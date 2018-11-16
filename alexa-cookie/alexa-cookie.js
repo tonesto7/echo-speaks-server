@@ -240,8 +240,13 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
     };
     _options.debug && console.log('Alexa-Cookie: Step 1: get first cookie and authentication redirect');
     request(options, (error, response, body, info) => {
+        if (error) {
+            callback && callback(error, null);
+            return;
+        }
 
-        let lastRequestOptions = info.requests[info.requests.length - 1].options || undefined;
+        let lastRequestOptions = info.requests[info.requests.length - 1].options;
+        console.log('lastRequestOptions1: ', lastRequestOptions);
         // login empty to generate session
         Cookie = addCookies(Cookie, response.headers);
         let options = {
@@ -264,6 +269,11 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
         };
         _options.debug && console.log('Alexa-Cookie: Step 2: login empty to generate session');
         request(options, (error, response, body, info) => {
+            if (error) {
+                callback && callback(error, null);
+                return;
+            }
+
             // login with filled out form
             //  !!! referer now contains session in URL
             options.host = 'www.' + _options.amazonDomain;
@@ -279,8 +289,12 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
 
             _options.debug && console.log('Alexa-Cookie: Step 3: login with filled form, referer contains session id');
             request(options, (error, response, body, info) => {
+                if (error) {
+                    callback && callback(error, null);
+                    return;
+                }
                 let lastRequestOptions = info.requests[info.requests.length - 1].options;
-
+                console.log('lastRequestOptions2: ', lastRequestOptions);
                 // check whether the login has been successful or exit otherwise
                 if (!lastRequestOptions.host.startsWith('alexa') || !lastRequestOptions.path.endsWith('.html')) {
                     let errMessage = 'Login unsuccessfull. Please check credentials.';
@@ -338,7 +352,7 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
         followRedirects: false,
         logLevel: _options.proxyLogLevel,
         onError: onError,
-        onProxyRes: onProxyRes,
+        onProxyRes: onProxyResp,
         onProxyReq: onProxyReq,
         headers: {
             'user-agent': _options.userAgent,
@@ -413,8 +427,7 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
     function onProxyReq(proxyReq, req, res) {
         const url = req.originalUrl || req.url;
         if (url.endsWith('.ico') || url.endsWith('.js') || url.endsWith('.ttf') || url.endsWith('.svg') || url.endsWith('.png') || url.endsWith('.appcache')) return;
-        if (url.startsWith('/ap/uedata')) return;
-        if (url.startsWith('/gp/aui')) return;
+        if (url.startsWith('/ap/uedata')) { return; }
 
         _options.debug && console.log('Alexa-Cookie: Proxy-Request: ' + req.method + ' ' + url);
         //_options.logger && _options.logger('Alexa-Cookie: Proxy-Request-Data: ' + customStringify(proxyReq, null, 2));
@@ -457,11 +470,10 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
         }
     }
 
-    function onProxyRes(proxyRes, req, res) {
+    function onProxyResp(proxyRes, req, res) {
         const url = req.originalUrl || req.url;
         if (url.endsWith('.ico') || url.endsWith('.js') || url.endsWith('.ttf') || url.endsWith('.svg') || url.endsWith('.png') || url.endsWith('.appcache')) { return; }
         if (url.startsWith('/ap/uedata')) { return; }
-        if (url.startsWith('/gp/aui')) return;
 
         if (_options.debug) {
             // console.log('Proxy-Response: ' + customStringify(proxyRes, null, 2));

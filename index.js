@@ -59,9 +59,9 @@ function loadConfig() {
     configFile.set('settings.useHeroku', (process.env.useHeroku === true || process.env.useHeroku === 'true'));
     configFile.set('settings.amazonDomain', process.env.amazonDomain || (configData.settings.amazonDomain || 'amazon.com'));
     configFile.set('settings.smartThingsUrl', process.env.smartThingsUrl || configData.settings.smartThingsUrl);
-    // configFile.set('settings.serviceDebug', true);
     if (process.env.serviceDebug === true || process.env.serviceDebug === 'true') console.log('** SERVICE DEBUG IS ACTIVE **');
-    configFile.set('settings.serviceDebug', (process.env.serviceDebug === true || process.env.serviceDebug === 'true'));
+    // configFile.set('settings.serviceDebug', (process.env.serviceDebug === true || process.env.serviceDebug === 'true'));
+    configFile.set('settings.serviceDebug', true);
     configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
     configFile.set('settings.refreshSeconds', process.env.refreshSeconds ? parseInt(process.env.refreshSeconds) : (configData.settings.refreshSeconds || 60));
     if (!configData.state) {
@@ -849,18 +849,19 @@ initConfig()
         if (res) {
             startWebConfig()
                 .then(function(res) {
-                    // console.log('webconfig up');
                     configCheckOk()
                         .then(function(res) {
                             if (res === true) {
-                                // console.log('loginComplete: ' + configData.state.loginComplete, 'hostUrl: ' + configData.settings.hostUrl, 'smartThingsUrl: ' + configData.settings.smartThingsUrl);
                                 if (configData.state.loginComplete === true || (configData.settings.hostUrl && configData.settings.smartThingsUrl)) {
                                     logger.info('-- Echo Speaks Web Service Starting Up! Takes about 10 seconds before it\'s available... --');
                                     startWebServer((configData.settings.useHeroku === true && configData.settings.smartThingsUrl !== undefined));
+                                } else {
+                                    logger.info(`** Echo Speaks Web Service is Waiting for Amazon Login to Start... loginComplete: ${configData.state.loginComplete || undefined} | hostUrl: ${configData.settings.hostUrl || undefined} | smartThingsUrl: ${configData.settings.smartThingsUrl} **`);
                                 }
+                            } else {
+                                logger.error('Config Check Did Not Pass');
                             }
                         });
-
                 })
                 .catch(function(err) {
                     logger.error("## Start Web Config Error: " + err.message);
