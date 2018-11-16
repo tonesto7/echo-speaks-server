@@ -690,10 +690,13 @@ async function buildEchoDeviceMap() {
                 // console.log('buildEchoDeviceMap getDevices Error: ', err);
                 logger.error("ERROR: Unable to getDevices() to buildEchoDeviceMap: " + err.message);
                 if (err.message === '401 - undefined') {
-                    let chkAuth = await checkAuthentication();
-                    return {};
+                    authenticationCheck()
+                        .then(function() {
+                            return {};
+                        });
+                } else {
+                    return runTimeData.echoDevices;
                 }
-                return runTimeData.echoDevices;
             });
         if (!Object.keys(eDevData).length > 0) { return {}; }
         let removeKeys = ['appDeviceList', 'charging', 'macAddress', 'deviceTypeFriendlyName', 'registrationId', 'remainingBatteryLevel', 'postalCode', 'language'];
