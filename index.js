@@ -693,6 +693,7 @@ async function buildEchoDeviceMap() {
                     logger.error("ERROR: Unable to getDevices() to buildEchoDeviceMap because you are not authenticated: " + err.message);
                     authenticationCheck()
                         .then(function() {
+                            startWebServer();
                             return {};
                         });
                 } else {
