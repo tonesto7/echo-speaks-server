@@ -664,6 +664,7 @@ function authenticationCheck() {
     return new Promise((resolve) => {
         logger.debug('** Checking if Amazon Cookie is Still Valid. **');
         alexa_api.checkAuthentication(runTimeData.savedConfig, function(error, resp) {
+            logger.debug(`** Authentication Check Response | Authenticated: ${resp.result || undefined} **`);
             if (resp && resp.result && resp.result !== undefined) {
                 runTimeData.authenticated = (resp.result !== false);
                 if (!runTimeData.authenticated) {
