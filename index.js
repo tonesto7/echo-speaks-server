@@ -208,9 +208,9 @@ let clearAuth = function() {
         configFile.unset('user');
         configFile.unset('password');
         configFile.save();
-        if (runTimeData.scheduledUpdatesActive) {
-            clearDataUpdates();
-        }
+        // if (runTimeData.scheduledUpdatesActive) {
+        clearDataUpdates();
+        // }
         resolve(true);
     });
 
