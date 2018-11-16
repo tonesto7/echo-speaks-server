@@ -667,12 +667,11 @@ function authenticationCheck() {
             if (resp && resp.result && resp.result !== undefined) {
                 runTimeData.authenticated = (resp.result !== false);
                 if (!runTimeData.authenticated) {
-                    logger.debug('** Amazon Cookie is no longer valid!!! Please login again using the config page. **');
                     clearAuth()
                         .then(function() {
+                            logger.debug('** Amazon Cookie is no longer valid!!! Please login again using the config page. **');
                             handleDataUpload([], 'checkAuthentication');
                             startWebServer();
-
                         });
                 }
                 resolve(runTimeData.authenticated);
@@ -690,9 +689,13 @@ async function buildEchoDeviceMap() {
             .catch(function(err) {
                 // console.log('buildEchoDeviceMap getDevices Error: ', err);
                 logger.error("ERROR: Unable to getDevices() to buildEchoDeviceMap: " + err.message);
+                if (err.message === '401 - undefined') {
+                    let chkAuth = await checkAuthentication();
+                    return {};
+                }
                 return runTimeData.echoDevices;
             });
-
+        if (!Object.keys(eDevData).length > 0) { return {}; }
         let removeKeys = ['appDeviceList', 'charging', 'macAddress', 'deviceTypeFriendlyName', 'registrationId', 'remainingBatteryLevel', 'postalCode', 'language'];
         let wakeWords = await getWakeWordInfo();
         let dndStates = await getDeviceDndInfo();
