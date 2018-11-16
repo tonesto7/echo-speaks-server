@@ -545,7 +545,7 @@ function startWebServer(checkForCookie = false) {
                                     configFile.save();
                                 });
 
-                                sendDeviceDataToST(runTimeData.echoDevices);
+                                if (Object.keys(runTimeData.echoDevices).length > 0) { sendDeviceDataToST(runTimeData.echoDevices); }
                                 logger.debug("** Device Data Refresh Scheduled for Every (" + configData.settings.refreshSeconds + ' sec) **');
                                 setInterval(scheduledDataUpdates, configData.settings.refreshSeconds * 1000);
                                 runTimeData.scheduledUpdatesActive = true;
