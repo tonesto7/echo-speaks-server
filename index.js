@@ -612,9 +612,11 @@ function getMusicProviderInfo() {
     return new Promise(resolve => {
         alexa_api.getMusicProviders(runTimeData.savedConfig, function(err, resp) {
             let items = {};
-            resp.filter((item) => item.availability === 'AVAILABLE').forEach((item) => {
-                items[item.id] = item.displayName;
-            });
+            if (resp && resp !== undefined) {
+                resp.filter((item) => item.availability === 'AVAILABLE').forEach((item) => {
+                    items[item.id] = item.displayName;
+                });
+            }
             resolve(items || {});
         });
     });
