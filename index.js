@@ -59,9 +59,11 @@ function loadConfig() {
     configFile.set('settings.useHeroku', (process.env.useHeroku === true || process.env.useHeroku === 'true'));
     configFile.set('settings.amazonDomain', process.env.amazonDomain || (configData.settings.amazonDomain || 'amazon.com'));
     configFile.set('settings.smartThingsUrl', process.env.smartThingsUrl || configData.settings.smartThingsUrl);
-    // configFile.set('settings.serviceDebug', true);
     if (process.env.serviceDebug === true || process.env.serviceDebug === 'true') console.log('** SERVICE DEBUG IS ACTIVE **');
     configFile.set('settings.serviceDebug', (process.env.serviceDebug === true || process.env.serviceDebug === 'true'));
+    configFile.set('settings.serviceTrace', (process.env.serviceTrace === true || process.env.serviceTrace === 'true'));
+    // configFile.set('settings.serviceDebug', true);
+    // configFile.set('settings.serviceTrace', true);
     configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
     configFile.set('settings.refreshSeconds', process.env.refreshSeconds ? parseInt(process.env.refreshSeconds) : (configData.settings.refreshSeconds || 60));
     if (!configData.state) {
@@ -208,9 +210,9 @@ let clearAuth = function() {
         configFile.unset('user');
         configFile.unset('password');
         configFile.save();
-        if (runTimeData.scheduledUpdatesActive) {
-            clearDataUpdates();
-        }
+        // if (runTimeData.scheduledUpdatesActive) {
+        stopScheduledDataUpdates();
+        // }
         resolve(true);
     });
 
@@ -219,6 +221,7 @@ let clearAuth = function() {
 function startWebServer(checkForCookie = false) {
     const alexaOptions = {
         debug: (configData.settings.serviceDebug === true),
+        trace: (configData.settings.serviceTrace === true),
         checkForCookie: checkForCookie,
         serverPort: configData.settings.serverPort,
         amazonDomain: configData.settings.amazonDomain,
@@ -533,7 +536,7 @@ function startWebServer(checkForCookie = false) {
                                         logger.debug('++ Changed Setting (refreshSeconds) | New Value: (' + req.headers.refreshseconds + ') | Old Value: (' + configData.settings.refreshSeconds + ') ++');
                                         configData.settings.refreshSeconds = parseInt(req.headers.refreshseconds);
                                         configFile.set('settings.refreshSeconds', parseInt(req.headers.refreshseconds));
-                                        clearDataUpdates();
+                                        stopScheduledDataUpdates();
                                         logger.debug("** Device Data Refresh Schedule Changed to Every (" + configData.settings.refreshSeconds + ' sec) **');
                                         setInterval(scheduledDataUpdates, configData.settings.refreshSeconds * 1000);
                                     }
@@ -545,7 +548,7 @@ function startWebServer(checkForCookie = false) {
                                     configFile.save();
                                 });
 
-                                sendDeviceDataToST(runTimeData.echoDevices);
+                                if (Object.keys(runTimeData.echoDevices).length > 0) { sendDeviceDataToST(runTimeData.echoDevices); }
                                 logger.debug("** Device Data Refresh Scheduled for Every (" + configData.settings.refreshSeconds + ' sec) **');
                                 setInterval(scheduledDataUpdates, configData.settings.refreshSeconds * 1000);
                                 runTimeData.scheduledUpdatesActive = true;
@@ -612,9 +615,11 @@ function getMusicProviderInfo() {
     return new Promise(resolve => {
         alexa_api.getMusicProviders(runTimeData.savedConfig, function(err, resp) {
             let items = {};
-            resp.filter((item) => item.availability === 'AVAILABLE').forEach((item) => {
-                items[item.id] = item.displayName;
-            });
+            if (resp && resp !== undefined) {
+                resp.filter((item) => item.availability === 'AVAILABLE').forEach((item) => {
+                    items[item.id] = item.displayName;
+                });
+            }
             resolve(items || {});
         });
     });
@@ -662,15 +667,15 @@ function authenticationCheck() {
     return new Promise((resolve) => {
         logger.debug('** Checking if Amazon Cookie is Still Valid. **');
         alexa_api.checkAuthentication(runTimeData.savedConfig, function(error, resp) {
+            logger.debug(`** Authentication Check Response | Authenticated: ${resp.result || undefined} **`);
             if (resp && resp.result && resp.result !== undefined) {
                 runTimeData.authenticated = (resp.result !== false);
                 if (!runTimeData.authenticated) {
-                    logger.debug('** Amazon Cookie is no longer valid!!! Please login again using the config page. **');
                     clearAuth()
                         .then(function() {
+                            logger.debug('** Amazon Cookie is no longer valid!!! Please login again using the config page. **');
                             handleDataUpload([], 'checkAuthentication');
                             startWebServer();
-
                         });
                 }
                 resolve(runTimeData.authenticated);
@@ -686,11 +691,21 @@ async function buildEchoDeviceMap() {
     try {
         let eDevData = await alexa_api.getDevices(runTimeData.savedConfig)
             .catch(function(err) {
-                console.log('buildEchoDeviceMap getDevices Error: ', err);
-                logger.error("ERROR: Unable to getDevices() to buildEchoDeviceMap: " + err.message);
-                return runTimeData.echoDevices;
+                if (err.message === '401 - undefined') {
+                    logger.error("ERROR: Unable to getDevices() to buildEchoDeviceMap because you are not authenticated: " + err.message);
+                    clearAuth()
+                        .then(function() {
+                            logger.debug('** Amazon Cookie is no longer valid!!! Please login again using the config page. **');
+                            handleDataUpload([], 'checkAuthentication');
+                            startWebServer();
+                        });
+                    return {};
+                } else {
+                    logger.error("ERROR: Unable to getDevices() to buildEchoDeviceMap: " + err.message);
+                    return runTimeData.echoDevices;
+                }
             });
-
+        if (!Object.keys(eDevData).length > 0) { return {}; }
         let removeKeys = ['appDeviceList', 'charging', 'macAddress', 'deviceTypeFriendlyName', 'registrationId', 'remainingBatteryLevel', 'postalCode', 'language'];
         let wakeWords = await getWakeWordInfo();
         let dndStates = await getDeviceDndInfo();
@@ -780,9 +795,10 @@ function handleDataUpload(deviceData, src) {
                     reqPromise(options)
                         .then(function(resp) {
                             // logger.debug('resp:', resp);
+                            let cltVerStr = resp && resp.version ? ` | Client Version: (${resp.version})` : '';
                             runTimeData.eventCount++;
                             if (configData.settings.useHeroku) {
-                                logger.info(`** Sent Echo Speaks Data to SmartThings Cloud Endpoint Successfully! **`);
+                                logger.info(`** Sent Echo Speaks Data to SmartThings Cloud Endpoint Successfully!${cltVerStr} **`);
                             } else {
                                 logger.info(`** Sent Echo Speaks Data to SmartThings Hub Successfully! | Hub: (${url}) **`);
                             }
@@ -814,10 +830,14 @@ function scheduledDataUpdates() {
     sendStatusUpdateToST(alexa_api);
 }
 
-function clearDataUpdates() {
+function stopScheduledDataUpdates() {
     runTimeData.scheduledUpdatesActive = false;
     logger.debug("Scheduled Updates Cancelled...");
-    clearInterval(scheduledDataUpdates);
+    try {
+        clearInterval(scheduledDataUpdates);
+    } catch (err) {
+        // console.log('clearUpdates Schedule: ')
+    }
 }
 
 function configCheckOk() {
@@ -832,18 +852,19 @@ initConfig()
         if (res) {
             startWebConfig()
                 .then(function(res) {
-                    // console.log('webconfig up');
                     configCheckOk()
                         .then(function(res) {
                             if (res === true) {
-                                // console.log('loginComplete: ' + configData.state.loginComplete, 'hostUrl: ' + configData.settings.hostUrl, 'smartThingsUrl: ' + configData.settings.smartThingsUrl);
                                 if (configData.state.loginComplete === true || (configData.settings.hostUrl && configData.settings.smartThingsUrl)) {
                                     logger.info('-- Echo Speaks Web Service Starting Up! Takes about 10 seconds before it\'s available... --');
                                     startWebServer((configData.settings.useHeroku === true && configData.settings.smartThingsUrl !== undefined));
+                                } else {
+                                    logger.info(`** Echo Speaks Web Service is Waiting for Amazon Login to Start... loginComplete: ${configData.state.loginComplete || undefined} | hostUrl: ${configData.settings.hostUrl || undefined} | smartThingsUrl: ${configData.settings.smartThingsUrl} **`);
                                 }
+                            } else {
+                                logger.error('Config Check Did Not Pass');
                             }
                         });
-
                 })
                 .catch(function(err) {
                     logger.error("## Start Web Config Error: " + err.message);
@@ -967,7 +988,7 @@ process.on('uncaughtException', exitHandler.bind(null, {
 function exitHandler(options, exitCode) {
     // alexaCookie.stopProxyServer();
     if (runTimeData.scheduledUpdatesActive) {
-        clearDataUpdates();
+        stopScheduledDataUpdates();
     }
     if (options.cleanup) {
         console.log('clean');

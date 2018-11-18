@@ -79,6 +79,7 @@ function alexaLogin(username, password, alexaOptions, webapp, callback) {
     config.deviceOwnerCustomerId = deviceOwnerCustomerId;
     config.alexaURL = alexaOptions.amazonDomain;
     serviceDebug = (alexaOptions.debug === true);
+    serviceTrace = (alexaOptions.trace === true);
 
     getRemoteCookie(alexaOptions)
         .then(function(remoteCookies) {
@@ -182,6 +183,7 @@ let checkAuthentication = function(config, callback) {
         },
         json: true
     }, function(error, response, body) {
+        // console.log("checkAuthentication resp: ", response, 'body:', body);
         if (!error && response.statusCode === 200) {
             callback(null, {
                 result: (body && body.authentication && body.authentication.authenticated !== false)
@@ -195,6 +197,24 @@ let checkAuthentication = function(config, callback) {
 };
 
 let getDevicePreferences = function(cached = true, config, callback) {
+    request({
+        method: 'GET',
+        url: `${alexaUrl}/api/device-preferences?cached=${cached === true}`,
+        headers: {
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        },
+        json: true
+    }, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            callback(null, body);
+        } else {
+            callback(error, response);
+        }
+    });
+};
+
+let setDevicePreferences = function(cached = true, config, callback) {
     request({
         method: 'GET',
         url: `${alexaUrl}/api/device-preferences?cached=${cached === true}`,
@@ -322,7 +342,7 @@ let getDevices = function(config) {
                 resolve(devices);
             })
             .catch(function(err) {
-                // logger.error("ERROR: Unable to retrieve Alexa Devices: " + err.message);
+                logger.error("ERROR: Unable to retrieve Alexa Devices: " + err.message);
                 reject(err);
             });
     });
@@ -754,9 +774,10 @@ let getMusicProviders = function(config, callback) {
         json: true
     }, function(error, response, body) {
         if (!error && response.statusCode === 200) {
-            callback(null, body ? JSON.parse(JSON.stringify(body)) : {});
+            // console.log('musicProvider:', body);
+            callback(null, body || {});
         } else {
-            callback(error, response);
+            callback(error, response.statusMessage);
         }
     });
 };
