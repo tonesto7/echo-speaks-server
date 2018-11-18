@@ -213,6 +213,24 @@ let getDevicePreferences = function(cached = true, config, callback) {
     });
 };
 
+let setDevicePreferences = function(cached = true, config, callback) {
+    request({
+        method: 'GET',
+        url: `${alexaUrl}/api/device-preferences?cached=${cached === true}`,
+        headers: {
+            'Cookie': config.cookies,
+            'csrf': config.csrf
+        },
+        json: true
+    }, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            callback(null, body);
+        } else {
+            callback(error, response);
+        }
+    });
+};
+
 let getAlarmVolume = function(device, config, callback) {
     request({
         method: 'GET',

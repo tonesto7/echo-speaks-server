@@ -5,7 +5,9 @@
 /* jslint esversion: 6 */
 "use strict";
 
+
 /**
+ * Original version Written by Apollon  https://github.com/apollon77/alexa-cookie
  * partly based on Amazon Alexa Remote Control (PLAIN shell)
  * http://blog.loetzimmer.de/2017/10/amazon-alexa-hort-auf-die-shell-echo.html AND on
  * https://github.com/thorsten-gehrig/alexa-remote-control
@@ -70,7 +72,7 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
     };
 
     function request(options, info, callback) {
-        _options.logger && _options.logger('Alexa-Cookie: Sending Request with ' + JSON.stringify(options));
+        _options.debug && console.log('Alexa-Cookie: Sending Request with ' + JSON.stringify(options));
         if (typeof info === 'function') {
             callback = info;
             info = {
@@ -93,7 +95,7 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
             info.requests.push({ options: options, response: res });
 
             if (options.followRedirects !== false && res.statusCode >= 300 && res.statusCode < 400) {
-                if (_options.debug) { console.log('Alexa-Cookie: Response (' + res.statusCode + ')' + (res.headers.location ? ' - Redirect to ' + res.headers.location : '')); }
+                _options.debug && console.log('Alexa-Cookie: Response (' + res.statusCode + ')' + (res.headers.location ? ' - Redirect to ' + res.headers.location : ''));
                 //options.url = res.headers.location;
                 let u = url.parse(res.headers.location);
                 if (u.host) options.host = u.host;
@@ -105,7 +107,7 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
                 res.connection.end();
                 return request(options, info, callback);
             } else {
-                _options.logger && _options.logger('Alexa-Cookie: Response (' + res.statusCode + ')');
+                _options.debug && console.log('Alexa-Cookie: Response (' + res.statusCode + ')');
                 res.on('data', function(chunk) {
                     body += chunk;
                 });
@@ -162,12 +164,12 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
             }
         };
 
-        _options.logger && _options.logger('Alexa-Cookie: Step 4: get CSRF');
+        _options.debug && console.log('Alexa-Cookie: Step 4: get CSRF');
         request(options, (error, response, body, info) => {
             cookie = addCookies(cookie, response.headers);
             let ar = /csrf=([^;]+)/.exec(cookie);
             let csrf = ar ? ar[1] : undefined;
-            _options.logger && _options.logger('Alexa-Cookie: Result: csrf=' + csrf + ', Cookie=' + cookie);
+            _options.debug && console.log('Alexa-Cookie: Result: csrf=' + csrf + ', Cookie=' + cookie);
             callback && callback(null, {
                 cookie: cookie,
                 csrf: csrf
@@ -194,23 +196,23 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
                 _options.userAgent = defaultUserAgentLinux;
             }
         }
-        _options.logger && _options.logger('Alexa-Cookie: Use as User-Agent: ' + _options.userAgent);
+        _options.debug && console.log('Alexa-Cookie: Use as User-Agent: ' + _options.userAgent);
 
         _options.acceptLanguage = _options.acceptLanguage || defaultAcceptLanguage;
-        _options.logger && _options.logger('Alexa-Cookie: Use as Accept-Language: ' + _options.acceptLanguage);
+        _options.debug && console.log('Alexa-Cookie: Use as Accept-Language: ' + _options.acceptLanguage);
 
         if (_options.setupProxy && (!_options.proxyOwnIp && !_options.proxyHost)) {
-            _options.logger && _options.logger('Alexa-Cookie: Own-IP Setting missing for Proxy. Disabling!');
+            _options.debug && console.log('Alexa-Cookie: Own-IP Setting missing for Proxy. Disabling!');
             _options.setupProxy = false;
         }
         if (_options.setupProxy) {
             _options.setupProxy = true;
             _options.proxyPort = _options.serverPort || 0;
             _options.proxyListenBind = _options.proxyListenBind || '0.0.0.0';
-            _options.logger && _options.logger('Alexa-Cookie: Proxy-Mode enabled if needed: ' + getLocalHost() + ' to listen on ' + _options.proxyListenBind);
+            _options.debug && console.log('Alexa-Cookie: Proxy-Mode enabled if needed: ' + getLocalHost() + ' to listen on ' + _options.proxyListenBind);
         } else {
             _options.setupProxy = false;
-            _options.logger && _options.logger('Alexa-Cookie: Proxy mode disabled');
+            _options.debug && console.log('Alexa-Cookie: Proxy mode disabled');
         }
         _options.proxyLogLevel = _options.proxyLogLevel || 'warn';
     }
@@ -379,8 +381,8 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
 
     function router(req) {
         const url = (req.originalUrl || req.url);
-        // _options.logger && _options.logger(url + ' / ' + req.method + ' / ' + JSON.stringify(req.headers));
-        console.log('router(host): ' + req.headers.host);
+        _options.trace && console.log('Router: ' + url + ' / ' + req.method + ' / ' + JSON.stringify(req.headers));
+        // console.log('router(host): ' + req.headers.host);
         let localHost = getLocalHost();
         if (req.headers.host === `${localHost}`) {
             if (url.startsWith(`/proxy/www.${_options.amazonDomain}/`)) {
@@ -399,7 +401,7 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
     }
 
     function onError(err, req, res) {
-        _options.logger && _options.logger('ERROR: ' + err);
+        _options.debug && console.error('ERROR: ' + err);
         res.writeHead(500, {
             'Content-Type': 'text/plain'
         });
@@ -410,6 +412,7 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
         let localHost = getLocalHost();
         const amazonRegex = new RegExp(`https?://www.${_options.amazonDomain}/`.replace(/\./g, "\\."), 'g');
         const alexaRegex = new RegExp(`https?://alexa.${_options.amazonDomain}/`.replace(/\./g, "\\."), 'g');
+        data = data.replace(/&#x2F;/g, '/');
         data = data.replace(amazonRegex, `http://${localHost}/proxy/www.${_options.amazonDomain}/`);
         data = data.replace(alexaRegex, `http://${localHost}/proxy/alexa.${_options.amazonDomain}/`);
         return data;
@@ -429,7 +432,7 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
         if (url.endsWith('.ico') || url.endsWith('.js') || url.endsWith('.ttf') || url.endsWith('.svg') || url.endsWith('.png') || url.endsWith('.appcache')) return;
         if (url.startsWith('/ap/uedata')) { return; }
 
-        _options.debug && console.log('Alexa-Cookie: Proxy-Request: ' + req.method + ' ' + url);
+        _options.trace && console.log('Alexa-Cookie: Proxy-Request: ' + req.method + ' ' + url);
         //_options.logger && _options.logger('Alexa-Cookie: Proxy-Request-Data: ' + customStringify(proxyReq, null, 2));
 
         let modified = false;
@@ -450,24 +453,22 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
                 postBody += chunk.toString(); // convert Buffer to string
             });
             req.on('end', () => {
-                //_options.proxyLogLevel === 'debug' && _options.logger && _options.logger('Alexa-Cookie: Catched POST parameter: ' + postBody);
+                _options.trace && console.log('Alexa-Cookie: Catched POST parameter: ' + postBody);
                 const postParams = querystring.parse(postBody);
                 if (email && email.length && postParams.email !== email) {
                     let errMessage = 'Alexa-Cookie: Email entered on Login Page via Proxy differs from set email! You should use the same email to allow automatic cookie retrieval.';
-                    _options.logger && _options.logger(errMessage);
+                    _options.debug && console.log(errMessage);
                     callbackCookie && callbackCookie(new Error(errMessage), null);
                 }
                 if (password && password.length && postParams.password !== password) {
                     let errMessage = 'Alexa-Cookie: Password entered on Login Page via Proxy differs from set email! You should use the same password to allow automatic cookie retrieval.';
-                    _options.logger && _options.logger(errMessage);
+                    _options.debug && console.logr(errMessage);
                     callbackCookie && callbackCookie(new Error(errMessage), null);
                 }
             });
         }
-        if (_options.debug) {
-            // console.log('Alexa-Cookie: Proxy-Request: (modified:' + modified + ')' + customStringify(proxyReq, null, 2));
-            console.log('Alexa-Cookie: Proxy-Request: (modified:' + modified + ')');
-        }
+        _options.debug && !_options.trace && console.log('Alexa-Cookie: Proxy-Request: (modified:' + modified + ')' + customStringify(proxyReq, null, 2));
+        _options.trace && console.log('Alexa-Cookie: Proxy-Request: (modified:' + modified + ')');
     }
 
     function onProxyResp(proxyRes, req, res) {
@@ -475,13 +476,16 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
         if (url.endsWith('.ico') || url.endsWith('.js') || url.endsWith('.ttf') || url.endsWith('.svg') || url.endsWith('.png') || url.endsWith('.appcache')) { return; }
         if (url.startsWith('/ap/uedata')) { return; }
 
-        if (_options.debug) {
-            // console.log('Proxy-Response: ' + customStringify(proxyRes, null, 2));
-            // console.log('Alexa-Cookie: Proxy-Response Headers: ' + customStringify(proxyRes._headers, null, 2));
-            // console.log('Alexa-Cookie: Proxy-Response Outgoing: ' + customStringify(proxyRes.socket.parser.outgoing, null, 2));
+        let reqestHost = null;
+        if (proxyRes.socket && proxyRes.socket._host) reqestHost = proxyRes.socket._host;
+        _options.trace && console.log('Alexa-Cookie: Proxy Response from Host: ' + reqestHost);
+
+        if (_options.trace) {
+            console.log('Proxy-Response: ' + customStringify(proxyRes, null, 2));
+            console.log('Alexa-Cookie: Proxy-Response Headers: ' + customStringify(proxyRes._headers, null, 2));
+            console.log('Alexa-Cookie: Proxy-Response Outgoing: ' + customStringify(proxyRes.socket.parser.outgoing, null, 2));
         }
-        _options.proxyLogLevel === 'debug' && _options.logger && _options.logger;
-        //_options.logger && _options.logger('Proxy-Response RES!!: ' + customStringify(res, null, 2));
+        _options.trace && console.log('Proxy-Response RES!!: ' + customStringify(res, null, 2));
 
         if (proxyRes && proxyRes.headers && proxyRes.headers['set-cookie']) {
             // make sure cookies are also sent to http by remove secure flags
@@ -489,35 +493,14 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
                 proxyRes.headers['set-cookie'][i] = proxyRes.headers['set-cookie'][i].replace('Secure;', '');
             }
         }
-        // let test1 = proxyRes.headers.location;
-        // let test2 = proxyRes.socket.parser.outgoing.path;
-        // let test3 = proxyRes.socket.parser.outgoing._headers.location || '';
-        // console.log('test1:', test1);
-        // console.log('test2:', test2);
-        // console.log('test3:', test3);
 
-        let chk1 = (
-            proxyRes.socket !== undefined &&
-            proxyRes.socket._host === 'alexa.' + _options.amazonDomain &&
-            proxyRes.socket.parser.outgoing &&
-            proxyRes.socket.parser.outgoing.method === 'GET' &&
-            proxyRes.socket.parser.outgoing.path === '/spa/index.html'
-        );
-        let chk2 = (
-            proxyRes.socket !== undefined && proxyRes.socket.parser.outgoing !== undefined &&
-            proxyRes.socket.parser.outgoing._headers.location !== undefined &&
-            proxyRes.socket.parser.outgoing._headers.location === 'https://alexa.' + _options.amazonDomain + '/spa/index.html'
-        );
-        let chk3 = (
-            proxyRes.headers !== undefined &&
-            proxyRes.headers.location !== undefined &&
-            (
-                proxyRes.headers.location === 'https://alexa.' + _options.amazonDomain + '/spa/index.html' ||
-                proxyRes.headers.location === 'https:/spa/index.html' ||
-                proxyRes.headers.location === 'https://alexa.' + _options.amazonDomain + '/proxy/'
-            )
-        );
-        if (chk1 || chk2 || chk3) {
+        // proxyRes.headers.location === 'https:/spa/index.html' ||
+        // proxyRes.headers.location === 'https://alexa.' + _options.amazonDomain + '/proxy/'
+        if (
+            (proxyRes.socket && proxyRes.socket._host === `alexa.${_options.amazonPage}` && proxyRes.socket.parser.outgoing && proxyRes.socket.parser.outgoing.method === 'GET' && proxyRes.socket.parser.outgoing.path === '/spa/index.html') ||
+            (proxyRes.socket && proxyRes.socket.parser.outgoing && proxyRes.socket.parser.outgoing._headers.location && proxyRes.socket.parser.outgoing._headers.location.endsWith('/spa/index.html')) ||
+            (proxyRes.headers.location && proxyRes.headers.location.endsWith('/spa/index.html'))
+        ) {
             _options.debug && console.log('Alexa-Cookie: Proxy detected SUCCESS!!');
 
             proxyRes.statusCode = 302;
@@ -533,9 +516,12 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
 
         // If we detect a redirect, rewrite the location header
         if (proxyRes.headers.location) {
+            _options.debug && console.log('Redirect: Original Location ----> ' + proxyRes.headers.location);
             proxyRes.headers.location = replaceHosts(proxyRes.headers.location);
-            // _options.logger && _options.logger('Redirect: Location ----> ' + proxyRes.headers.location);
-            _options.debug && console.log('Redirect: Location ----> ' + proxyRes.headers.location);
+            if (reqestHost && proxyRes.headers.location.startsWith('/')) {
+                proxyRes.headers.location = `http://${_options.proxyOwnIp}:${_options.proxyPort}/` + reqestHost + proxyRes.headers.location;
+            }
+            _options.debug && console.log('Redirect: Final Location ----> ' + proxyRes.headers.location);
             return;
         }
         if (!proxyRes || !proxyRes.headers || !proxyRes.headers['content-encoding']) return;
@@ -544,7 +530,7 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
             if (body) {
                 const bodyOrig = body;
                 body = replaceHosts(body);
-                if (body !== bodyOrig) _options.logger && _options.logger('Alexa-Cookie: MODIFIED Response Body to rewrite URLs');
+                if (body !== bodyOrig) { _options.debug && console.log('Alexa-Cookie: MODIFIED Response Body to rewrite URLs'); }
             }
             return body;
         });
@@ -570,7 +556,6 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
             callbackListening(server);
         });
     }
-
 }
 
 function stopProxyServer(callback) {
