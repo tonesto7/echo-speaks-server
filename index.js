@@ -60,10 +60,10 @@ function loadConfig() {
     configFile.set('settings.amazonDomain', process.env.amazonDomain || (configData.settings.amazonDomain || 'amazon.com'));
     configFile.set('settings.smartThingsUrl', process.env.smartThingsUrl || configData.settings.smartThingsUrl);
     if (process.env.serviceDebug === true || process.env.serviceDebug === 'true') console.log('** SERVICE DEBUG IS ACTIVE **');
-    // configFile.set('settings.serviceDebug', (process.env.serviceDebug === true || process.env.serviceDebug === 'true'));
-    // configFile.set('settings.serviceTrace', (process.env.serviceTrace === true || process.env.serviceTrace === 'true'));
-    configFile.set('settings.serviceDebug', true);
-    configFile.set('settings.serviceTrace', true);
+    configFile.set('settings.serviceDebug', (process.env.serviceDebug === true || process.env.serviceDebug === 'true'));
+    configFile.set('settings.serviceTrace', (process.env.serviceTrace === true || process.env.serviceTrace === 'true'));
+    // configFile.set('settings.serviceDebug', true);
+    // configFile.set('settings.serviceTrace', true);
     configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
     configFile.set('settings.refreshSeconds', process.env.refreshSeconds ? parseInt(process.env.refreshSeconds) : (configData.settings.refreshSeconds || 60));
     if (!configData.state) {

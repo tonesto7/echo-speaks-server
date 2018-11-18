@@ -79,6 +79,7 @@ function alexaLogin(username, password, alexaOptions, webapp, callback) {
     config.deviceOwnerCustomerId = deviceOwnerCustomerId;
     config.alexaURL = alexaOptions.amazonDomain;
     serviceDebug = (alexaOptions.debug === true);
+    serviceTrace = (alexaOptions.trace === true);
 
     getRemoteCookie(alexaOptions)
         .then(function(remoteCookies) {

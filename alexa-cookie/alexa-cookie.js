@@ -248,7 +248,6 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
         }
 
         let lastRequestOptions = info.requests[info.requests.length - 1].options;
-        console.log('lastRequestOptions1: ', lastRequestOptions);
         // login empty to generate session
         Cookie = addCookies(Cookie, response.headers);
         let options = {
@@ -296,7 +295,6 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
                     return;
                 }
                 let lastRequestOptions = info.requests[info.requests.length - 1].options;
-                console.log('lastRequestOptions2: ', lastRequestOptions);
                 // check whether the login has been successful or exit otherwise
                 if (!lastRequestOptions.host.startsWith('alexa') || !lastRequestOptions.path.endsWith('.html')) {
                     let errMessage = 'Login unsuccessfull. Please check credentials.';
