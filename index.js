@@ -261,13 +261,14 @@ function startWebServer(checkForCookie = false) {
                                 logger.silly('Echo Speaks Alexa API is Actively Running at (IP: ' + getIPAddress() + ' | Port: ' + configData.settings.serverPort + ') | ProcessId: ' + process.pid);
 
                                 webApp.get('/heartbeat', urlencodedParser, function(req, res) {
-                                    let appVer = req.headers.appversion;
+                                    let clientVer = req.headers.appversion;
                                     authenticationCheck()
                                         .then(function() {
-                                            logger.verbose('++ Received a Heartbeat Request...' + (appVer ? ' | Client Version: (v' + appVer + ')' : '') + ' ++');
+                                            logger.verbose('++ Received a Heartbeat Request...' + (clientVer ? ' | Client Version: (v' + clientVer + ')' : '') + ' ++');
                                             res.send({
                                                 result: "i am alive",
-                                                authenticated: runTimeData.authenticated
+                                                authenticated: runTimeData.authenticated,
+                                                version: appVer
                                             });
                                         });
                                 });
