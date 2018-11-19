@@ -688,6 +688,8 @@ function authenticationCheck() {
     });
 }
 
+//
+
 async function buildEchoDeviceMap() {
     try {
         let eDevData = await alexa_api.getDevices(runTimeData.savedConfig)
