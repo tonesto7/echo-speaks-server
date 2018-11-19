@@ -517,7 +517,7 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
             _options.debug && console.log('Redirect: Original Location ----> ' + proxyRes.headers.location);
             proxyRes.headers.location = replaceHosts(proxyRes.headers.location);
             if (reqestHost && proxyRes.headers.location.startsWith('/')) {
-                proxyRes.headers.location = `http://${getLocalHost()}/` + reqestHost + proxyRes.headers.location;
+                proxyRes.headers.location = `http://${getLocalHost()}/proxy` + reqestHost + proxyRes.headers.location;
             }
             _options.debug && console.log('Redirect: Final Location ----> ' + proxyRes.headers.location);
             return;
