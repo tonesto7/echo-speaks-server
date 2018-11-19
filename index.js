@@ -717,7 +717,7 @@ async function buildEchoDeviceMap() {
         for (const dev in eDevData) {
             let devSerialNumber = eDevData[dev].serialNumber;
             // if (eDevData[dev].deviceFamily === 'ECHO' || eDevData[dev].deviceFamily === 'KNIGHT' || eDevData[dev].deviceFamily === 'ROOK' || eDevData[dev].deviceFamily === 'TABLET' || eDevData[dev].deviceFamily === 'WHA') {
-            if (!ignoreTypes.includes(eDevData[dev].deviceType)) {
+            if (!ignoreTypes.includes(eDevData[dev].deviceType) && !eDevData[dev].accountName.includes('Alexa Apps')) {
                 for (const item in removeKeys) {
                     delete eDevData[dev][removeKeys[item]];
                 }
