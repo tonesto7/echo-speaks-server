@@ -707,7 +707,7 @@ async function buildEchoDeviceMap() {
                 }
             });
         if (!Object.keys(eDevData).length > 0) { return {}; }
-        let ignoreTypes = ['A1DL2DVDQVK3Q', 'A21Z3CGI8UIP0F', 'A2825NDLA7WDZV', 'A2IVLV5VM2W81', 'A2TF17PFR55MTB', 'A1X7HJX9QL16M5', 'A2T0P32DY3F7VB', 'A3H674413M2EKB', 'AILBSA2LNTOYL', 'A38BPK7OW001EX'];
+        let ignoreTypes = ['A1DL2DVDQVK3Q', 'A21Z3CGI8UIP0F', 'A2825NDLA7WDZV', 'A2IVLV5VM2W81', 'A2TF17PFR55MTB', 'A1X7HJX9QL16M5', 'A2T0P32DY3F7VB', 'A3H674413M2EKB', 'AILBSA2LNTOYL', 'A38BPK7OW001EX', 'A1N9SW0I0LUX5Y'];
         let removeKeys = ['appDeviceList', 'charging', 'macAddress', 'deviceTypeFriendlyName', 'registrationId', 'remainingBatteryLevel', 'postalCode', 'language'];
         let wakeWords = await getWakeWordInfo();
         let dndStates = await getDeviceDndInfo();
@@ -801,7 +801,7 @@ function handleDataUpload(deviceData, src) {
                             let cltVerStr = resp && resp.version ? ` | Client Version: (${resp.version})` : '';
                             runTimeData.eventCount++;
                             if (configData.settings.useHeroku) {
-                                logger.info(`** Date Sent to SmartThings Cloud Endpoint Successfully!${cltVerStr} **`);
+                                logger.info(`** Data Sent to SmartThings Cloud Endpoint Successfully!${cltVerStr} **`);
                             } else {
                                 logger.info(`** Data Sent to SmartThings Hub Successfully! | Hub: (${url}) **`);
                             }
