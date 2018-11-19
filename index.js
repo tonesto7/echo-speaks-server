@@ -801,9 +801,9 @@ function handleDataUpload(deviceData, src) {
                             let cltVerStr = resp && resp.version ? ` | Client Version: (${resp.version})` : '';
                             runTimeData.eventCount++;
                             if (configData.settings.useHeroku) {
-                                logger.info(`** Sent Echo Speaks Data to SmartThings Cloud Endpoint Successfully!${cltVerStr} **`);
+                                logger.info(`** Date Sent to SmartThings Cloud Endpoint Successfully!${cltVerStr} **`);
                             } else {
-                                logger.info(`** Sent Echo Speaks Data to SmartThings Hub Successfully! | Hub: (${url}) **`);
+                                logger.info(`** Data Sent to SmartThings Hub Successfully! | Hub: (${url}) **`);
                             }
                         })
                         .catch(function(err) {
