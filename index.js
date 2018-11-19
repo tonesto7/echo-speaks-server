@@ -261,13 +261,14 @@ function startWebServer(checkForCookie = false) {
                                 logger.silly('Echo Speaks Alexa API is Actively Running at (IP: ' + getIPAddress() + ' | Port: ' + configData.settings.serverPort + ') | ProcessId: ' + process.pid);
 
                                 webApp.get('/heartbeat', urlencodedParser, function(req, res) {
-                                    let appVer = req.headers.appversion;
+                                    let clientVer = req.headers.appversion;
                                     authenticationCheck()
                                         .then(function() {
-                                            logger.verbose('++ Received a Heartbeat Request...' + (appVer ? ' | Client Version: (v' + appVer + ')' : '') + ' ++');
+                                            logger.verbose('++ Received a Heartbeat Request...' + (clientVer ? ' | Client Version: (v' + clientVer + ')' : '') + ' ++');
                                             res.send({
                                                 result: "i am alive",
-                                                authenticated: runTimeData.authenticated
+                                                authenticated: runTimeData.authenticated,
+                                                version: appVer
                                             });
                                         });
                                 });
@@ -706,6 +707,7 @@ async function buildEchoDeviceMap() {
                 }
             });
         if (!Object.keys(eDevData).length > 0) { return {}; }
+        let ignoreTypes = ['A1DL2DVDQVK3Q', 'A21Z3CGI8UIP0F', 'A2825NDLA7WDZV', 'A2IVLV5VM2W81', 'A2TF17PFR55MTB', 'A1X7HJX9QL16M5', 'A2T0P32DY3F7VB', 'A3H674413M2EKB', 'AILBSA2LNTOYL', 'A38BPK7OW001EX'];
         let removeKeys = ['appDeviceList', 'charging', 'macAddress', 'deviceTypeFriendlyName', 'registrationId', 'remainingBatteryLevel', 'postalCode', 'language'];
         let wakeWords = await getWakeWordInfo();
         let dndStates = await getDeviceDndInfo();
@@ -714,7 +716,8 @@ async function buildEchoDeviceMap() {
 
         for (const dev in eDevData) {
             let devSerialNumber = eDevData[dev].serialNumber;
-            if (eDevData[dev].deviceFamily === 'ECHO' || eDevData[dev].deviceFamily === 'KNIGHT' || eDevData[dev].deviceFamily === 'ROOK' || eDevData[dev].deviceFamily === 'TABLET' || eDevData[dev].deviceFamily === 'WHA') {
+            // if (eDevData[dev].deviceFamily === 'ECHO' || eDevData[dev].deviceFamily === 'KNIGHT' || eDevData[dev].deviceFamily === 'ROOK' || eDevData[dev].deviceFamily === 'TABLET' || eDevData[dev].deviceFamily === 'WHA') {
+            if (!ignoreTypes.includes(eDevData[dev].deviceType) && !eDevData[dev].accountName.includes('Alexa Apps')) {
                 for (const item in removeKeys) {
                     delete eDevData[dev][removeKeys[item]];
                 }
@@ -798,9 +801,9 @@ function handleDataUpload(deviceData, src) {
                             let cltVerStr = resp && resp.version ? ` | Client Version: (${resp.version})` : '';
                             runTimeData.eventCount++;
                             if (configData.settings.useHeroku) {
-                                logger.info(`** Sent Echo Speaks Data to SmartThings Cloud Endpoint Successfully!${cltVerStr} **`);
+                                logger.info(`** Data Sent to SmartThings Cloud Endpoint Successfully!${cltVerStr} **`);
                             } else {
-                                logger.info(`** Sent Echo Speaks Data to SmartThings Hub Successfully! | Hub: (${url}) **`);
+                                logger.info(`** Data Sent to SmartThings Hub Successfully! | Hub: (${url}) **`);
                             }
                         })
                         .catch(function(err) {
