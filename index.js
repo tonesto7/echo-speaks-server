@@ -124,48 +124,48 @@ function startWebConfig() {
                 logger.debug('/config page requested');
                 res.sendFile(__dirname + '/public/index.html');
             });
-            webApp.get('/manualCookie', function(req, res) {
-                logger.debug('/manualCookie page requested');
-                res.sendFile(__dirname + '/public/manual_cookie.html');
-            });
+            // webApp.get('/manualCookie', function(req, res) {
+            //     logger.debug('/manualCookie page requested');
+            //     res.sendFile(__dirname + '/public/manual_cookie.html');
+            // });
 
-            webApp.get('/cookieData', function(req, res) {
-                // console.log(configData)
-                res.send(JSON.stringify(sessionFile.get() || {}));
-            });
-            webApp.post('/cookieData', function(req, res) {
-                let saveFile = false;
-                if (req.headers.cookiedata) {
-                    let cData = JSON.parse(req.headers.cookiedata);
-                    console.log(cData);
-                    sessionFile.set('cookie', cData.cookie);
-                    sessionFile.set('csrf', cData.csrf);
-                    saveFile = true;
-                };
-                if (saveFile) {
-                    sessionFile.save();
-                    sessionData = sessionFile.get();
-                    logger.debug('** Cookie Settings File Updated via Manual Entry **');
-                    if (configData.settings.useHeroku === true) {
-                        alexa_api.sendCookiesToST(configData.settings.smartThingsUrl ? String(configData.settings.smartThingsUrl).replace("/receiveData?", "/cookie?") : null, sessionData.cookie, sessionData.csrf)
-                            .then(function(sendResp) {
-                                if (sendResp) {
-                                    // startWebServer(true);
-                                    process.exit();
-                                    res.send('done');
-                                } else {
-                                    res.send('failed');
-                                }
-                            });
-                    } else {
-                        // startWebServer(true);
-                        res.send('done');
-                        logger.debug('** Please Restart Server to Use new Cookie **');
-                    }
-                } else {
-                    res.send('failed');
-                }
-            });
+            // webApp.get('/cookieData', function(req, res) {
+            //     // console.log(configData)
+            //     res.send(JSON.stringify(sessionFile.get() || {}));
+            // });
+            // webApp.post('/cookieData', function(req, res) {
+            //     let saveFile = false;
+            //     if (req.headers.cookiedata) {
+            //         let cData = JSON.parse(req.headers.cookiedata);
+            //         console.log(cData);
+            //         sessionFile.set('cookie', cData.cookie);
+            //         sessionFile.set('csrf', cData.csrf);
+            //         saveFile = true;
+            //     };
+            //     if (saveFile) {
+            //         sessionFile.save();
+            //         sessionData = sessionFile.get();
+            //         logger.debug('** Cookie Settings File Updated via Manual Entry **');
+            //         if (configData.settings.useHeroku === true) {
+            //             alexa_api.sendCookiesToST(configData.settings.smartThingsUrl ? String(configData.settings.smartThingsUrl).replace("/receiveData?", "/cookie?") : null, sessionData.cookie, sessionData.csrf)
+            //                 .then(function(sendResp) {
+            //                     if (sendResp) {
+            //                         // startWebServer(true);
+            //                         // process.exit();
+            //                         res.send('done');
+            //                     } else {
+            //                         res.send('failed');
+            //                     }
+            //                 });
+            //         } else {
+            //             // startWebServer(true);
+            //             res.send('done');
+            //             logger.debug('** Please Restart Server to Use new Cookie **');
+            //         }
+            //     } else {
+            //         res.send('failed');
+            //     }
+            // });
 
             webApp.get('/clearAuth', urlencodedParser, function(req, res) {
                 logger.verbose('got request for to clear authentication');
@@ -855,9 +855,9 @@ function handleDataUpload(deviceData, src) {
                             let cltVerStr = resp && resp.version ? ` | Client Version: (${resp.version})` : '';
                             runTimeData.eventCount++;
                             if (configData.settings.useHeroku) {
-                                logger.info(`** Data Sent to SmartThings Cloud Endpoint Successfully!${cltVerStr} | (${updCycleCnt}) **`);
+                                logger.info(`** Data Sent to SmartThings Cloud Endpoint Successfully!${cltVerStr} **`);
                             } else {
-                                logger.info(`** Data Sent to SmartThings Hub Successfully! | Hub: (${url}) | (${updCycleCnt}) **`);
+                                logger.info(`** Data Sent to SmartThings Hub Successfully! | Hub: (${url}) **`);
                             }
                         })
                         .catch(function(err) {
@@ -885,12 +885,14 @@ function sendStatusUpdateToST(self) {
 
 function scheduledDataUpdates() {
     sendStatusUpdateToST(alexa_api);
-    updCycleCnt++;
-    if (updCycleCnt > 20) {
-        clearInterval(scheduledDataUpdates);
-        scheduledDataUpdates()
-        updCycleCnt = 0;
-    }
+    // updCycleCnt++;
+    // if (updCycleCnt > 20) {
+    //     runTimeData.scheduledUpdatesActive = false;
+    //     clearInterval(scheduledDataUpdates);
+    //     setInterval(scheduledDataUpdates, configData.settings.refreshSeconds * 1000);
+    //     runTimeData.scheduledUpdatesActive = true;
+    //     updCycleCnt = 0;
+    // }
 }
 
 function stopScheduledDataUpdates() {
