@@ -15,6 +15,7 @@ const editJsonFile = require("edit-json-file", {
 });
 const dataFolder = os.homedir() + '/.echo-speaks';
 const configFile = editJsonFile(dataFolder + '/es_config.json');
+const sessionFile = editJsonFile(dataFolder + '/session.json');
 const fs = require('fs');
 const webApp = express();
 const urlencodedParser = bodyParser.urlencoded({
@@ -24,6 +25,7 @@ const urlencodedParser = bodyParser.urlencoded({
 
 // These the config variables
 let configData = {};
+let sessionData = sessionFile.get() || {};
 let runTimeData = {};
 runTimeData.savedConfig = {};
 runTimeData.scheduledUpdatesActive = false;
@@ -118,9 +120,46 @@ function startWebConfig() {
                 logger.debug('/config page requested');
                 res.sendFile(__dirname + '/public/index.html');
             });
-            webApp.get('/manualAuth', function(req, res) {
-                logger.debug('/manualAuth page requested');
-                res.sendFile(__dirname + '/public/manual_auth.html');
+            webApp.get('/manualCookie', function(req, res) {
+                logger.debug('/manualCookie page requested');
+                res.sendFile(__dirname + '/public/manual_cookie.html');
+            });
+
+            webApp.get('/cookieData', function(req, res) {
+                // console.log(configData)
+                res.send(JSON.stringify(sessionData));
+            });
+            webApp.post('/cookieData', function(req, res) {
+                let saveFile = false;
+                // console.log(req.headers);
+                if (req.headers.cookiestr) {
+                    console.log(req.headers.cookiestr);
+                    configFile.set('cookie', req.headers.cookiestr);
+                    saveFile = true;
+                };
+                if (req.headers.csrfstr) {
+                    console.log(req.headers.csrfstr);
+                    configFile.set('csrf', req.headers.csrfstr);
+                    saveFile = true;
+                };
+                if (saveFile) {
+                    sessionFile.save();
+                    logger.debug('** Cookie Settings File Updated via Manual Entry **');
+                    if (process.env.useHeroku !== true) {
+                        let sendCookie = alexa_api.sendCookiesToST(configData.settings.smartThingsUrl, req.headers.cookiestr, req.headers.csrfstr);
+                        if (sendCookie) {
+                            startWebServer();
+                            res.send('done');
+                        } else {
+                            res.send('failed');
+                        };
+                    } else {
+                        startWebServer();
+                        res.send('done');
+                    }
+                } else {
+                    res.send('failed');
+                }
             });
 
             webApp.get('/clearAuth', urlencodedParser, function(req, res) {

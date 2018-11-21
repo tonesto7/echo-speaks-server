@@ -133,7 +133,7 @@ function alexaLogin(username, password, alexaOptions, webapp, callback) {
         });
 };
 
-var sendCookiesToST = function(url, cookie, csrf) {
+let sendCookiesToST = function(url, cookie, csrf) {
     if (url && cookie && csrf) {
         let options = {
             method: 'POST',
@@ -149,10 +149,12 @@ var sendCookiesToST = function(url, cookie, csrf) {
                 // console.log('resp:', resp);
                 if (resp) {
                     logger.info(`** Alexa Cookie sent to SmartThings Cloud Endpoint Successfully! **`);
-                }
+                    return true;
+                } else { return false; }
             })
             .catch(function(err) {
                 logger.error("ERROR: Unable to send Alexa Cookie to SmartThings: " + err.message);
+                return false;
             });
     }
 };
@@ -968,6 +970,7 @@ let createSequenceNode = function(device, command, value, callback) {
 
 exports.alexaLogin = alexaLogin;
 exports.clearSession = clearSession;
+exports.sendCookiesToST = sendCookiesToST;
 exports.setMedia = setMedia;
 exports.getDevices = getDevices;
 exports.getWakeWords = getWakeWords;
