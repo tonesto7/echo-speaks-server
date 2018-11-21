@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>Echo Speaks</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.5.13/css/mdb.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet">
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.4/umd/popper.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+    <style>
+        form div {
+            margin-bottom: 0.5em;
+            margin: 0 auto;
+        }
+        
+        .form-control {
+            font-size: 0.7rem;
+        }
+        
+        button.btn.btn-info.btn-block.my-4 {
+            max-width: 200px;
+            text-align: center;
+        }
+        
+        .btn-rounded {
+            border-radius: 50px!important;
+        }
+        
+        form div label,
+        form div input {
+            display: block;
+            margin-bottom: 0.3em;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Settings Form -->
+    <div style="margin: 0 auto; max-width: 500px;">
+        <form class="p-5">
+            <p class="h4 mb-0 text-center">Echo Speaks Service</p>
+            <p id="scriptVer" class="h5 mt-0 mb-4 text-center"></p>
+            <div class="card w-100 mb-3">
+                <div class="card-header deep-orange lighten-1 white-text w-100 text-center">Amazon Login</div>
+                <div id="loginInputDiv" class="card-body w-100">
+                    <div class="md-form mt-0">
+                        <i class="fa fa-user prefix"></i>
+                        <input type="email" id="user" name="user" class="form-control" aria-describedby="emailHelpBlockMD">
+                        <label for="user" data-error="wrong" data-success="right">Email</label>
+                        <small id="emailHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
+                            Enter your Amazon login email.
+                        </small>
+                    </div>
+                    <div class="md-form">
+                        <i class="fa fa-lock prefix"></i>
+                        <input type="password" id="password" name="password" class="form-control" aria-describedby="passwordHelpBlockMD">
+                        <label for="password" data-error="wrong" data-success="right">Password</label>
+                        <small id="passwordHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
+                            No password requirements defined.
+                        </small>
+                    </div>
+                </div>
+                <div id="clearLoginDiv" class="w-100">
+                    <div class="text-center">
+                        <h5 class="my-2">Authentication Good!</h5>
+                        <button id="clearLoginBtn" class="btn btn-amber btn-rounded mt-0 mb-4" type="button"><i class="fa fa-close mr-1"></i>Clear Login Info</button>
+                    </div>
+                </div>
+                <div id="proxyLoginDiv" class="w-100">
+                    <div class="text-center">
+                        <button id="proxyLoginLink" class="btn btn-info btn-rounded my-4" type="button"><i class="fa fa-unlock-alt mr-1"></i>Goto Login Page</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="statusCard" class="card w-100 mb-3">
+                <div class="card-header blue lighten-1 w-100 text-white text-center">Status Info</div>
+                <div class="card-body w-100">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="useHeroku" disabled>
+                        <label class="form-check-label" for="useHeroku">Running on Heroku?</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="serviceDebug" disabled>
+                        <label class="form-check-label" for="serviceDebug">Service Debug?</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Material input -->
+            <div id="settingsCard" class="card w-100 mb-3">
+                <div class="card-header grey lighten-1 w-100 text-center">Required Settings</div>
+                <div class="card-body w-100">
+                    <div class="md-form mt-0">
+                        <select id="amazonDomain" class="browser-default custom-select">
+                            <option selected>Amazon Domain for your region</option>
+                            <option value="amazon.com">amazon.com</option>
+                            <option value="amazon.ca">amazon.ca</option>
+                            <option value="amazon.co.uk">amazon.co.uk</option>
+                            <option value="amazon.de">amazon.de</option>
+                        </select>
+                        <small id="amazonDomainHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
+                            Select the Alexa Domain for login `amazon.com, amazon.de, etc.`
+                        </small>
+                    </div>
+                    <div class="md-form" id="localDivHubIp">
+                        <i class="fa fa-microchip prefix"></i>
+                        <input type="text" id="smartThingsHubIP" name="smartThingsHubIP" class="form-control" aria-describedby="smartThingsHubIPHelpBlockMD">
+                        <label for="smartThingsHubIP" data-error="wrong" data-success="right">SmartThings Hub IP</label>
+                        <small id="smartThingsHubIPHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
+                            Enter the IP Address xxx.xxx.xxx.xxx
+                        </small>
+                    </div>
+
+                    <div class="md-form" id="cloudDivUrl">
+                        <i class="fa fa-at prefix"></i>
+                        <input type="text" id="smartThingsUrl" name="smartThingsUrl" class="form-control" aria-describedby="smartThingsUrlHelpBlockMD">
+                        <label for="smartThingsUrl" data-error="wrong" data-success="right">SmartThings Cloud Url</label>
+                        <small id="smartThingsUrlHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
+                            Enter the EchoSpeaks Endpoint Url obtained from the smart app.
+                        </small>
+                    </div>
+
+                    <div class="md-form mt-0" id="localDivHubPort">
+                        <i class="fa fa-info prefix"></i>
+                        <input type="text" id="serverPort" name="serverPort" class="form-control" aria-describedby="serverPortHelpBlockMD">
+                        <label for="serverPort" data-error="wrong" data-success="right">Server Port</label>
+                        <small id="serverPortHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
+                            Enter the port for the Echo Speaks Server.  Default: 8091
+                        </small>
+                    </div>
+
+                    <div class="md-form mb-0">
+                        <i class="fa fa-refresh prefix"></i>
+                        <input type="number" id="refreshSeconds" name="refreshSeconds" class="form-control" aria-describedby="refreshSecondsHelpBlockMD">
+                        <label for="refreshSeconds" data-error="wrong" data-success="right">Device Data Refresh (Seconds)</label>
+                        <small id="refreshSecondsHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
+                            Enter a number between 5-3600
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sign in button -->
+            <div id="submitBtnDiv" class="text-center">
+                <button class="btn btn-success btn-rounded my-4" type="submit"><i class="fa fa-save mr-1"></i>Save Settings</button>
+            </div>
+        </form>
+    </div>
+    <!-- MDB core JavaScript -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.5.13/js/mdb.min.js"></script>
+    <!-- Settings Form -->
+    <script>
+        // Get Root Page URL for Callback to Send Settings
+        let rootOrigin = window.location.origin;
+        let rootHost = window.location.hostname;
+
+        function getChecked(name) {
+            return ($(`#${name}`).prop("checked") === true);
+        }
+        let useHeroku = getChecked('useHeroku');
+        let serviceDebug = getChecked('serviceDebug');
+        console.log('rootOrigin: ' + rootOrigin);
+        console.log('rootHost: ' + rootHost);
+
+        $('#proxyLoginDiv').hide();
+        $('#loginInputDiv').hide();
+        $('#clearLoginDiv').hide();
+        $('[id^="cloudDiv"]').hide()
+
+        var configData = {};
+        $(document).ready(function() {
+            let url = rootOrigin + '/configData';
+            $.getJSON(url, function(data) {
+                console.log('configData: ', data);
+                configData = data;
+                $.each(data.state, function(key, val) {
+                    if (key === 'loginProxyActive' && val === true) {
+                        $('#loginInputDiv').hide();
+                        $('#proxyLoginDiv').show();
+                    }
+                    if (key === 'scriptVersion') {
+                        $('#scriptVer').text('v' + val);
+                    }
+                    if (key === 'loginComplete' && val === true) {
+                        $('#loginInputDiv').hide();
+                        $('#clearLoginDiv').show();
+                    }
+                });
+
+                $.each(data.settings, function(key, val) {
+                    var elem = document.getElementById(key);
+                    if ($(elem)) {
+                        if (key === 'amazonDomain') {
+                            $('#amazonDomain').val(val);
+                        } else if (key === 'useHeroku') {
+                            console.log('useHeroku: ' + val);
+                            useHeroku = (val === true || val === 'true')
+                            $('#useHeroku').prop('checked', useHeroku);
+                            useHeroku ? $('[id^="localDiv"]').hide() : $('[id^="localDiv"]').show();
+                            useHeroku ? $('[id^="cloudDiv"]').show() : $('[id^="cloudDiv"]').hide();
+                            if (useHeroku) {
+                                $('#settingsCard').hide();
+                                $('#submitBtnDiv').hide();
+                            }
+                        } else if (key === 'serviceDebug') {
+                            console.log('serviceDebug: ' + val);
+                            serviceDebug = (val === true || val === 'true')
+                            $('#serviceDebug').prop('checked', serviceDebug);
+                        } else {
+                            $(elem).attr('value', val);
+                            $(elem).focus();
+                        }
+                    }
+                });
+            });
+        });
+
+        $("#amazonDomain").change(function() {
+            console.log($(this).val());
+            configData.settings.amazonDomain = $(this).val();
+        });
+        $("#useHeroku").change(function() {
+            configData.settings.useHeroku = getChecked('useHeroku');
+            useHeroku = configData.settings.useHeroku;
+            console.log(`useHeroku: ${useHeroku}`)
+            useHeroku ? $('[id^="localDiv"]').hide() : $('[id^="localDiv"]').show();
+            useHeroku ? $('[id^="cloudDiv"]').show() : $('[id^="cloudDiv"]').hide();
+        });
+        $("#serviceDebug").change(function() {
+            configData.settings.serviceDebug = getChecked('useHeroku');
+            serviceDebug = configData.settings.serviceDebug;
+            console.log(`serviceDebug: ${serviceDebug}`)
+        });
+
+        $("#proxyLoginLink").click(function() {
+            let pUrl = 'http://' + rootHost + ':' + configData.settings.serverPort + '/proxy/alexa.' + $('#amazonDomain').val();
+            if (useHeroku) {
+                pUrl = 'https://' + rootHost + '/proxy/alexa.' + $('#amazonDomain').val()
+            }
+            console.log('Proxy Url: ' + pUrl)
+            window.location.href = pUrl;
+        });
+
+        $("#clearLoginBtn").click(function() {
+            let url = rootOrigin + '/clearAuth';
+            $.getJSON(url, function(data) {
+                if (data.result === 'Clear Complete') {
+                    toastr.options = {
+                        "closeButton": false,
+                        "debug": false,
+                        "newestOnTop": false,
+                        "progressBar": false,
+                        "positionClass": "toast-bottom-center",
+                        "preventDuplicates": true,
+                        "onclick": null,
+                        "showDuration": 300,
+                        "hideDuration": 1000,
+                        "timeOut": 5000,
+                        "extendedTimeOut": 1000,
+                        "showEasing": "swing",
+                        "hideEasing": "linear",
+                        "showMethod": "fadeIn",
+                        "hideMethod": "fadeOut"
+                    }
+                    toastr.success('Success!', "Authentication Cleared");
+                    window.location.href = rootOrigin + '/config';
+                }
+            });
+        });
+        (function($) {
+            $.fn.serializeFormJSON = function() {
+                var o = {};
+                var a = this.serializeArray();
+                $.each(a, function() {
+                    if (o[this.name]) {
+                        if (!o[this.name].push) {
+                            o[this.name] = [o[this.name]];
+                        }
+                        o[this.name].push(this.value || '');
+                    } else {
+                        o[this.name] = this.value || '';
+                    }
+                });
+                return o;
+            };
+        })(jQuery);
+
+        $('form').submit(function(e) {
+            e.preventDefault();
+            var config = $(this).serializeFormJSON();
+            var url = rootOrigin + '/configData';
+            if (Object.keys(config).length) {
+                // console.log(config);
+                console.log(configData.state.loginComplete);
+                if (configData.state.loginComplete === true) {
+                    delete configData.settings.user;
+                    delete configData.settings.password;
+                    config.user = "";
+                    config.password = "";
+                }
+                config.amazonDomain = configData.settings.amazonDomain;
+                config.useHeroku = configData.settings.useHeroku;
+                config.serviceDebug = configData.settings.serviceDebug;
+                var xmlhttp = new XMLHttpRequest();
+                xmlhttp.open("POST", rootOrigin + '/configData');
+                xmlhttp.onreadystatechange = function() {
+                    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                        // console.log(xmlhttp.responseText);
+                        // Command: toastr["success"]("Settings Saved", "Success")
+                        toastr.options = {
+                            "closeButton": false,
+                            "debug": false,
+                            "newestOnTop": false,
+                            "progressBar": false,
+                            "positionClass": "toast-bottom-center",
+                            "preventDuplicates": true,
+                            "onclick": null,
+                            "showDuration": 300,
+                            "hideDuration": 1000,
+                            "timeOut": 5000,
+                            "extendedTimeOut": 1000,
+                            "showEasing": "swing",
+                            "hideEasing": "linear",
+                            "showMethod": "fadeIn",
+                            "hideMethod": "fadeOut"
+                        }
+                        toastr.success('Success!', "Setting Saved..")
+                    }
+                }
+                xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+                for (const h in config) {
+                    xmlhttp.setRequestHeader(h.toString(), config[h].toString())
+                }
+                xmlhttp.send(JSON.stringify(config));
+            }
+        });
+    </script>
+</body>
+
+</html>
