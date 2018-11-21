@@ -971,6 +971,7 @@ let createSequenceNode = function(device, command, value, callback) {
 exports.alexaLogin = alexaLogin;
 exports.clearSession = clearSession;
 exports.sendCookiesToST = sendCookiesToST;
+exports.getRemoteCookie = getRemoteCookie;
 exports.setMedia = setMedia;
 exports.getDevices = getDevices;
 exports.getWakeWords = getWakeWords;

@@ -149,7 +149,7 @@ function startWebConfig() {
                     if (process.env.useHeroku === true) {
                         let sendCookie = alexa_api.sendCookiesToST(configData.settings.smartThingsUrl, sessionFile.cookie, sessionFile.csrf);
                         if (sendCookie) {
-                            startWebServer();
+                            startWebServer(true);
                             res.send('done');
                         } else {
                             res.send('failed');
