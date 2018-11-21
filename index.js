@@ -127,26 +127,27 @@ function startWebConfig() {
 
             webApp.get('/cookieData', function(req, res) {
                 // console.log(configData)
-                res.send(JSON.stringify(sessionData));
+                res.send(JSON.stringify(sessionFile.get() || {}));
             });
             webApp.post('/cookieData', function(req, res) {
                 let saveFile = false;
                 // console.log(req.headers);
                 if (req.headers.cookiestr) {
                     console.log(req.headers.cookiestr);
-                    configFile.set('cookie', req.headers.cookiestr);
+                    sessionFile.set('cookie', req.headers.cookiestr);
                     saveFile = true;
                 };
                 if (req.headers.csrfstr) {
                     console.log(req.headers.csrfstr);
-                    configFile.set('csrf', req.headers.csrfstr);
+                    sessionFile.set('csrf', req.headers.csrfstr);
                     saveFile = true;
                 };
                 if (saveFile) {
                     sessionFile.save();
+                    sessionFile.get();
                     logger.debug('** Cookie Settings File Updated via Manual Entry **');
-                    if (process.env.useHeroku !== true) {
-                        let sendCookie = alexa_api.sendCookiesToST(configData.settings.smartThingsUrl, req.headers.cookiestr, req.headers.csrfstr);
+                    if (process.env.useHeroku === true) {
+                        let sendCookie = alexa_api.sendCookiesToST(configData.settings.smartThingsUrl, sessionFile.cookie, sessionFile.csrf);
                         if (sendCookie) {
                             startWebServer();
                             res.send('done');
