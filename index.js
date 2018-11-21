@@ -27,7 +27,7 @@ const urlencodedParser = bodyParser.urlencoded({
 let configData = {};
 let sessionData = sessionFile.get() || {};
 let runTimeData = {};
-let forceHeroku = true;
+let forceHeroku = false;
 let retryCnt = 0;
 let updCycleCnt = 0;
 
@@ -150,15 +150,17 @@ function startWebConfig() {
                         alexa_api.sendCookiesToST(configData.settings.smartThingsUrl ? String(configData.settings.smartThingsUrl).replace("/receiveData?", "/cookie?") : null, sessionData.cookie, sessionData.csrf)
                             .then(function(sendResp) {
                                 if (sendResp) {
-                                    startWebServer(true);
+                                    // startWebServer(true);
+                                    process.exit();
                                     res.send('done');
                                 } else {
                                     res.send('failed');
                                 }
                             });
                     } else {
-                        startWebServer(true);
+                        // startWebServer(true);
                         res.send('done');
+                        logger.debug('** Please Restart Server to Use new Cookie **');
                     }
                 } else {
                     res.send('failed');
@@ -251,6 +253,7 @@ let clearAuth = function() {
         alexa_api.clearSession(clearUrl, configData.settings.useHeroku);
         configFile.set('state.loginProxyActive', true);
         configData.state.loginProxyActive = true;
+        runTimeData.authenticated = false;
         configFile.set('state.loginComplete', false);
         configData.state.loginComplete = false;
         configFile.unset('user');
@@ -310,7 +313,7 @@ function startWebServer(checkForCookie = false) {
                                 webApp.get('/heartbeat', urlencodedParser, function(req, res) {
                                     let clientVer = req.headers.appversion;
                                     authenticationCheck()
-                                        .then(function() {
+                                        .then(function(resp) {
                                             logger.verbose('++ Received a Heartbeat Request...' + (clientVer ? ' | Client Version: (v' + clientVer + ')' : '') + ' ++');
                                             res.send({
                                                 result: "i am alive",
@@ -852,9 +855,9 @@ function handleDataUpload(deviceData, src) {
                             let cltVerStr = resp && resp.version ? ` | Client Version: (${resp.version})` : '';
                             runTimeData.eventCount++;
                             if (configData.settings.useHeroku) {
-                                logger.info(`** Data Sent to SmartThings Cloud Endpoint Successfully!${cltVerStr} **`);
+                                logger.info(`** Data Sent to SmartThings Cloud Endpoint Successfully!${cltVerStr} | (${updCycleCnt}) **`);
                             } else {
-                                logger.info(`** Data Sent to SmartThings Hub Successfully! | Hub: (${url}) **`);
+                                logger.info(`** Data Sent to SmartThings Hub Successfully! | Hub: (${url}) | (${updCycleCnt}) **`);
                             }
                         })
                         .catch(function(err) {
