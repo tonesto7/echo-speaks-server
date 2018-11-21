@@ -119,7 +119,7 @@ function alexaLogin(username, password, alexaOptions, webapp, callback) {
                             sessionFile.save();
                             config.cookies = sessionData.cookie;
                             config.csrf = sessionData.csrf;
-                            sendCookiesToST(alexaOptions.stEndpoint, config.cookies, config.csrf);
+                            sendCookiesToST(alexaOptions.stEndpoint, config.cookies, config.csrf)
                             callback(null, 'Login Successful', config);
                         } else {
                             callback(true, 'There was an error getting authentication', null);
@@ -133,30 +133,32 @@ function alexaLogin(username, password, alexaOptions, webapp, callback) {
         });
 };
 
-let sendCookiesToST = function(url, cookie, csrf) {
-    if (url && cookie && csrf) {
-        let options = {
-            method: 'POST',
-            uri: url,
-            body: {
-                cookie: cookie,
-                csrf: csrf
-            },
-            json: true
-        };
-        reqPromise(options)
-            .then(function(resp) {
-                // console.log('resp:', resp);
-                if (resp) {
-                    logger.info(`** Alexa Cookie sent to SmartThings Cloud Endpoint Successfully! **`);
-                    return true;
-                } else { return false; }
-            })
-            .catch(function(err) {
-                logger.error("ERROR: Unable to send Alexa Cookie to SmartThings: " + err.message);
-                return false;
-            });
-    }
+function sendCookiesToST(url, cookie, csrf) {
+    return new Promise(resolve => {
+        if (url && cookie && csrf) {
+            let options = {
+                method: 'POST',
+                uri: url,
+                body: {
+                    cookie: cookie,
+                    csrf: csrf
+                },
+                json: true
+            };
+            reqPromise(options)
+                .then(function(resp) {
+                    // console.log('resp:', resp);
+                    if (resp) {
+                        logger.info(`** Alexa Cookie sent to SmartThings Cloud Endpoint Successfully! **`);
+                        resolve(true);
+                    } else { resolve(false); }
+                })
+                .catch(function(err) {
+                    logger.error("ERROR: Unable to send Alexa Cookie to SmartThings: " + err.message);
+                    resolve(false);
+                });
+        }
+    });
 };
 
 function getCookiesFromST(url) {

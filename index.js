@@ -27,6 +27,10 @@ const urlencodedParser = bodyParser.urlencoded({
 let configData = {};
 let sessionData = sessionFile.get() || {};
 let runTimeData = {};
+let forceHeroku = true;
+let retryCnt = 0;
+let updCycleCnt = 0;
+
 runTimeData.savedConfig = {};
 runTimeData.scheduledUpdatesActive = false;
 runTimeData.alexaUrl = 'https://alexa.amazon.com';
@@ -58,7 +62,7 @@ function loadConfig() {
         configData.settings = {};
     }
     if (process.env.hostUrl) { configFile.set('settings.hostUrl', process.env.hostUrl); }
-    configFile.set('settings.useHeroku', (process.env.useHeroku === true || process.env.useHeroku === 'true'));
+    configFile.set('settings.useHeroku', (forceHeroku || process.env.useHeroku === true || process.env.useHeroku === 'true'));
     configFile.set('settings.amazonDomain', process.env.amazonDomain || (configData.settings.amazonDomain || 'amazon.com'));
     configFile.set('settings.smartThingsUrl', process.env.smartThingsUrl || configData.settings.smartThingsUrl);
     if (process.env.serviceDebug === true || process.env.serviceDebug === 'true') console.log('** SERVICE DEBUG IS ACTIVE **');
@@ -131,31 +135,29 @@ function startWebConfig() {
             });
             webApp.post('/cookieData', function(req, res) {
                 let saveFile = false;
-                // console.log(req.headers);
-                if (req.headers.cookiestr) {
-                    console.log(req.headers.cookiestr);
-                    sessionFile.set('cookie', req.headers.cookiestr);
-                    saveFile = true;
-                };
-                if (req.headers.csrfstr) {
-                    console.log(req.headers.csrfstr);
-                    sessionFile.set('csrf', req.headers.csrfstr);
+                if (req.headers.cookiedata) {
+                    let cData = JSON.parse(req.headers.cookiedata);
+                    console.log(cData);
+                    sessionFile.set('cookie', cData.cookie);
+                    sessionFile.set('csrf', cData.csrf);
                     saveFile = true;
                 };
                 if (saveFile) {
                     sessionFile.save();
-                    sessionFile.get();
+                    sessionData = sessionFile.get();
                     logger.debug('** Cookie Settings File Updated via Manual Entry **');
-                    if (process.env.useHeroku === true) {
-                        let sendCookie = alexa_api.sendCookiesToST(configData.settings.smartThingsUrl, sessionFile.cookie, sessionFile.csrf);
-                        if (sendCookie) {
-                            startWebServer(true);
-                            res.send('done');
-                        } else {
-                            res.send('failed');
-                        };
+                    if (configData.settings.useHeroku === true) {
+                        alexa_api.sendCookiesToST(configData.settings.smartThingsUrl ? String(configData.settings.smartThingsUrl).replace("/receiveData?", "/cookie?") : null, sessionData.cookie, sessionData.csrf)
+                            .then(function(sendResp) {
+                                if (sendResp) {
+                                    startWebServer(true);
+                                    res.send('done');
+                                } else {
+                                    res.send('failed');
+                                }
+                            });
                     } else {
-                        startWebServer();
+                        startWebServer(true);
                         res.send('done');
                     }
                 } else {
@@ -300,6 +302,7 @@ function startWebServer(checkForCookie = false) {
             authenticationCheck()
                 .then(function(authResp) {
                     if (authResp === true) {
+                        retryCnt = 0;
                         buildEchoDeviceMap()
                             .then(function(devOk) {
                                 logger.silly('Echo Speaks Alexa API is Actively Running at (IP: ' + getIPAddress() + ' | Port: ' + configData.settings.serverPort + ') | ProcessId: ' + process.pid);
@@ -732,20 +735,21 @@ function authenticationCheck() {
     });
 }
 
-//
-
 async function buildEchoDeviceMap() {
     try {
         let eDevData = await alexa_api.getDevices(runTimeData.savedConfig)
             .catch(function(err) {
                 if (err.message === '401 - undefined') {
-                    logger.error("ERROR: Unable to getDevices() to buildEchoDeviceMap because you are not authenticated: " + err.message);
-                    clearAuth()
-                        .then(function() {
-                            logger.debug('** Amazon Cookie is no longer valid!!! Please login again using the config page. **');
-                            handleDataUpload([], 'checkAuthentication');
-                            startWebServer();
-                        });
+                    if (retryCnt < 3) {
+                        retryCnt++;
+                        logger.error("ERROR: Unable to getDevices() to buildEchoDeviceMap because you are not authenticated: " + err.message);
+                        clearAuth()
+                            .then(function() {
+                                logger.debug('** Amazon Cookie is no longer valid!!! Please login again using the config page. **');
+                                handleDataUpload([], 'checkAuthentication');
+                                startWebServer();
+                            });
+                    }
                     return {};
                 } else {
                     logger.error("ERROR: Unable to getDevices() to buildEchoDeviceMap: " + err.message);
@@ -878,6 +882,12 @@ function sendStatusUpdateToST(self) {
 
 function scheduledDataUpdates() {
     sendStatusUpdateToST(alexa_api);
+    updCycleCnt++;
+    if (updCycleCnt > 20) {
+        clearInterval(scheduledDataUpdates);
+        scheduledDataUpdates()
+        updCycleCnt = 0;
+    }
 }
 
 function stopScheduledDataUpdates() {

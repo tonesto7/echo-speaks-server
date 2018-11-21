@@ -52,16 +52,16 @@
                 <div id="manualCookieDiv" class="card-body w-100">
                     <div class="md-form mt-0">
                         <i class="fa fa-user prefix"></i>
-                        <input type="text" id="cookieStr" name="cookieStr" class="form-control" aria-describedby="cookieStrHelpBlockMD">
-                        <label for="cookieStr" data-error="wrong" data-success="right">Cookie String</label>
+                        <input type="text" id="cookie" name="cookie" class="form-control" aria-describedby="cookieStrHelpBlockMD">
+                        <label for="cookie" data-error="wrong" data-success="right">Cookie String</label>
                         <small id="cookieStrHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
                             Enter the full Cookie String.
                         </small>
                     </div>
                     <div class="md-form">
                         <i class="fa fa-lock prefix"></i>
-                        <input type="text" id="csrfStr" name="csrfStr" class="form-control" aria-describedby="csrfStrHelpBlockMD">
-                        <label for="csrfStr" data-error="wrong" data-success="right">CSRF</label>
+                        <input type="text" id="csrf" name="csrf" class="form-control" aria-describedby="csrfStrHelpBlockMD">
+                        <label for="csrf" data-error="wrong" data-success="right">CSRF</label>
                         <small id="csrfStrHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
                             Enter csrf.
                         </small>
@@ -92,10 +92,10 @@
                 cookieData = data;
                 $.each(data, function(key, val) {
                     if (key === 'cookie') {
-                        key = 'cookieStr';
+                        // key = 'cookieStr';
                     }
                     if (key === 'csrf') {
-                        key = 'csrfStr';
+                        // key = 'csrfStr';
                     }
                     var elem = document.getElementById(key);
                     if ($(elem)) {
@@ -115,9 +115,9 @@
                         if (!o[this.name].push) {
                             o[this.name] = [o[this.name]];
                         }
-                        o[this.name].push(this.value || '');
+                        o[this.name].push(String(this.value || ''));
                     } else {
-                        o[this.name] = this.value || '';
+                        o[this.name] = String(this.value || '');
                     }
                 });
                 return o;
@@ -157,10 +157,13 @@
                     }
                 }
                 xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-                for (const h in config) {
-                    xmlhttp.setRequestHeader(h.toString(), config[h].toString())
-                }
-                xmlhttp.send(JSON.stringify(config));
+                // for (const h in config) {
+                //     xmlhttp.setRequestHeader(h.toString(), config[h].toString())
+                // }
+                xmlhttp.setRequestHeader('cookieData', JSON.stringify(config))
+                xmlhttp.send(JSON.stringify({
+                    cookieData: config
+                }));
             }
         });
     </script>
