@@ -15,6 +15,7 @@ const editJsonFile = require("edit-json-file", {
 });
 const dataFolder = os.homedir() + '/.echo-speaks';
 const configFile = editJsonFile(dataFolder + '/es_config.json');
+const sessionFile = editJsonFile(dataFolder + '/session.json');
 const fs = require('fs');
 const webApp = express();
 const urlencodedParser = bodyParser.urlencoded({
@@ -24,7 +25,12 @@ const urlencodedParser = bodyParser.urlencoded({
 
 // These the config variables
 let configData = {};
+let sessionData = sessionFile.get() || {};
 let runTimeData = {};
+let forceHeroku = false;
+let retryCnt = 0;
+let updCycleCnt = 0;
+
 runTimeData.savedConfig = {};
 runTimeData.scheduledUpdatesActive = false;
 runTimeData.alexaUrl = 'https://alexa.amazon.com';
@@ -56,7 +62,7 @@ function loadConfig() {
         configData.settings = {};
     }
     if (process.env.hostUrl) { configFile.set('settings.hostUrl', process.env.hostUrl); }
-    configFile.set('settings.useHeroku', (process.env.useHeroku === true || process.env.useHeroku === 'true'));
+    configFile.set('settings.useHeroku', (forceHeroku || process.env.useHeroku === true || process.env.useHeroku === 'true'));
     configFile.set('settings.amazonDomain', process.env.amazonDomain || (configData.settings.amazonDomain || 'amazon.com'));
     configFile.set('settings.smartThingsUrl', process.env.smartThingsUrl || configData.settings.smartThingsUrl);
     if (process.env.serviceDebug === true || process.env.serviceDebug === 'true') console.log('** SERVICE DEBUG IS ACTIVE **');
@@ -118,10 +124,48 @@ function startWebConfig() {
                 logger.debug('/config page requested');
                 res.sendFile(__dirname + '/public/index.html');
             });
-            webApp.get('/manualAuth', function(req, res) {
-                logger.debug('/manualAuth page requested');
-                res.sendFile(__dirname + '/public/manual_auth.html');
-            });
+            // webApp.get('/manualCookie', function(req, res) {
+            //     logger.debug('/manualCookie page requested');
+            //     res.sendFile(__dirname + '/public/manual_cookie.html');
+            // });
+
+            // webApp.get('/cookieData', function(req, res) {
+            //     // console.log(configData)
+            //     res.send(JSON.stringify(sessionFile.get() || {}));
+            // });
+            // webApp.post('/cookieData', function(req, res) {
+            //     let saveFile = false;
+            //     if (req.headers.cookiedata) {
+            //         let cData = JSON.parse(req.headers.cookiedata);
+            //         console.log(cData);
+            //         sessionFile.set('cookie', cData.cookie);
+            //         sessionFile.set('csrf', cData.csrf);
+            //         saveFile = true;
+            //     };
+            //     if (saveFile) {
+            //         sessionFile.save();
+            //         sessionData = sessionFile.get();
+            //         logger.debug('** Cookie Settings File Updated via Manual Entry **');
+            //         if (configData.settings.useHeroku === true) {
+            //             alexa_api.sendCookiesToST(configData.settings.smartThingsUrl ? String(configData.settings.smartThingsUrl).replace("/receiveData?", "/cookie?") : null, sessionData.cookie, sessionData.csrf)
+            //                 .then(function(sendResp) {
+            //                     if (sendResp) {
+            //                         // startWebServer(true);
+            //                         // process.exit();
+            //                         res.send('done');
+            //                     } else {
+            //                         res.send('failed');
+            //                     }
+            //                 });
+            //         } else {
+            //             // startWebServer(true);
+            //             res.send('done');
+            //             logger.debug('** Please Restart Server to Use new Cookie **');
+            //         }
+            //     } else {
+            //         res.send('failed');
+            //     }
+            // });
 
             webApp.get('/clearAuth', urlencodedParser, function(req, res) {
                 logger.verbose('got request for to clear authentication');
@@ -209,6 +253,7 @@ let clearAuth = function() {
         alexa_api.clearSession(clearUrl, configData.settings.useHeroku);
         configFile.set('state.loginProxyActive', true);
         configData.state.loginProxyActive = true;
+        runTimeData.authenticated = false;
         configFile.set('state.loginComplete', false);
         configData.state.loginComplete = false;
         configFile.unset('user');
@@ -260,6 +305,7 @@ function startWebServer(checkForCookie = false) {
             authenticationCheck()
                 .then(function(authResp) {
                     if (authResp === true) {
+                        retryCnt = 0;
                         buildEchoDeviceMap()
                             .then(function(devOk) {
                                 logger.silly('Echo Speaks Alexa API is Actively Running at (IP: ' + getIPAddress() + ' | Port: ' + configData.settings.serverPort + ') | ProcessId: ' + process.pid);
@@ -267,7 +313,7 @@ function startWebServer(checkForCookie = false) {
                                 webApp.get('/heartbeat', urlencodedParser, function(req, res) {
                                     let clientVer = req.headers.appversion;
                                     authenticationCheck()
-                                        .then(function() {
+                                        .then(function(resp) {
                                             logger.verbose('++ Received a Heartbeat Request...' + (clientVer ? ' | Client Version: (v' + clientVer + ')' : '') + ' ++');
                                             res.send({
                                                 result: "i am alive",
@@ -692,20 +738,21 @@ function authenticationCheck() {
     });
 }
 
-//
-
 async function buildEchoDeviceMap() {
     try {
         let eDevData = await alexa_api.getDevices(runTimeData.savedConfig)
             .catch(function(err) {
                 if (err.message === '401 - undefined') {
-                    logger.error("ERROR: Unable to getDevices() to buildEchoDeviceMap because you are not authenticated: " + err.message);
-                    clearAuth()
-                        .then(function() {
-                            logger.debug('** Amazon Cookie is no longer valid!!! Please login again using the config page. **');
-                            handleDataUpload([], 'checkAuthentication');
-                            startWebServer();
-                        });
+                    if (retryCnt < 3) {
+                        retryCnt++;
+                        logger.error("ERROR: Unable to getDevices() to buildEchoDeviceMap because you are not authenticated: " + err.message);
+                        clearAuth()
+                            .then(function() {
+                                logger.debug('** Amazon Cookie is no longer valid!!! Please login again using the config page. **');
+                                handleDataUpload([], 'checkAuthentication');
+                                startWebServer();
+                            });
+                    }
                     return {};
                 } else {
                     logger.error("ERROR: Unable to getDevices() to buildEchoDeviceMap: " + err.message);
@@ -838,6 +885,14 @@ function sendStatusUpdateToST(self) {
 
 function scheduledDataUpdates() {
     sendStatusUpdateToST(alexa_api);
+    // updCycleCnt++;
+    // if (updCycleCnt > 20) {
+    //     runTimeData.scheduledUpdatesActive = false;
+    //     clearInterval(scheduledDataUpdates);
+    //     setInterval(scheduledDataUpdates, configData.settings.refreshSeconds * 1000);
+    //     runTimeData.scheduledUpdatesActive = true;
+    //     updCycleCnt = 0;
+    // }
 }
 
 function stopScheduledDataUpdates() {
