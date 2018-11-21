@@ -118,6 +118,10 @@ function startWebConfig() {
                 logger.debug('/config page requested');
                 res.sendFile(__dirname + '/public/index.html');
             });
+            webApp.get('/manualAuth', function(req, res) {
+                logger.debug('/manualAuth page requested');
+                res.sendFile(__dirname + '/public/manual_auth.html');
+            });
 
             webApp.get('/clearAuth', urlencodedParser, function(req, res) {
                 logger.verbose('got request for to clear authentication');
@@ -743,6 +747,7 @@ async function buildEchoDeviceMap() {
                 runTimeData.echoDevices[devSerialNumber].dndEnabled = dnd ? dnd.enabled : false;
                 runTimeData.echoDevices[devSerialNumber].canPlayMusic = (eDevData[dev].capabilities.includes('AUDIO_PLAYER') || eDevData[dev].capabilities.includes('AMAZON_MUSIC') || eDevData[dev].capabilities.includes('TUNE_IN') || eDevData[dev].capabilities.includes('PANDORA') || eDevData[dev].capabilities.includes('I_HEART_RADIO') || eDevData[dev].capabilities.includes('SPOTIFY')) || false;
                 runTimeData.echoDevices[devSerialNumber].allowAmazonMusic = (eDevData[dev].capabilities.includes('AMAZON_MUSIC')) || false;
+                runTimeData.echoDevices[devSerialNumber].volumeControl = (eDevData[dev].capabilities.includes('VOLUME_SETTING')) || false;
                 runTimeData.echoDevices[devSerialNumber].allowTuneIn = (eDevData[dev].capabilities.includes('TUNE_IN')) || false;
                 runTimeData.echoDevices[devSerialNumber].allowIheart = (eDevData[dev].capabilities.includes('I_HEART_RADIO')) || false;
                 runTimeData.echoDevices[devSerialNumber].allowPandora = (eDevData[dev].capabilities.includes('PANDORA')) || false;
