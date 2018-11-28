@@ -765,7 +765,6 @@ let deleteNotification = function(notification, config, callback) {
     });
 };
 
-
 let getMusicProviders = function(config, callback) {
     request({
         method: 'GET',

@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <title>Echo Speaks</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"> -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.5.13/css/mdb.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet">
@@ -27,6 +28,10 @@
         button.btn.btn-info.btn-block.my-4 {
             max-width: 200px;
             text-align: center;
+        }
+        
+        .dark-gray {
+            background-color: slategray;
         }
         
         .btn-rounded {
@@ -51,7 +56,7 @@
                 <div class="card-header deep-orange lighten-1 white-text w-100 text-center">Amazon Login</div>
                 <div id="loginInputDiv" class="card-body w-100">
                     <div class="md-form mt-0">
-                        <i class="fa fa-user prefix"></i>
+                        <i class="fas fa-user prefix"></i>
                         <input type="email" id="user" name="user" class="form-control" aria-describedby="emailHelpBlockMD">
                         <label for="user" data-error="wrong" data-success="right">Email</label>
                         <small id="emailHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
@@ -59,7 +64,7 @@
                         </small>
                     </div>
                     <div class="md-form">
-                        <i class="fa fa-lock prefix"></i>
+                        <i class="fas fa-lock prefix"></i>
                         <input type="password" id="password" name="password" class="form-control" aria-describedby="passwordHelpBlockMD">
                         <label for="password" data-error="wrong" data-success="right">Password</label>
                         <small id="passwordHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
@@ -70,12 +75,12 @@
                 <div id="clearLoginDiv" class="w-100">
                     <div class="text-center">
                         <h5 class="my-2">Authentication Good!</h5>
-                        <button id="clearLoginBtn" class="btn btn-amber btn-rounded mt-0 mb-4" type="button"><i class="fa fa-close mr-1"></i>Clear Login Info</button>
+                        <button id="clearLoginBtn" class="btn btn-amber btn-rounded mt-0 mb-4" type="button"><i class="fas fa-times mr-1"></i>Clear Login Info</button>
                     </div>
                 </div>
                 <div id="proxyLoginDiv" class="w-100">
                     <div class="text-center">
-                        <button id="proxyLoginLink" class="btn btn-info btn-rounded my-4" type="button"><i class="fa fa-unlock-alt mr-1"></i>Goto Login Page</button>
+                        <button id="proxyLoginLink" class="btn btn-info btn-rounded my-4" type="button"><i class="fas fa-unlock-alt mr-1"></i>Goto Login Page</button>
                     </div>
                 </div>
             </div>
@@ -111,7 +116,7 @@
                         </small>
                     </div>
                     <div class="md-form" id="localDivHubIp">
-                        <i class="fa fa-microchip prefix"></i>
+                        <i class="fas fa-microchip prefix"></i>
                         <input type="text" id="smartThingsHubIP" name="smartThingsHubIP" class="form-control" aria-describedby="smartThingsHubIPHelpBlockMD">
                         <label for="smartThingsHubIP" data-error="wrong" data-success="right">SmartThings Hub IP</label>
                         <small id="smartThingsHubIPHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
@@ -152,6 +157,9 @@
             <div id="submitBtnDiv" class="text-center">
                 <button class="btn btn-success btn-rounded my-4" type="submit"><i class="fa fa-save mr-1"></i>Save Settings</button>
             </div>
+            <div class="text-center">
+                <button id="manualCookieLink" class="btn btn-rounded text-dark my-4" type="submit"><i class="fa fa-cookie mr-1"></i></i>Manual Cookie Entry</button>
+            </div>
         </form>
     </div>
     <!-- MDB core JavaScript -->
@@ -173,6 +181,9 @@
         $('#proxyLoginDiv').hide();
         $('#loginInputDiv').hide();
         $('#clearLoginDiv').hide();
+        $('#settingsCard').hide();
+        $('#submitBtnDiv').hide();
+        $('#statusCard').hide();
         $('[id^="cloudDiv"]').hide()
 
         var configData = {};
@@ -246,6 +257,15 @@
                 pUrl = 'https://' + rootHost + '/proxy/alexa.' + $('#amazonDomain').val()
             }
             console.log('Proxy Url: ' + pUrl)
+            window.location.href = pUrl;
+        });
+
+        $("#manualCookieLink").click(function() {
+            let pUrl = 'http://' + rootHost + ':' + configData.settings.serverPort + '/manualCookie';
+            if (useHeroku) {
+                pUrl = 'https://' + rootHost + '/manualCookie';
+            }
+            console.log('Manual Cookie Url: ' + pUrl)
             window.location.href = pUrl;
         });
 
