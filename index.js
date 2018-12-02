@@ -267,6 +267,7 @@ function startWebServer(checkForCookie = false) {
     const alexaOptions = {
         debug: (configData.settings.serviceDebug === true),
         trace: (configData.settings.serviceTrace === true),
+        serverVersion: appVer,
         checkForCookie: checkForCookie,
         serverPort: configData.settings.serverPort,
         amazonDomain: configData.settings.amazonDomain,
