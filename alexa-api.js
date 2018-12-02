@@ -166,7 +166,7 @@ function sendCookiesToST(url, cookie, csrf) {
 
 function getCookiesFromST(url) {
     return new Promise(resolve => {
-        reqPromise({ method: 'GET', uri: url, headers: ['serverVesion': serverVesion], json: true })
+        reqPromise({ method: 'GET', uri: url, headers: { serverVesion: serverVesion }, json: true })
             .then(function(resp) {
                 // console.log('getCookiesFromST resp: ', resp);
                 if (resp && resp.length > 0)
