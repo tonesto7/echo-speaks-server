@@ -881,7 +881,7 @@ function sendServerDataToST() {
                 method: 'POST',
                 uri: url,
                 body: {
-                    version: serverVesion
+                    version: appVer
                 },
                 json: true
             };
