@@ -267,6 +267,7 @@ function startWebServer(checkForCookie = false) {
     const alexaOptions = {
         debug: (configData.settings.serviceDebug === true),
         trace: (configData.settings.serviceTrace === true),
+        serverVersion: appVer,
         checkForCookie: checkForCookie,
         serverPort: configData.settings.serverPort,
         amazonDomain: configData.settings.amazonDomain,
@@ -291,6 +292,7 @@ function startWebServer(checkForCookie = false) {
         if (response !== undefined && response !== "") {
             logger.debug('Alexa Login Status: ' + response);
         }
+        sendServerDataToST();
         // console.log('config: ', config);
         if (response.startsWith('Login Successful') && config.devicesArray) {
             configFile.set('state.loginProxyActive', false);
@@ -870,6 +872,36 @@ function handleDataUpload(deviceData, src) {
         logger.error(`${src} Error: ` + err.message);
     }
 }
+
+function sendServerDataToST() {
+    let url = configData.settings.smartThingsUrl
+    return new Promise(resolve => {
+        if (url) {
+            let options = {
+                method: 'POST',
+                uri: url,
+                body: {
+                    version: appVer
+                },
+                json: true
+            };
+            reqPromise(options)
+                .then(function(resp) {
+                    // console.log('resp:', resp);
+                    if (resp) {
+                        logger.info(`** ServerVersion Sent to SmartThings Cloud Endpoint Successfully! **`);
+                        resolve(true);
+                    } else {
+                        resolve(false);
+                    }
+                })
+                .catch(function(err) {
+                    logger.error("ERROR: Unable to send Server Version to SmartThings: " + err.message);
+                    resolve(false);
+                });
+        }
+    });
+};
 
 function sendDeviceDataToST(eDevData) {
     handleDataUpload(eDevData, 'sendDeviceDataToST');
