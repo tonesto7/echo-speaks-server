@@ -873,7 +873,7 @@ function handleDataUpload(deviceData, src) {
     }
 }
 
-function sendServerDataToST(url, cookie, csrf) {
+function sendServerDataToST() {
     let url = configData.settings.smartThingsUrl
     return new Promise(resolve => {
         if (url) {
@@ -881,7 +881,6 @@ function sendServerDataToST(url, cookie, csrf) {
                 method: 'POST',
                 uri: url,
                 body: {
-
                     version: serverVesion
                 },
                 json: true
