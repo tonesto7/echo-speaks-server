@@ -421,9 +421,11 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
         const amazonRegex = new RegExp(`http://${localHost}/proxy/www.${_options.amazonDomain}/`.replace(/\./g, "\\."), 'g');
         const amazonRegex2 = new RegExp(`https://${localHost}/proxy/www.${_options.amazonDomain}/`.replace(/\./g, "\\."), 'g');
         const alexaRegex = new RegExp(`http://${localHost}/proxy/alexa.${_options.amazonDomain}/`.replace(/\./g, "\\."), 'g');
-        const alexaRegex = new RegExp(`https://${localHost}/proxy/alexa.${_options.amazonDomain}/`.replace(/\./g, "\\."), 'g');
+        const alexaRegex2 = new RegExp(`https://${localHost}/proxy/alexa.${_options.amazonDomain}/`.replace(/\./g, "\\."), 'g');
         data = data.replace(amazonRegex, `https://www.${_options.amazonDomain}/`);
+        data = data.replace(amazonRegex2, `https://www.${_options.amazonDomain}/`);
         data = data.replace(alexaRegex, `https://alexa.${_options.amazonDomain}/`);
+        data = data.replace(alexaRegex2, `https://alexa.${_options.amazonDomain}/`);
         return data;
     }
 
