@@ -14,7 +14,7 @@ const sessionFile = editJsonFile(dataFolder + '/session.json');
 let alexaUrl = 'https://alexa.amazon.com';
 let sessionData = sessionFile.get() || {};
 let serviceDebug = false;
-let serverVesion = '';
+let serverVersion = '';
 sessionFile.save();
 
 var clearSession = function(url, useHeroku) {
@@ -69,7 +69,7 @@ function getRemoteCookie(alexaOptions) {
 };
 
 function alexaLogin(username, password, alexaOptions, webapp, callback) {
-    serverVesion = alexaOptions.serverVesion;
+    serverVersion = alexaOptions.serverVersion;
     let devicesArray = [];
     let deviceSerialNumber;
     let deviceType;
@@ -144,7 +144,7 @@ function sendCookiesToST(url, cookie, csrf) {
                 body: {
                     cookie: cookie,
                     csrf: csrf,
-                    version: serverVesion
+                    version: serverVersion
                 },
                 json: true
             };
@@ -166,7 +166,7 @@ function sendCookiesToST(url, cookie, csrf) {
 
 function getCookiesFromST(url) {
     return new Promise(resolve => {
-        reqPromise({ method: 'GET', uri: url, headers: { serverVesion: serverVesion }, json: true })
+        reqPromise({ method: 'GET', uri: url, headers: { serverVersion: serverVersion }, json: true })
             .then(function(resp) {
                 // console.log('getCookiesFromST resp: ', resp);
                 if (resp && resp.length > 0)

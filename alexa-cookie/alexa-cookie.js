@@ -304,7 +304,7 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
                     }
                     if (_options.setupProxy) {
                         if (proxyServer) {
-                            errMessage += ` You can try to get the cookie manually by opening http://${getLocalHost()}/ with your browser.`;
+                            errMessage += ` You can try to get the cookie manually by opening https://${getLocalHost()}/ with your browser.`;
                         } else {
                             initAmazonProxy(_options, email, password,
                                 (err, cookie) => {
@@ -319,7 +319,7 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
                                     if (_options.proxyPort === 0) {
                                         _options.proxyPort = proxyServer.address().port;
                                     }
-                                    errMessage += ` You can try to get the cookie manually by opening http://${getLocalHost()}/ with your browser.`;
+                                    errMessage += ` You can try to get the cookie manually by opening https://${getLocalHost()}/ with your browser.`;
                                     callback && callback(new Error(errMessage), null);
                                 }
                             );
@@ -411,15 +411,17 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
         const amazonRegex = new RegExp(`https?://www.${_options.amazonDomain}/`.replace(/\./g, "\\."), 'g');
         const alexaRegex = new RegExp(`https?://alexa.${_options.amazonDomain}/`.replace(/\./g, "\\."), 'g');
         data = data.replace(/&#x2F;/g, '/');
-        data = data.replace(amazonRegex, `http://${localHost}/proxy/www.${_options.amazonDomain}/`);
-        data = data.replace(alexaRegex, `http://${localHost}/proxy/alexa.${_options.amazonDomain}/`);
+        data = data.replace(amazonRegex, `https://${localHost}/proxy/www.${_options.amazonDomain}/`);
+        data = data.replace(alexaRegex, `https://${localHost}/proxy/alexa.${_options.amazonDomain}/`);
         return data;
     }
 
     function replaceHostsBack(data) {
         let localHost = getLocalHost();
         const amazonRegex = new RegExp(`http://${localHost}/proxy/www.${_options.amazonDomain}/`.replace(/\./g, "\\."), 'g');
+        const amazonRegex2 = new RegExp(`https://${localHost}/proxy/www.${_options.amazonDomain}/`.replace(/\./g, "\\."), 'g');
         const alexaRegex = new RegExp(`http://${localHost}/proxy/alexa.${_options.amazonDomain}/`.replace(/\./g, "\\."), 'g');
+        const alexaRegex = new RegExp(`https://${localHost}/proxy/alexa.${_options.amazonDomain}/`.replace(/\./g, "\\."), 'g');
         data = data.replace(amazonRegex, `https://www.${_options.amazonDomain}/`);
         data = data.replace(alexaRegex, `https://alexa.${_options.amazonDomain}/`);
         return data;
@@ -502,7 +504,7 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
             _options.debug && console.log('Alexa-Cookie: Proxy detected SUCCESS!!');
 
             proxyRes.statusCode = 302;
-            proxyRes.headers.location = `http://${getLocalHost()}/cookie-success`;
+            proxyRes.headers.location = `https://${getLocalHost()}/cookie-success`;
             delete proxyRes.headers.referer;
 
             const finalCookie = proxyRes.headers.cookie || proxyRes.socket.parser.outgoing._headers.cookie;
@@ -517,7 +519,7 @@ function initAmazonProxy(_options, email, password, callbackCookie, callbackList
             _options.debug && console.log('Redirect: Original Location ----> ' + proxyRes.headers.location);
             proxyRes.headers.location = replaceHosts(proxyRes.headers.location);
             if (reqestHost && proxyRes.headers.location.startsWith('/')) {
-                proxyRes.headers.location = `http://${getLocalHost()}/proxy/` + reqestHost + proxyRes.headers.location;
+                proxyRes.headers.location = `https://${getLocalHost()}/proxy/` + reqestHost + proxyRes.headers.location;
             }
             _options.debug && console.log('Redirect: Final Location ----> ' + proxyRes.headers.location);
             return;
