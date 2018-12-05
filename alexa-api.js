@@ -106,8 +106,8 @@ function alexaLogin(username, password, alexaOptions, webapp, callback) {
                     } else if (result) {
                         alexaUrl = 'https://alexa.' + alexaOptions.amazonDomain;
                         // IMPORTANT: can be called multiple times!! As soon as a new cookie is fetched or an error happened. Consider that!
-                        logger.debug('cookie: ' + result.cookie || undefined);
-                        logger.debug('csrf: ' + result.csrf || undefined);
+                        serviceDebug && logger.debug('cookie: ' + result.cookie || undefined);
+                        serviceDebug && logger.debug('csrf: ' + result.csrf || undefined);
                         if (result && result.csrf && result.cookie) {
                             // alexaCookie.stopProxyServer();
                             if (sessionData['csrf'] === undefined || sessionData['csrf'] !== result.csrf) {
