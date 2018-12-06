@@ -6,6 +6,7 @@ form div {
 button.btn.btn-info.btn-block.my-4 {
     max-width: 200px;
     text-align: center;
+    /* text-size-adjust: content: '\f0a3'; */
 }
 
 .btn-rounded {
