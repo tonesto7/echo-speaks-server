@@ -414,7 +414,7 @@ function alexaLogin(username, password, alexaOptions, webapp, callback) {
             runTimeData.serviceDebug && logger.debug('csrf: ' + result.csrf || undefined);
             if (result && result.csrf && result.cookie) {
               console.log('result: ', result);
-                // alexaCookie.stopProxyServer();
+              // alexaCookie.stopProxyServer();
               if (sessionData['csrf'] === undefined || sessionData['csrf'] !== result.csrf) {
                 sessionFile.set('csrf', result.csrf);
                 sessionData['csrf'] = result.csrf;
@@ -502,7 +502,7 @@ function sendCookiesToST(url, cookie, csrf) {
         body: {
           cookie: cookie,
           csrf: csrf,
-          version: serverVersion
+          version: appVer
         },
         json: true
       };
@@ -530,7 +530,7 @@ function getCookiesFromST(url) {
         method: 'GET',
         uri: url,
         headers: {
-          serverVersion: serverVersion
+          serverVersion: appVer
         },
         json: true
       })

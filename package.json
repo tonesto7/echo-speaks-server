@@ -3,14 +3,9 @@
   "version": "2.1.0",
   "author": "Anthony Santilli",
   "contributors": [{
-      "name": "Corey L.",
-      "email": "no@email.com"
-    },
-    {
-      "name": "Apollon77",
-      "email": "ingo@fischer-ka.de"
-    }
-  ],
+    "name": "Apollon77",
+    "email": "ingo@fischer-ka.de"
+  }],
   "engines": {
     "node": "10.12.0"
   },
