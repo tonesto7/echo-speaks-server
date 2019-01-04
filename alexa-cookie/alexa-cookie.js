@@ -212,9 +212,7 @@ function getCSRFFromCookies(cookie, _options, callback) {
 }
 
 function generateAlexaCookie(email, password, __options, webapp, callback) {
-  if (webapp) {
-    webApp = webapp;
-  }
+  if (webapp) webApp = webapp;
   if (email !== undefined && typeof email !== 'string') {
     callback = __options;
     __options = password;
@@ -325,16 +323,14 @@ function generateAlexaCookie(email, password, __options, webapp, callback) {
               if (proxyServer) {
                 errMessage += ` You can try to get the cookie manually by opening https://${getLocalHost()}/ with your browser.`;
               } else {
-                amazonProxy.initAmazonProxy(_options, prepareResult,
-                  (server) => {
-                    proxyServer = server;
-                    if (_options.proxyPort === 0) {
-                      _options.proxyPort = proxyServer.address().port;
-                    }
-                    errMessage += ` You can try to get the cookie manually by opening https://${getLocalHost()}/ with your browser.`;
-                    callback && callback(new Error(errMessage), null);
+                amazonProxy.initAmazonProxy(_options, webApp, prepareResult, (server) => {
+                  proxyServer = server;
+                  if (_options.proxyPort === 0) {
+                    _options.proxyPort = proxyServer.address().port;
                   }
-                );
+                  errMessage += ` You can try to get the cookie manually by opening https://${getLocalHost()}/ with your browser.`;
+                  callback && callback(new Error(errMessage), null);
+                });
                 return;
               }
             }

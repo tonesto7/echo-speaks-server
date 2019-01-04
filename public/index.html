@@ -138,7 +138,7 @@
                         <input type="text" id="serverPort" name="serverPort" class="form-control" aria-describedby="serverPortHelpBlockMD">
                         <label for="serverPort" data-error="wrong" data-success="right">Server Port</label>
                         <small id="serverPortHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
-                            Enter the port for the Echo Speaks Server.  Default: 8091
+                            Enter the port for the Echo Speaks Server. Default: 8091
                         </small>
                     </div>
 
@@ -252,9 +252,11 @@
         });
 
         $("#proxyLoginLink").click(function() {
-            let pUrl = 'http://' + rootHost + ':' + configData.settings.serverPort + '/proxy/alexa.' + $('#amazonDomain').val();
+            let pUrl = 'http://' + rootHost + ':' + configData.settings.serverPort + '/proxy';
+            // let pUrl = 'http://' + rootHost + ':' + configData.settings.serverPort + '/proxy/alexa.' + $('#amazonDomain').val();
             if (useHeroku) {
-                pUrl = 'https://' + rootHost + '/proxy/alexa.' + $('#amazonDomain').val()
+                // pUrl = 'https://' + rootHost + '/proxy/alexa.' + $('#amazonDomain').val()
+                pUrl = 'https://' + rootHost + '/proxy';
             }
             console.log('Proxy Url: ' + pUrl)
             window.location.href = pUrl;

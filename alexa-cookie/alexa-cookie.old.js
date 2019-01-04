@@ -90,7 +90,7 @@ function generateAlexaCookie(email, password, _options, webapp, callback) {
     }
 
     let req = https.request(options, function(res) {
-      let bodyÂ = "";
+      let body = "";
       let r = res;
       info.requests.push({
         options: options,

@@ -3,7 +3,7 @@
 const appVer = require('./package.json').version;
 
 const alexaCookie = require('./alexa-cookie/alexa-cookie');
-const request = require('request');
+// const request = require('request');
 const reqPromise = require("request-promise");
 const logger = require('./logger');
 const express = require('express');
@@ -71,10 +71,10 @@ function loadConfig() {
   configFile.set('settings.amazonDomain', process.env.amazonDomain || (configData.settings.amazonDomain || 'amazon.com'));
   configFile.set('settings.smartThingsUrl', process.env.smartThingsUrl || configData.settings.smartThingsUrl);
   if (process.env.serviceDebug === true || process.env.serviceDebug === 'true') console.log('** SERVICE DEBUG IS ACTIVE **');
-  //   configFile.set('settings.serviceDebug', (process.env.serviceDebug === true || process.env.serviceDebug === 'true'));
-  //   configFile.set('settings.serviceTrace', (process.env.serviceTrace === true || process.env.serviceTrace === 'true'));
-  configFile.set('settings.serviceDebug', true);
-  configFile.set('settings.serviceTrace', true);
+  configFile.set('settings.serviceDebug', (process.env.serviceDebug === true || process.env.serviceDebug === 'true'));
+  configFile.set('settings.serviceTrace', (process.env.serviceTrace === true || process.env.serviceTrace === 'true'));
+  //   configFile.set('settings.serviceDebug', true);
+  //   configFile.set('settings.serviceTrace', true);
   configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
   configFile.set('settings.refreshSeconds', process.env.refreshSeconds ? parseInt(process.env.refreshSeconds) : (configData.settings.refreshSeconds || 60));
   if (!configData.state) {
@@ -269,14 +269,14 @@ function startWebServer(checkForCookie = false) {
   const alexaOptions = {
     debug: (configData.settings.serviceDebug === true),
     trace: (configData.settings.serviceTrace === true),
-    serverVersion: appVer,
     checkForCookie: checkForCookie,
     serverPort: configData.settings.serverPort,
     amazonPage: configData.settings.amazonDomain,
-    alexaServiceHost: ((configData.settings.amazonDomain === 'amazon.de' || configData.settings.amazonDomain === 'amazon.co.uk') ? 'layla.' : 'pitangui.') + configData.settings.amazonDomain,
+    // alexaServiceHost: ((configData.settings.amazonDomain === 'amazon.de' || configData.settings.amazonDomain === 'amazon.co.uk') ? 'layla.' : 'pitangui.') + configData.settings.amazonDomain,
     setupProxy: true,
     proxyOwnIp: getIPAddress(),
     proxyListenBind: '0.0.0.0',
+    useWebApp: true,
     useHeroku: (configData.settings.useHeroku === true || configData.settings.useHeroku === 'true'),
     proxyHost: configData.settings.hostUrl,
     stEndpoint: configData.settings.smartThingsUrl ? String(configData.settings.smartThingsUrl).replace("/receiveData?", "/cookie?") : null
@@ -287,7 +287,7 @@ function startWebServer(checkForCookie = false) {
   configFile.save();
   configData = configFile.get();
   runTimeData.loginProxyActive = true;
-  alexaLogin(configData.settings.user, configData.settings.password, alexaOptions, webApp, function(error, response, config) {
+  alexaLogin(undefined, undefined, alexaOptions, function(error, response, config) {
     runTimeData.alexaUrl = `https://alexa.${configData.settings.amazonDomain}`;
     runTimeData.savedConfig = config;
     // console.log('error:', error);
@@ -373,16 +373,9 @@ initConfig()
   });
 
 
-function alexaLogin(username, password, alexaOptions, webapp, callback) {
-  let devicesArray = [];
-  let deviceSerialNumber;
-  let deviceType;
-  let deviceOwnerCustomerId;
+function alexaLogin(username, password, alexaOptions, callback) {
   let config = {};
-  config.devicesArray = devicesArray;
-  config.deviceSerialNumber = deviceSerialNumber;
-  config.deviceType = deviceType;
-  config.deviceOwnerCustomerId = deviceOwnerCustomerId;
+  config.devicesArray = [];
   config.alexaURL = alexaOptions.amazonPage;
   runTimeData.serviceDebug = (alexaOptions.debug === true);
   runTimeData.serviceTrace = (alexaOptions.trace === true);
@@ -390,19 +383,17 @@ function alexaLogin(username, password, alexaOptions, webapp, callback) {
   getRemoteCookie(alexaOptions)
     .then(function(remoteCookies) {
       // console.log('remoteCookies: ', remoteCookies, 'keys: ', Object.keys(remoteCookies));
-      if (remoteCookies !== undefined && Object.keys(remoteCookies).length > 0 && remoteCookies.cookies && remoteCookies.csrf) {
-        config.cookies = remoteCookies.cookies;
-        config.csrf = remoteCookies.csrf;
+      if (remoteCookies !== undefined && Object.keys(remoteCookies).length > 0 && remoteCookies.cookieData) {
+        config.cookieData = remoteCookies.cookieData;
         callback(null, 'Login Successful (Retreived from ST)', config);
-      } else if (sessionData.csrf && sessionData.cookie) {
-        config.cookies = sessionData.cookie;
-        config.csrf = sessionData.csrf;
+      } else if (sessionData && sessionData.cookieData && Object.keys(sessionData.cookieData) >= 2) {
+        config.cookieData = sessionData.cookieData || {};
         callback(null, 'Login Successful (Stored Session)', config);
       } else {
-        alexaCookie.generateAlexaCookie(username, password, alexaOptions, webapp, function(err, result) {
-          // console.log('generateAlexaCookie error: ', err);
-          // console.log('generateAlexaCookie result: ', result);
-          if (err && (err.message.startsWith('Login unsuccessful') || err.message.startsWith('Amazon-Login-Error:'))) {
+        alexaCookie.generateAlexaCookie(username, password, alexaOptions, webApp, (err, result) => {
+          //   console.log('generateAlexaCookie error: ', err);
+          //   console.log('generateAlexaCookie result: ', result);
+          if (err && (err.message.startsWith('Login unsuccessful') || err.message.startsWith('Amazon-Login-Error:') || err.message.startsWith('You can try to get the cookie manually by opening'))) {
             logger.debug('Please complete Amazon login by going here: (http://' + alexaOptions.proxyHost + ':' + alexaOptions.serverPort + '/config)');
           } else if (err && !result) {
             logger.error('generateAlexaCookie: ' + err.message);
@@ -410,23 +401,20 @@ function alexaLogin(username, password, alexaOptions, webapp, callback) {
           } else if (result) {
             runTimeData.alexaUrl = 'https://alexa.' + alexaOptions.amazonPage;
             // IMPORTANT: can be called multiple times!! As soon as a new cookie is fetched or an error happened. Consider that!
-            runTimeData.serviceDebug && logger.debug('cookie: ' + result.cookie || undefined);
+            runTimeData.serviceDebug && logger.debug('cookie: ' + result.localCookie || undefined);
             runTimeData.serviceDebug && logger.debug('csrf: ' + result.csrf || undefined);
-            if (result && result.csrf && result.cookie) {
+
+            if (result && result.csrf && (result.cookie || result.localCookie)) {
               console.log('result: ', result);
-              // alexaCookie.stopProxyServer();
-              if (sessionData['csrf'] === undefined || sessionData['csrf'] !== result.csrf) {
-                sessionFile.set('csrf', result.csrf);
-                sessionData['csrf'] = result.csrf;
-              }
-              if (sessionData['cookie'] === undefined || sessionData['cookie'] !== result.cookie) {
-                sessionFile.set('cookie', result.cookie);
-                sessionData['cookie'] = result.cookie;
+              sessionFile.unset('csrf');
+              sessionFile.unset('cookie');
+              if (sessionData['cookieData'] === undefined || sessionData['cookieData'] !== result) {
+                sessionFile.set('cookieData', result);
+                sessionData['cookieData'] = result;
               }
               sessionFile.save();
-              config.cookies = sessionData.cookie;
-              config.csrf = sessionData.csrf;
-              sendCookiesToST(alexaOptions.stEndpoint, config.cookies, config.csrf);
+              config.cookieData = result;
+              sendCookiesToST(alexaOptions.stEndpoint, config.cookieData);
               callback(null, 'Login Successful', config);
             } else {
               callback(true, 'There was an error getting authentication', null);
@@ -443,6 +431,7 @@ function alexaLogin(username, password, alexaOptions, webapp, callback) {
 var clearSession = function(url, useHeroku) {
   sessionFile.unset('csrf');
   sessionFile.unset('cookie');
+  sessionFile.unset('cookieData');
   sessionFile.save();
   if (url && useHeroku) {
     let options = {
@@ -454,11 +443,11 @@ var clearSession = function(url, useHeroku) {
       .then(function(resp) {
         // console.log('resp:', resp);
         if (resp) {
-          logger.info(`** Sent Remove Alexa Cookie Request to SmartThings Successfully! **`);
+          logger.info(`** Sent Remove Alexa Cookie Data Request to SmartThings Successfully! **`);
         }
       })
       .catch(function(err) {
-        logger.error("ERROR: Unable to send Alexa Cookie to SmartThings: " + err.message);
+        logger.error("ERROR: Unable to send Alexa Cookie Data to SmartThings: " + err.message);
       });
   }
 };
@@ -471,19 +460,15 @@ function getRemoteCookie(alexaOptions) {
     let config = {};
     if (alexaOptions.useHeroku === true && alexaOptions.stEndpoint) {
       getCookiesFromST(alexaOptions.stEndpoint)
-        .then(function(cookies) {
-          if (cookies && cookies.cookie && cookies.csrf) {
-            if (sessionData['csrf'] === undefined || sessionData['csrf'] !== cookies.csrf) {
-              sessionFile.set('csrf', cookies.csrf);
-              sessionData['csrf'] = cookies.csrf;
-            }
-            if (sessionData['cookie'] === undefined || sessionData['cookie'] !== cookies.cookie) {
-              sessionFile.set('cookie', cookies.cookie);
-              sessionData['cookie'] = cookies.cookie;
+        .then(function(data) {
+          if (data && data.cookieData) {
+
+            if (sessionData['cookieData'] === undefined || sessionData['cookieData'] !== data.cookieData) {
+              sessionFile.set('cookieData', data.cookieData);
+              sessionData['cookieData'] = data.cookieData;
             }
             sessionFile.save();
-            config.cookies = cookies.cookie;
-            config.csrf = cookies.csrf;
+            config.cookieData = data.cookieData;
             resolve(config);
           }
         });
@@ -493,15 +478,14 @@ function getRemoteCookie(alexaOptions) {
   });
 };
 
-function sendCookiesToST(url, cookie, csrf) {
+function sendCookiesToST(url, cookieData) {
   return new Promise(resolve => {
-    if (url && cookie && csrf) {
+    if (url && cookieData) {
       let options = {
         method: 'POST',
         uri: url,
         body: {
-          cookie: cookie,
-          csrf: csrf,
+          cookieData: cookieData,
           version: appVer
         },
         json: true
@@ -510,14 +494,14 @@ function sendCookiesToST(url, cookie, csrf) {
         .then(function(resp) {
           // console.log('resp:', resp);
           if (resp) {
-            logger.info(`** Alexa Cookie sent to SmartThings Cloud Endpoint Successfully! **`);
+            logger.info(`** Alexa Cookie Data sent to SmartThings Cloud Endpoint Successfully! **`);
             resolve(true);
           } else {
             resolve(false);
           }
         })
         .catch(function(err) {
-          logger.error("ERROR: Unable to send Alexa Cookie to SmartThings: " + err.message);
+          logger.error("ERROR: Unable to send Alexa Cookie Data to SmartThings: " + err.message);
           resolve(false);
         });
     }
@@ -536,12 +520,12 @@ function getCookiesFromST(url) {
       })
       .then(function(resp) {
         // console.log('getCookiesFromST resp: ', resp);
-        if (resp && resp.length > 0)
-          logger.info(`** Retrieved Alexa Cookie from SmartThings Cloud Endpoint Successfully! **`);
+        if (resp && Object.keys(resp).length >= 2)
+          logger.info(`** Retrieved Alexa Cookie Data from SmartThings Cloud Endpoint Successfully! **`);
         resolve(resp);
       })
       .catch(function(err) {
-        logger.error("ERROR: Unable to retrieve Alexa Cookie from SmartThings: " + err.message);
+        logger.error("ERROR: Unable to retrieve Alexa Cookie Data from SmartThings: " + err.message);
         resolve({});
       });
   });
@@ -659,7 +643,7 @@ process.on('uncaughtException', exitHandler.bind(null, {
 function exitHandler(options, exitCode) {
   // alexaCookie.stopProxyServer();
   if (runTimeData.scheduledUpdatesActive) {
-    stopScheduledDataUpdates();
+    // stopScheduledDataUpdates();
   }
   if (options.cleanup) {
     console.log('clean');
