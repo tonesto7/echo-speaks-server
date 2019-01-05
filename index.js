@@ -184,10 +184,14 @@ function startWebConfig() {
                 alexaCookie.refreshAlexaCookie({
                     formerRegistrationData: runTimeData.savedConfig.cookieData
                 }, (err, result) => {
-                    console.log('RESULT: ' + err + ' / ' + JSON.stringify(result));
-                    res.send({
-                        result: result
-                    });
+                    if (result && Object.keys(result).length >= 2) {
+                        sendCookiesToST((configData.settings.smartThingsUrl ? String(configData.settings.smartThingsUrl).replace("/receiveData?", "/cookie?") : null), result);
+                        runTimeData.savedConfig.cookieData = result;
+                        // console.log('RESULT: ' + err + ' / ' + JSON.stringify(result));
+                        res.send({
+                            result: result
+                        });
+                    }
                 });
             });
             webApp.get('/configData', function(req, res) {
