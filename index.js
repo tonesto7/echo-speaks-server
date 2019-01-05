@@ -36,6 +36,7 @@ runTimeData.savedConfig = {};
 runTimeData.scheduledUpdatesActive = false;
 runTimeData.alexaUrl = 'https://alexa.amazon.com';
 runTimeData.loginProxyActive = false;
+runTimeData.loginComplete = false;
 runTimeData.ignoredDevices = {};
 runTimeData.authenticated = false;
 runTimeData.serviceDebug = false;
@@ -387,18 +388,12 @@ function alexaLogin(username, password, alexaOptions, callback) {
     let config = {};
     config.devicesArray = [];
     config.alexaURL = alexaOptions.amazonPage;
-    runTimeData.serviceDebug = (alexaOptions.debug === true);
-    runTimeData.serviceTrace = (alexaOptions.trace === true);
 
     getRemoteCookie(alexaOptions)
         .then(function(remoteCookies) {
             // console.log('remoteCookies: ', remoteCookies, 'keys: ', Object.keys(remoteCookies));
             if (remoteCookies !== undefined && Object.keys(remoteCookies).length > 0 && remoteCookies.cookieData) {
-                if (sessionData['cookieData'] === undefined || sessionData['cookieData'] !== remoteCookies.cookieData) {
-                    sessionFile.set('cookieData', remoteCookies.cookieData);
-                    sessionData['cookieData'] = remoteCookies.cookieData;;
-                }
-                sessionFile.save();
+                updSessionItem('cookieData', remoteCookies.cookieData);
                 config.cookieData = remoteCookies.cookieData;
                 runTimeData.savedConfig.cookieData = remoteCookies.cookieData;
                 callback(null, 'Login Successful (Retreived from ST)', config);
@@ -423,13 +418,7 @@ function alexaLogin(username, password, alexaOptions, callback) {
 
                         if (result && result.csrf && (result.cookie || result.localCookie)) {
                             console.log('result: ', result);
-                            sessionFile.unset('csrf');
-                            sessionFile.unset('cookie');
-                            if (sessionData['cookieData'] === undefined || sessionData['cookieData'] !== result) {
-                                sessionFile.set('cookieData', result);
-                                sessionData['cookieData'] = result;
-                            }
-                            sessionFile.save();
+                            updSessionItem('cookieData', result);
                             config.cookieData = result;
                             runTimeData.savedConfig.cookieData = result;
                             sendCookiesToST(alexaOptions.stEndpoint, config.cookieData);
@@ -446,11 +435,24 @@ function alexaLogin(username, password, alexaOptions, callback) {
         });
 };
 
-var clearSession = function(url, useHeroku) {
+let updSessionItem = (key, value) => {
+    if (sessionData[key] === undefined || sessionData[key] !== value) {
+        sessionFile.set(key, value);
+        sessionFile.save();
+    }
+    sessionData = sessionFile.get();
+};
+
+let remSessionItem = (key) => {
     sessionFile.unset('csrf');
-    sessionFile.unset('cookie');
-    sessionFile.unset('cookieData');
     sessionFile.save();
+    sessionData = sessionFile.get();
+};
+
+var clearSession = function(url, useHeroku) {
+    remSessionItem('csrf');
+    remSessionItem('cookie');
+    remSessionItem('cookieData');
     delete runTimeData.savedConfig.cookieData;
     if (url && useHeroku) {
         let options = {
@@ -473,20 +475,15 @@ var clearSession = function(url, useHeroku) {
 
 function getRemoteCookie(alexaOptions) {
     return new Promise(resolve => {
-        if (alexaOptions.useHeroku === false || alexaOptions.checkForCookie === false) {
+        if (alexaOptions.checkForCookie === false) {
             resolve(undefined);
         }
         let config = {};
-        if (alexaOptions.useHeroku === true && alexaOptions.stEndpoint) {
+        if (alexaOptions.stEndpoint) {
             getCookiesFromST(alexaOptions.stEndpoint)
                 .then(function(data) {
                     if (data && data.cookieData) {
-
-                        if (sessionData['cookieData'] === undefined || sessionData['cookieData'] !== data.cookieData) {
-                            sessionFile.set('cookieData', data.cookieData);
-                            sessionData['cookieData'] = data.cookieData;
-                        }
-                        sessionFile.save();
+                        updSessionItem('cookieData', data.cookieData);
                         config.cookieData = data.cookieData;
                         resolve(config);
                     }
