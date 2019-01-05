@@ -180,10 +180,9 @@ function startWebConfig() {
             });
             webApp.get('/refreshCookie', urlencodedParser, function(req, res) {
                 logger.verbose('refreshCookie request received');
-                const config = {
-                    formerRegistrationData: sessionData.cookieData;
-                };
-                alexaCookie.refreshAlexaCookie(config, (err, result) => {
+                alexaCookie.refreshAlexaCookie({
+                    formerRegistrationData: runTimeData.savedConfig
+                }, (err, result) => {
                     console.log('RESULT: ' + err + ' / ' + JSON.stringify(result));
                     res.send({
                         result: result
@@ -401,9 +400,11 @@ function alexaLogin(username, password, alexaOptions, callback) {
                 }
                 sessionFile.save();
                 config.cookieData = remoteCookies.cookieData;
+                runTimeData.savedConfig.cookieData = remoteCookies.cookieData;
                 callback(null, 'Login Successful (Retreived from ST)', config);
             } else if (sessionData && sessionData.cookieData && Object.keys(sessionData.cookieData) >= 2) {
                 config.cookieData = sessionData.cookieData || {};
+                runTimeData.savedConfig.cookieData = sessionData.cookieData;
                 callback(null, 'Login Successful (Stored Session)', config);
             } else {
                 alexaCookie.generateAlexaCookie(username, password, alexaOptions, webApp, (err, result) => {
@@ -430,6 +431,7 @@ function alexaLogin(username, password, alexaOptions, callback) {
                             }
                             sessionFile.save();
                             config.cookieData = result;
+                            runTimeData.savedConfig.cookieData = result;
                             sendCookiesToST(alexaOptions.stEndpoint, config.cookieData);
                             callback(null, 'Login Successful', config);
                         } else {
@@ -449,6 +451,7 @@ var clearSession = function(url, useHeroku) {
     sessionFile.unset('cookie');
     sessionFile.unset('cookieData');
     sessionFile.save();
+    delete runTimeData.savedConfig.cookieData;
     if (url && useHeroku) {
         let options = {
             method: 'DELETE',
