@@ -395,6 +395,11 @@ function alexaLogin(username, password, alexaOptions, callback) {
         .then(function(remoteCookies) {
             // console.log('remoteCookies: ', remoteCookies, 'keys: ', Object.keys(remoteCookies));
             if (remoteCookies !== undefined && Object.keys(remoteCookies).length > 0 && remoteCookies.cookieData) {
+                if (sessionData['cookieData'] === undefined || sessionData['cookieData'] !== remoteCookies.cookieData) {
+                    sessionFile.set('cookieData', remoteCookies.cookieData);
+                    sessionData['cookieData'] = remoteCookies.cookieData;;
+                }
+                sessionFile.save();
                 config.cookieData = remoteCookies.cookieData;
                 callback(null, 'Login Successful (Retreived from ST)', config);
             } else if (sessionData && sessionData.cookieData && Object.keys(sessionData.cookieData) >= 2) {
