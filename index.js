@@ -178,7 +178,18 @@ function startWebConfig() {
                         });
                     });
             });
-
+            webApp.get('/refreshCookie', urlencodedParser, function(req, res) {
+                logger.verbose('refreshCookie request received');
+                const config = {
+                    formerRegistrationData: sessionData.cookieData;
+                };
+                alexaCookie.refreshAlexaCookie(config, (err, result) => {
+                    console.log('RESULT: ' + err + ' / ' + JSON.stringify(result));
+                    res.send({
+                        result: result
+                    });
+                });
+            });
             webApp.get('/configData', function(req, res) {
                 // console.log(configData)
                 res.send(JSON.stringify(configData));
