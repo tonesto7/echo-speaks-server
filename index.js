@@ -1,14 +1,10 @@
 "use strict";
 
 const appVer = require('./package.json').version;
-
 const alexaCookie = require('./alexa-cookie/alexa-cookie');
-// const request = require('request');
 const reqPromise = require("request-promise");
 const logger = require('./logger');
 const express = require('express');
-// const gson = require('gson');
-// const io = socketIO(express);
 const bodyParser = require('body-parser');
 const os = require('os');
 // const alexaCookie = require('./alexa-cookie/alexa-cookie');

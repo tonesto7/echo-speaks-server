@@ -11,18 +11,17 @@
     },
     "dependencies": {
         "@types/underscore": "^1.8.9",
-        "gson": "^0.1.5",
         "body-parser": "^1.18.3",
         "dateformat": "^3.0.3",
-        "edit-json-file": "^1.2.0",
+        "edit-json-file": "^1.2.1",
         "express": "^4.16.4",
         "express-remove-route": "1.0.0",
         "find-free-port": "^2.0.0",
-        "getos": "^3.1.0",
-        "http-proxy-middleware": "^0.19.0",
+        "getos": "^3.1.1",
+        "http-proxy-middleware": "^0.19.1",
         "http-proxy-response-rewrite": "^0.0.1",
         "https": "^1.0.0",
-        "moment": "^2.22.2",
+        "moment": "^2.23.0",
         "node-datetime": "^2.1.2",
         "os": "^0.1.1",
         "extend": "^3.0.2",
@@ -31,7 +30,7 @@
         "request-promise": "^4.2.2",
         "underscore": "^1.9.1",
         "winston": "^3.1.0",
-        "winston-daily-rotate-file": "^3.3.2"
+        "winston-daily-rotate-file": "^3.5.1"
     },
     "repository": {
         "type": "git",
