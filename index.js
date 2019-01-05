@@ -23,7 +23,7 @@ const webApp = express();
 const urlencodedParser = bodyParser.urlencoded({
     extended: false
 });
-// process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 sessionFile.save();
 
 // These the config variables
@@ -391,7 +391,7 @@ function alexaLogin(username, password, alexaOptions, callback) {
 
     getRemoteCookie(alexaOptions)
         .then(function(remoteCookies) {
-            console.log('remoteCookies: ', remoteCookies, 'keys: ', Object.keys(remoteCookies));
+            // console.log('remoteCookies: ', remoteCookies || undefined, 'keys: ', Object.keys(remoteCookies) || {});
             if (remoteCookies !== undefined && Object.keys(remoteCookies).length > 0 && remoteCookies.cookieData) {
                 updSessionItem('cookieData', remoteCookies.cookieData);
                 config.cookieData = remoteCookies.cookieData;
@@ -479,9 +479,9 @@ function getRemoteCookie(alexaOptions) {
         if (alexaOptions.stEndpoint) {
             getCookiesFromST(alexaOptions.stEndpoint)
                 .then(function(data) {
-                    if (data && data.cookieData) {
-                        updSessionItem('cookieData', data.cookieData);
-                        config.cookieData = data.cookieData;
+                    if (data) {
+                        updSessionItem('cookieData', data);
+                        config.cookieData = data;
                         resolve(config);
                     }
                 });
