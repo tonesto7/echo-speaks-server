@@ -391,7 +391,7 @@ function alexaLogin(username, password, alexaOptions, callback) {
 
     getRemoteCookie(alexaOptions)
         .then(function(remoteCookies) {
-            // console.log('remoteCookies: ', remoteCookies, 'keys: ', Object.keys(remoteCookies));
+            console.log('remoteCookies: ', remoteCookies, 'keys: ', Object.keys(remoteCookies));
             if (remoteCookies !== undefined && Object.keys(remoteCookies).length > 0 && remoteCookies.cookieData) {
                 updSessionItem('cookieData', remoteCookies.cookieData);
                 config.cookieData = remoteCookies.cookieData;
