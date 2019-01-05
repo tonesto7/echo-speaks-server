@@ -182,7 +182,7 @@ function startWebConfig() {
             webApp.get('/refreshCookie', urlencodedParser, function(req, res) {
                 logger.verbose('refreshCookie request received');
                 alexaCookie.refreshAlexaCookie({
-                    formerRegistrationData: runTimeData.savedConfig
+                    formerRegistrationData: runTimeData.savedConfig.cookieData
                 }, (err, result) => {
                     console.log('RESULT: ' + err + ' / ' + JSON.stringify(result));
                     res.send({
