@@ -656,11 +656,12 @@ function refreshAlexaCookie(__options, callback) {
         },
         body: querystring.stringify(refreshData)
     };
-    console.log('querystring body: ', querystring.stringify(refreshData));
+
     Cookie = _options.formerRegistrationData.loginCookie;
     _options.logger && _options.logger('Alexa-Cookie: Refresh Token');
     _options.logger && _options.logger(JSON.stringify(options));
     request(options, (error, response, body) => {
+        console.log('request: ', request);
         if (error) {
             callback && callback(error, null);
             return;
