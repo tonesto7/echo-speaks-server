@@ -395,11 +395,9 @@ function alexaLogin(username, password, alexaOptions, callback) {
             if (remoteCookies !== undefined && Object.keys(remoteCookies).length > 0 && remoteCookies.cookieData) {
                 updSessionItem('cookieData', remoteCookies.cookieData);
                 config.cookieData = remoteCookies.cookieData;
-                runTimeData.savedConfig.cookieData = remoteCookies.cookieData;
                 callback(null, 'Login Successful (Retreived from ST)', config);
             } else if (sessionData && sessionData.cookieData && Object.keys(sessionData.cookieData) >= 2) {
                 config.cookieData = sessionData.cookieData || {};
-                runTimeData.savedConfig.cookieData = sessionData.cookieData;
                 callback(null, 'Login Successful (Stored Session)', config);
             } else {
                 alexaCookie.generateAlexaCookie(username, password, alexaOptions, webApp, (err, result) => {
@@ -420,13 +418,12 @@ function alexaLogin(username, password, alexaOptions, callback) {
                             console.log('result: ', result);
                             updSessionItem('cookieData', result);
                             config.cookieData = result;
-                            runTimeData.savedConfig.cookieData = result;
-                            sendCookiesToST(alexaOptions.stEndpoint, config.cookieData);
+                            sendCookiesToST(alexaOptions.stEndpoint, result);
                             callback(null, 'Login Successful', config);
                         } else {
                             callback(true, 'There was an error getting authentication', null);
-                            if (alexaOptions.stEndpoint && alexaOptions.useHeroku) {
-                                clearSession(alexaOptions.stEndpoint, alexaOptions.useHeroku);
+                            if (alexaOptions.stEndpoint) {
+                                clearSession(alexaOptions.stEndpoint);
                             }
                         }
                     }
@@ -449,12 +446,12 @@ let remSessionItem = (key) => {
     sessionData = sessionFile.get();
 };
 
-var clearSession = function(url, useHeroku) {
+var clearSession = function(url) {
     remSessionItem('csrf');
     remSessionItem('cookie');
     remSessionItem('cookieData');
     delete runTimeData.savedConfig.cookieData;
-    if (url && useHeroku) {
+    if (url) {
         let options = {
             method: 'DELETE',
             uri: url,
