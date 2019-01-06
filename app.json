@@ -16,6 +16,9 @@
             "description": "This is used to tell the service that is running under heroku and act accordingly.",
             "value": true
         },
+        "regionLocale": {
+            "description": "the region language to use."
+        },
         "serviceDebug": {
             "description": "This is used to tell the service to provide more detailed logs.",
             "value": false

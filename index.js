@@ -310,7 +310,7 @@ function startWebServer(checkForCookie = false) {
             logger.debug('Alexa Login Status: ' + response);
         }
         sendServerDataToST();
-        console.log('response: ', response);
+        // console.log('response: ', response);
         if (response.startsWith('Login Successful') && config.devicesArray) {
             configFile.set('state.loginProxyActive', false);
             configData.state.loginProxyActive = false;
@@ -396,7 +396,7 @@ function alexaLogin(username, password, alexaOptions, callback) {
     getRemoteCookie(alexaOptions)
         .then(function(remoteCookies) {
             // console.log('remoteCookies: ', remoteCookies || undefined, 'keys: ', Object.keys(remoteCookies) || {});
-            if (remoteCookies !== undefined && Object.keys(remoteCookies).length > 0 && remoteCookies.cookieData) {
+            if (remoteCookies !== undefined && Object.keys(remoteCookies).length > 0 && remoteCookies.cookieData && remoteCookies.cookieData.localCookie && remoteCookies.cookieData.csrf) {
                 updSessionItem('cookieData', remoteCookies.cookieData);
                 config.cookieData = remoteCookies.cookieData;
                 callback(null, 'Login Successful (Retreived from ST)', config);
