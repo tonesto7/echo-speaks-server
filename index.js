@@ -70,9 +70,10 @@ function loadConfig() {
     if (process.env.serviceDebug === true || process.env.serviceDebug === 'true') console.log('** SERVICE DEBUG IS ACTIVE **');
     configFile.set('settings.serviceDebug', (process.env.serviceDebug === true || process.env.serviceDebug === 'true'));
     configFile.set('settings.serviceTrace', (process.env.serviceTrace === true || process.env.serviceTrace === 'true'));
-    //   configFile.set('settings.serviceDebug', true);
-    //   configFile.set('settings.serviceTrace', true);
-    configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
+    configFile.set('settings.regionLocale', (process.env.regionLocale || (configData.settings.regionLocale || 'en-US'))),
+        //   configFile.set('settings.serviceDebug', true);
+        //   configFile.set('settings.serviceTrace', true);
+        configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
     configFile.set('settings.refreshSeconds', process.env.refreshSeconds ? parseInt(process.env.refreshSeconds) : (configData.settings.refreshSeconds || 60));
     if (!configData.state) {
         configData.state = {};
@@ -290,6 +291,9 @@ function startWebServer(checkForCookie = false) {
         useWebApp: true,
         useHeroku: (configData.settings.useHeroku === true || configData.settings.useHeroku === 'true'),
         proxyHost: configData.settings.hostUrl,
+        acceptLanguage: configData.settings.regionLocale,
+        proxyRootPath: '/proxy',
+
         stEndpoint: configData.settings.smartThingsUrl ? String(configData.settings.smartThingsUrl).replace("/receiveData?", "/cookie?") : null
     };
 

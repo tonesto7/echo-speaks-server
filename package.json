@@ -1,11 +1,13 @@
 {
     "name": "echo-speaks-server",
-    "version": "2.1.0",
+    "version": "2.1.1",
     "author": "Anthony Santilli",
-    "contributors": [{
-        "name": "Apollon77",
-        "email": "ingo@fischer-ka.de"
-    }],
+    "contributors": [
+        {
+            "name": "Apollon77",
+            "email": "ingo@fischer-ka.de"
+        }
+    ],
     "engines": {
         "node": "10.12.0"
     },

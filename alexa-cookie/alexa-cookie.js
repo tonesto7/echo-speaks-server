@@ -175,6 +175,7 @@ function initConfig() {
         _options.setupProxy = false;
         _options.debug && console.log('Alexa-Cookie: Proxy mode disabled');
     }
+    _options.proxyRootPath = _options.proxyRootPath || '/';
     _options.proxyLogLevel = _options.proxyLogLevel || 'warn';
     _options.amazonPageProxyLanguage = _options.amazonPageProxyLanguage || 'en_US';
 
