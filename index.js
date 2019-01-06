@@ -310,7 +310,7 @@ function startWebServer(checkForCookie = false) {
             logger.debug('Alexa Login Status: ' + response);
         }
         sendServerDataToST();
-        console.log('response: ', response);
+        // console.log('response: ', response);
         if (response.startsWith('Login Successful') && config.devicesArray) {
             configFile.set('state.loginProxyActive', false);
             configData.state.loginProxyActive = false;
