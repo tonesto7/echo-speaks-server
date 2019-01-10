@@ -4,7 +4,7 @@
   "repository": "https://github.com/tonesto7/echo-speaks-server",
   "success_url": "/config",
   "logo": "https://raw.githubusercontent.com/tonesto7/echo-speaks/master/resources/icons/echo_speaks.1x.png",
-  "keywords": ["alexa", "smartthings", "echo"],
+  "keywords": ["alexa", "hubitat", "smartthings", "echo", "tts"],
   "env": {
     "amazonDomain": {
       "description": "Used by the service to define the correct domain for your region"
@@ -17,7 +17,8 @@
       "value": true
     },
     "regionLocale": {
-      "description": "the region language to use."
+      "description": "the region language to use.",
+      "value": "en-US"
     },
     "serviceDebug": {
       "description": "This is used to tell the service to provide more detailed logs.",
@@ -26,6 +27,10 @@
     "serviceTrace": {
       "description": "This is used to tell the service to provide extremely detailed logs.",
       "value": false
+    },
+    "hubPlatform": {
+      "description": "Hub Platform (SmartThings or Hubitat) the app is running on.",
+      "value": "SmartThings"
     },
     "smartThingsUrl": {
       "description": "The Echo Speaks SmartThings Callback Endpoint Url.",

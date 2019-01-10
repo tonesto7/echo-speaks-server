@@ -66,6 +66,7 @@ function loadConfig() {
   }
   configFile.set('settings.useHeroku', (forceHeroku || process.env.useHeroku === true || process.env.useHeroku === 'true'));
   configFile.set('settings.amazonDomain', process.env.amazonDomain || (configData.settings.amazonDomain || 'amazon.com'));
+  configFile.set('settings.hubPlatform', process.env.hubPlatform || 'SmartThings');
   configFile.set('settings.appCallbackUrl', (process.env.appCallbackUrl || configData.settings.appCallbackUrl || (process.env.smartThingsUrl !== null ? process.env.smartThingsUrl : configData.settings.smartThingsUrl)));
   if (process.env.serviceDebug === true || process.env.serviceDebug === 'true') console.log('** SERVICE DEBUG IS ACTIVE **');
   configFile.set('settings.serviceDebug', (process.env.serviceDebug === true || process.env.serviceDebug === 'true'));
@@ -338,14 +339,14 @@ function sendServerDataToST() {
         .then(function(resp) {
           // console.log('resp:', resp);
           if (resp) {
-            logger.info(`** ServerVersion Sent to SmartThings Cloud Endpoint Successfully! **`);
+            logger.info(`** ServerVersion Sent to ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
             resolve(true);
           } else {
             resolve(false);
           }
         })
         .catch(function(err) {
-          logger.error("ERROR: Unable to send Server Version to SmartThings: " + err.message);
+          logger.error(`ERROR: Unable to send Server Version to ${configData.settings.hubPlatform}: ` + err.message);
           resolve(false);
         });
     }
@@ -465,11 +466,11 @@ var clearSession = function(url) {
       .then(function(resp) {
         // console.log('resp:', resp);
         if (resp) {
-          logger.info(`** Sent Remove Alexa Cookie Data Request to SmartThings Successfully! **`);
+          logger.info(`** Sent Remove Alexa Cookie Data Request to ${configData.settings.hubPlatform} Successfully! **`);
         }
       })
       .catch(function(err) {
-        logger.error("ERROR: Unable to send Alexa Cookie Data to SmartThings: " + err.message);
+        logger.error(`ERROR: Unable to send Alexa Cookie Data to ${configData.settings.hubPlatform}: ` + err.message);
       });
   }
 };
@@ -511,14 +512,14 @@ function sendCookiesToST(url, cookieData) {
         .then(function(resp) {
           // console.log('resp:', resp);
           if (resp) {
-            logger.info(`** Alexa Cookie Data sent to SmartThings Cloud Endpoint Successfully! **`);
+            logger.info(`** Alexa Cookie Data sent to ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
             resolve(true);
           } else {
             resolve(false);
           }
         })
         .catch(function(err) {
-          logger.error("ERROR: Unable to send Alexa Cookie Data to SmartThings: " + err.message);
+          logger.error(`ERROR: Unable to send Alexa Cookie Data to ${configData.settings.hubPlatform}: ` + err.message);
           resolve(false);
         });
     }
@@ -538,11 +539,11 @@ function getCookiesFromST(url) {
       .then(function(resp) {
         // console.log('getCookiesFromST resp: ', resp);
         if (resp && Object.keys(resp).length >= 2)
-          logger.info(`** Retrieved Alexa Cookie Data from SmartThings Cloud Endpoint Successfully! **`);
+          logger.info(`** Retrieved Alexa Cookie Data from ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
         resolve(resp);
       })
       .catch(function(err) {
-        logger.error("ERROR: Unable to retrieve Alexa Cookie Data from SmartThings: " + err.message);
+        logger.error(`ERROR: Unable to retrieve Alexa Cookie Data from ${configData.settings.hubPlatform}: ` + err.message);
         resolve({});
       });
   });
