@@ -28,7 +28,8 @@
       "value": false
     },
     "smartThingsUrl": {
-      "description": "The Echo Speaks SmartThings Callback Endpoint Url."
+      "description": "The Echo Speaks SmartThings Callback Endpoint Url.",
+      "value": null
     },
     "appCallbackUrl": {
       "description": "The Echo Speaks App (SmartThings or Hubitat) Callback Endpoint Url."

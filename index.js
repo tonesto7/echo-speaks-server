@@ -66,7 +66,7 @@ function loadConfig() {
   }
   configFile.set('settings.useHeroku', (forceHeroku || process.env.useHeroku === true || process.env.useHeroku === 'true'));
   configFile.set('settings.amazonDomain', process.env.amazonDomain || (configData.settings.amazonDomain || 'amazon.com'));
-  configFile.set('settings.appCallbackUrl', (process.env.appCallbackUrl || configData.settings.appCallbackUrl || process.env.smartThingsUrl || configData.settings.smartThingsUrl));
+  configFile.set('settings.appCallbackUrl', (process.env.appCallbackUrl || configData.settings.appCallbackUrl || (process.env.smartThingsUrl !== null ? process.env.smartThingsUrl : configData.settings.smartThingsUrl)));
   if (process.env.serviceDebug === true || process.env.serviceDebug === 'true') console.log('** SERVICE DEBUG IS ACTIVE **');
   configFile.set('settings.serviceDebug', (process.env.serviceDebug === true || process.env.serviceDebug === 'true'));
   configFile.set('settings.serviceTrace', (process.env.serviceTrace === true || process.env.serviceTrace === 'true'));
@@ -74,7 +74,7 @@ function loadConfig() {
     //   configFile.set('settings.serviceDebug', true);
     //   configFile.set('settings.serviceTrace', true);
     configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
-  configFile.set('settings.refreshSeconds', process.env.refreshSeconds ? parseInt(process.env.refreshSeconds) : (configData.settings.refreshSeconds || 60));
+  //   configFile.set('settings.refreshSeconds', process.env.refreshSeconds ? parseInt(process.env.refreshSeconds) : (configData.settings.refreshSeconds || 60));
   if (!configData.state) {
     configData.state = {};
   }
@@ -224,10 +224,6 @@ function startWebConfig() {
         };
         if (req.headers.amazondomain) {
           configFile.set('settings.amazonDomain', req.headers.amazondomain);
-          saveFile = true;
-        };
-        if (req.headers.refreshseconds) {
-          configFile.set('settings.refreshSeconds', parseInt(req.headers.refreshseconds));
           saveFile = true;
         };
         if (req.headers.serverport) {
