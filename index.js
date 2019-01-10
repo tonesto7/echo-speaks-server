@@ -151,7 +151,7 @@ function startWebConfig() {
           sessionData = sessionFile.get();
           logger.debug('** Cookie Settings File Updated via Manual Entry **');
           // if (configData.settings.useHeroku === true) {
-          sendCookiesToST(configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null, sessionData.cookie, sessionData.csrf)
+          sendCookiesToEndpoint(configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null, sessionData.cookie, sessionData.csrf)
             .then(function(sendResp) {
               if (sendResp) {
                 res.send('done');
@@ -183,7 +183,7 @@ function startWebConfig() {
           formerRegistrationData: runTimeData.savedConfig.cookieData
         }, (err, result) => {
           if (result && Object.keys(result).length >= 2) {
-            sendCookiesToST((configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null), result);
+            sendCookiesToEndpoint((configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null), result);
             runTimeData.savedConfig.cookieData = result;
             // console.log('RESULT: ' + err + ' / ' + JSON.stringify(result));
             res.send({
@@ -400,7 +400,7 @@ function alexaLogin(username, password, alexaOptions, callback) {
       if (remoteCookies !== undefined && Object.keys(remoteCookies).length > 0 && remoteCookies.cookieData && remoteCookies.cookieData.localCookie && remoteCookies.cookieData.csrf) {
         updSessionItem('cookieData', remoteCookies.cookieData);
         config.cookieData = remoteCookies.cookieData;
-        callback(null, 'Login Successful (Retreived from ST)', config);
+        callback(null, `Login Successful (Retreived from ${configData.settings.hubPlatform})`, config);
       } else if (sessionData && sessionData.cookieData && Object.keys(sessionData.cookieData) >= 2) {
         config.cookieData = sessionData.cookieData || {};
         callback(null, 'Login Successful (Stored Session)', config);
@@ -423,7 +423,7 @@ function alexaLogin(username, password, alexaOptions, callback) {
               console.log('result: ', result);
               updSessionItem('cookieData', result);
               config.cookieData = result;
-              sendCookiesToST(alexaOptions.stEndpoint, result);
+              sendCookiesToEndpoint(alexaOptions.stEndpoint, result);
               callback(null, 'Login Successful', config);
             } else {
               callback(true, 'There was an error getting authentication', null);
@@ -482,7 +482,7 @@ function getRemoteCookie(alexaOptions) {
     }
     let config = {};
     if (alexaOptions.stEndpoint) {
-      getCookiesFromST(alexaOptions.stEndpoint)
+      getCookiesFromEndpoint(alexaOptions.stEndpoint)
         .then(function(data) {
           if (data) {
             updSessionItem('cookieData', data);
@@ -496,7 +496,7 @@ function getRemoteCookie(alexaOptions) {
   });
 };
 
-function sendCookiesToST(url, cookieData) {
+function sendCookiesToEndpoint(url, cookieData) {
   return new Promise(resolve => {
     if (url && cookieData) {
       let options = {
@@ -526,7 +526,7 @@ function sendCookiesToST(url, cookieData) {
   });
 };
 
-function getCookiesFromST(url) {
+function getCookiesFromEndpoint(url) {
   return new Promise(resolve => {
     reqPromise({
         method: 'GET',
@@ -537,7 +537,7 @@ function getCookiesFromST(url) {
         json: true
       })
       .then(function(resp) {
-        // console.log('getCookiesFromST resp: ', resp);
+        // console.log('getCookiesFromEndpoint resp: ', resp);
         if (resp && Object.keys(resp).length >= 2)
           logger.info(`** Retrieved Alexa Cookie Data from ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
         resolve(resp);
