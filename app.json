@@ -1,38 +1,43 @@
 {
-    "name": "Echo Speaks",
-    "description": "Amazon Login Proxy and Alexa API for Echo Speaks SmartApp",
-    "repository": "https://github.com/tonesto7/echo-speaks-server",
-    "success_url": "/config",
-    "logo": "https://raw.githubusercontent.com/tonesto7/echo-speaks/master/resources/icons/echo_speaks.1x.png",
-    "keywords": ["alexa", "smartthings", "echo"],
-    "env": {
-        "amazonDomain": {
-            "description": "Used by the service to define the correct domain for your region"
-        },
-        "hostUrl": {
-            "description": "Dynamic URL generated for this heroku instance"
-        },
-        "useHeroku": {
-            "description": "This is used to tell the service that is running under heroku and act accordingly.",
-            "value": true
-        },
-        "regionLocale": {
-            "description": "the region language to use."
-        },
-        "serviceDebug": {
-            "description": "This is used to tell the service to provide more detailed logs.",
-            "value": false
-        },
-        "serviceTrace": {
-            "description": "This is used to tell the service to provide extremely detailed logs.",
-            "value": false
-        },
-        "refreshSeconds": {
-            "description": "The number of seconds between refreshes of the amazon data",
-            "value": "60"
-        },
-        "smartThingsUrl": {
-            "description": "The Echo Speaks smart app endpoint url"
-        }
+  "name": "Echo Speaks",
+  "description": "Amazon Login Proxy and Alexa API for Echo Speaks SmartApp",
+  "repository": "https://github.com/tonesto7/echo-speaks-server",
+  "success_url": "/config",
+  "logo": "https://raw.githubusercontent.com/tonesto7/echo-speaks/master/resources/icons/echo_speaks.1x.png",
+  "keywords": ["alexa", "hubitat", "smartthings", "echo", "tts"],
+  "env": {
+    "amazonDomain": {
+      "description": "Used by the service to define the correct domain for your region"
+    },
+    "hostUrl": {
+      "description": "Dynamic URL generated for this heroku instance"
+    },
+    "useHeroku": {
+      "description": "This is used to tell the service that is running under heroku and act accordingly.",
+      "value": true
+    },
+    "regionLocale": {
+      "description": "the region language to use.",
+      "value": "en-US"
+    },
+    "serviceDebug": {
+      "description": "This is used to tell the service to provide more detailed logs.",
+      "value": false
+    },
+    "serviceTrace": {
+      "description": "This is used to tell the service to provide extremely detailed logs.",
+      "value": false
+    },
+    "hubPlatform": {
+      "description": "Hub Platform (SmartThings or Hubitat) the app is running on.",
+      "value": "SmartThings"
+    },
+    "smartThingsUrl": {
+      "description": "The Echo Speaks SmartThings Callback Endpoint Url.",
+      "value": null
+    },
+    "appCallbackUrl": {
+      "description": "The Echo Speaks App (SmartThings or Hubitat) Callback Endpoint Url."
     }
+  }
 }
