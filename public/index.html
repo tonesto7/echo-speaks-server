@@ -103,7 +103,7 @@
             <div id="settingsCard" class="card w-100 mb-3">
                 <div class="card-header grey lighten-1 w-100 text-center">Required Settings</div>
                 <div class="card-body w-100">
-                    <div class="md-form mt-0">
+                    <!-- <div class="md-form mt-0">
                         <select id="amazonDomain" class="browser-default custom-select">
                             <option selected>Amazon Domain for your region</option>
                             <option value="amazon.com">amazon.com</option>
@@ -114,22 +114,22 @@
                         <small id="amazonDomainHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
                             Select the Alexa Domain for login `amazon.com, amazon.de, etc.`
                         </small>
-                    </div>
-                    <div class="md-form" id="localDivHubIp">
+                    </div> -->
+                    <!-- <div class="md-form" id="localDivHubIp">
                         <i class="fas fa-microchip prefix"></i>
                         <input type="text" id="smartThingsHubIP" name="smartThingsHubIP" class="form-control" aria-describedby="smartThingsHubIPHelpBlockMD">
                         <label for="smartThingsHubIP" data-error="wrong" data-success="right">SmartThings Hub IP</label>
                         <small id="smartThingsHubIPHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
                             Enter the IP Address xxx.xxx.xxx.xxx
                         </small>
-                    </div>
+                    </div> -->
 
                     <div class="md-form" id="cloudDivUrl">
                         <i class="fa fa-at prefix"></i>
-                        <input type="text" id="smartThingsUrl" name="smartThingsUrl" class="form-control" aria-describedby="smartThingsUrlHelpBlockMD">
-                        <label for="smartThingsUrl" data-error="wrong" data-success="right">SmartThings Cloud Url</label>
+                        <input type="text" id="appCallbackUrl" name="appCallbackUrl" class="form-control" aria-describedby="smartThingsUrlHelpBlockMD">
+                        <label for="appCallbackUrl" data-error="wrong" data-success="right">App Callback Url</label>
                         <small id="smartThingsUrlHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
-                            Enter the EchoSpeaks Endpoint Url obtained from the smart app.
+                            Enter the EchoSpeaks App Endpoint Url obtained from the App.
                         </small>
                     </div>
 
@@ -142,14 +142,7 @@
                         </small>
                     </div>
 
-                    <div class="md-form mb-0">
-                        <i class="fa fa-refresh prefix"></i>
-                        <input type="number" id="refreshSeconds" name="refreshSeconds" class="form-control" aria-describedby="refreshSecondsHelpBlockMD">
-                        <label for="refreshSeconds" data-error="wrong" data-success="right">Device Data Refresh (Seconds)</label>
-                        <small id="refreshSecondsHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
-                            Enter a number between 5-3600
-                        </small>
-                    </div>
+
                 </div>
             </div>
 

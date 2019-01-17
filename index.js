@@ -11,7 +11,7 @@ const os = require('os');
 const editJsonFile = require("edit-json-file", {
   autosave: true
 });
-const dataFolder = os.homedir() + '/.echo-speaks';
+const dataFolder = os.homedir();
 const configFile = editJsonFile(dataFolder + '/es_config.json');
 const sessionFile = editJsonFile(dataFolder + '/session.json');
 const fs = require('fs');
@@ -75,7 +75,6 @@ function loadConfig() {
     //   configFile.set('settings.serviceDebug', true);
     //   configFile.set('settings.serviceTrace', true);
     configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
-  //   configFile.set('settings.refreshSeconds', process.env.refreshSeconds ? parseInt(process.env.refreshSeconds) : (configData.settings.refreshSeconds || 60));
   if (!configData.state) {
     configData.state = {};
   }
