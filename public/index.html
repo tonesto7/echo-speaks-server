@@ -245,7 +245,7 @@
         });
 
         $("#proxyLoginLink").click(function() {
-            let pUrl = 'http://' + rootHost + ':' + configData.settings.serverPort + '/proxy';
+            let pUrl = 'https://' + rootHost + ':' + configData.settings.serverPort + '/proxy';
             // let pUrl = 'http://' + rootHost + ':' + configData.settings.serverPort + '/proxy/alexa.' + $('#amazonDomain').val();
             if (useHeroku) {
                 // pUrl = 'https://' + rootHost + '/proxy/alexa.' + $('#amazonDomain').val()
@@ -256,7 +256,7 @@
         });
 
         $("#manualCookieLink").click(function() {
-            let pUrl = 'http://' + rootHost + ':' + configData.settings.serverPort + '/manualCookie';
+            let pUrl = 'https://' + rootHost + ':' + configData.settings.serverPort + '/manualCookie';
             if (useHeroku) {
                 pUrl = 'https://' + rootHost + '/manualCookie';
             }

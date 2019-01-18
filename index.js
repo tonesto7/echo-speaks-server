@@ -1,6 +1,7 @@
 "use strict";
 
 const appVer = require('./package.json').version;
+const https = require('https');
 const alexaCookie = require('./alexa-cookie/alexa-cookie');
 const reqPromise = require("request-promise");
 const logger = require('./logger');
@@ -87,9 +88,20 @@ function loadConfig() {
 function startWebConfig() {
   return new Promise(function(resolve, reject) {
     try {
-      webApp.listen(configData.settings.serverPort, function() {
-        logger.info('** Echo Speaks Config Service (v' + appVer + ') is Running at (IP: ' + getIPAddress() + ' | Port: ' + configData.settings.serverPort + ') | ProcessId: ' + process.pid + ' **');
-      });
+      if (!configData.settings.useHeroku) {
+        https.createServer({
+          key: fs.readFileSync('./server.key'),
+          cert: fs.readFileSync('./server.cert')
+        }, webApp).listen(configData.settings.serverPort, function() {
+          logger.info(`** Echo Speaks Config Service (v${appVer}) is Running at (IP: ${getIPAddress()} | Port: ${configData.settings.serverPort}) | ProcessId: ${process.pid} **`);
+          logger.info(`** On Heroku: (${configData.settings.useHeroku}) **`);
+        });
+      } else {
+        webApp.listen(configData.settings.serverPort, function() {
+          logger.info(`** Echo Speaks Config Service (v${appVer}) is Running at (IP: ${getIPAddress()} | Port: ${configData.settings.serverPort}) | ProcessId: ${process.pid} **`);
+          logger.info(`** On Heroku: (${configData.settings.useHeroku}) **`);
+        });
+      }
       webApp.use(function(req, res, next) {
         res.header("Access-Control-Allow-Origin", "*");
         res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
@@ -288,6 +300,7 @@ function startWebServer(checkForCookie = false) {
     setupProxy: true,
     proxyOwnIp: getIPAddress(),
     proxyListenBind: '0.0.0.0',
+    transportPrefix: (configData.settings.useHeroku === true || configData.settings.useHeroku === 'true') ? 'https' : 'http',
     useWebApp: true,
     useHeroku: (configData.settings.useHeroku === true || configData.settings.useHeroku === 'true'),
     proxyHost: configData.settings.hostUrl,

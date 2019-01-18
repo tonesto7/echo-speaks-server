@@ -160,14 +160,10 @@ function initAmazonProxy(_options, webapp, callbackCookie, callbackListening) {
     const amazonRegex = new RegExp(`https?://www.amazon.com/`.replace(/\./g, "\\."), 'g');
     const alexaRegex = new RegExp(`https?://alexa.amazon.com/`.replace(/\./g, "\\."), 'g');
     data = data.replace(/&#x2F;/g, '/');
-    if (_options.useHeroku) {
-      data = data.replace(amazonRegex, `https://${localHost}${_options.proxyRootPath}/www.amazon.com/`);
-      data = data.replace(alexaRegex, `https://${localHost}${_options.proxyRootPath}/alexa.amazon.com/`);
-    } else {
-      data = data.replace(amazonRegex, `http://${localHost}${_options.proxyRootPath}/www.amazon.com/`);
-      data = data.replace(alexaRegex, `http://${localHost}${_options.proxyRootPath}/alexa.amazon.com/`);
-    }
-
+    data = data.replace(amazonRegex, `https://${localHost}${_options.proxyRootPath}/www.amazon.com/`);
+    data = data.replace(alexaRegex, `https://${localHost}${_options.proxyRootPath}/alexa.amazon.com/`);
+    // data = data.replace(amazonRegex, `http://${localHost}${_options.proxyRootPath}/www.amazon.com/`);
+    // data = data.replace(alexaRegex, `http://${localHost}${_options.proxyRootPath}/alexa.amazon.com/`);
     // _options.trace && console.log('REPLACEHOSTS: ' + dataOrig + ' --> ' + data);
     return data;
   }
@@ -175,8 +171,8 @@ function initAmazonProxy(_options, webapp, callbackCookie, callbackListening) {
   function replaceHostsBack(data) {
     let localHost = getLocalHost();
     const amazonRegex = new RegExp(`http://${localHost}${_options.proxyRootPath}/www.amazon.com/`.replace(/\./g, "\\."), 'g');
-    const alexaRegex = new RegExp(`http://${localHost}${_options.proxyRootPath}/alexa.amazon.com/`.replace(/\./g, "\\."), 'g');
     const amazonRegex2 = new RegExp(`https://${localHost}${_options.proxyRootPath}/www.amazon.com/`.replace(/\./g, "\\."), 'g');
+    const alexaRegex = new RegExp(`http://${localHost}${_options.proxyRootPath}/alexa.amazon.com/`.replace(/\./g, "\\."), 'g');
     const alexaRegex2 = new RegExp(`https://${localHost}${_options.proxyRootPath}/alexa.amazon.com/`.replace(/\./g, "\\."), 'g');
     data = data.replace(amazonRegex, `https://www.amazon.com/`);
     data = data.replace(amazonRegex2, `https://www.amazon.com/`);
