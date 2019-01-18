@@ -245,7 +245,7 @@
         });
 
         $("#proxyLoginLink").click(function() {
-            let pUrl = useHeroku ? `https://${rootHost}/proxy` : `http://${rootHost}:${configData.settings.serverPort}/proxy`;
+            let pUrl = useHeroku ? `https://${rootHost}/proxy` : `http://${rootHost}:${parseInt(configData.settings.serverPort)}/proxy`;
             console.log('Proxy Url: ' + pUrl)
             window.location.href = pUrl;
         });
