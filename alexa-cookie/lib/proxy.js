@@ -313,10 +313,8 @@ function initAmazonProxy(_options, webapp, callbackCookie, callbackListening) {
     const myProxy = proxy(optionsAlexa);
     if (webApp !== undefined) {
         webApp.use(`${_options.proxyRootPath}`, myProxy);
-        console.log('starting login proxy on port: ' + _options.proxyPort);
         callbackListening(webApp);
     } else {
-        console.log("using express proxy...");
         const app = express();
         app.use(myProxy);
         let server = app.listen(parseInt(_options.proxyPort), _options.proxyListenBind, function() {

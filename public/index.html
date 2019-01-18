@@ -96,6 +96,10 @@
                         <input type="checkbox" class="form-check-input" id="serviceDebug" disabled>
                         <label class="form-check-label" for="serviceDebug">Service Debug?</label>
                     </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="serviceTrace" disabled>
+                        <label class="form-check-label" for="serviceTrace">Service Trace?</label>
+                    </div>
                 </div>
             </div>
 
@@ -117,22 +121,12 @@
                     </div> -->
                     <!-- <div class="md-form" id="localDivHubIp">
                         <i class="fas fa-microchip prefix"></i>
-                        <input type="text" id="smartThingsHubIP" name="smartThingsHubIP" class="form-control" aria-describedby="smartThingsHubIPHelpBlockMD">
-                        <label for="smartThingsHubIP" data-error="wrong" data-success="right">SmartThings Hub IP</label>
-                        <small id="smartThingsHubIPHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
+                        <input type="text" id="hubIP" name="hu" class="form-control" aria-describedby="hubIPHelpBlockMD">
+                        <label for="hubIP" data-error="wrong" data-success="right">Hub IP</label>
+                        <small id="hubIPHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
                             Enter the IP Address xxx.xxx.xxx.xxx
                         </small>
                     </div> -->
-
-                    <div class="md-form" id="cloudDivUrl">
-                        <i class="fa fa-at prefix"></i>
-                        <input type="text" id="appCallbackUrl" name="appCallbackUrl" class="form-control" aria-describedby="smartThingsUrlHelpBlockMD">
-                        <label for="appCallbackUrl" data-error="wrong" data-success="right">App Callback Url</label>
-                        <small id="smartThingsUrlHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
-                            Enter the EchoSpeaks App Endpoint Url obtained from the App.
-                        </small>
-                    </div>
-
                     <div class="md-form mt-0" id="localDivHubPort">
                         <i class="fa fa-info prefix"></i>
                         <input type="text" id="serverPort" name="serverPort" class="form-control" aria-describedby="serverPortHelpBlockMD">
@@ -142,7 +136,14 @@
                         </small>
                     </div>
 
-
+                    <div class="md-form" id="callbackDivUrl">
+                        <i class="fa fa-at prefix"></i>
+                        <input type="text" id="appCallbackUrl" name="appCallbackUrl" class="form-control" aria-describedby="appCallbackUrlHelpBlockMD">
+                        <label for="appCallbackUrl" data-error="wrong" data-success="right">App Callback Url</label>
+                        <small id="appCallbackUrlHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
+                            Enter the EchoSpeaks App Endpoint Url obtained from the App.
+                        </small>
+                    </div>
                 </div>
             </div>
 
@@ -168,16 +169,17 @@
         }
         let useHeroku = getChecked('useHeroku');
         let serviceDebug = getChecked('serviceDebug');
+        let serviceTrace = getChecked('serviceTrace');
         console.log('rootOrigin: ' + rootOrigin);
         console.log('rootHost: ' + rootHost);
 
         $('#proxyLoginDiv').hide();
         $('#loginInputDiv').hide();
         $('#clearLoginDiv').hide();
-        $('#settingsCard').hide();
-        $('#submitBtnDiv').hide();
-        $('#statusCard').hide();
-        $('[id^="cloudDiv"]').hide()
+        // $('#settingsCard').hide();
+        // $('#submitBtnDiv').hide();
+        // $('#statusCard').hide();
+        // $('[id^="callbackDiv"]').hide()
 
         var configData = {};
         $(document).ready(function() {
@@ -218,6 +220,10 @@
                             console.log('serviceDebug: ' + val);
                             serviceDebug = (val === true || val === 'true')
                             $('#serviceDebug').prop('checked', serviceDebug);
+                        } else if (key === 'serviceTrace') {
+                            console.log('serviceTrace: ' + val);
+                            serviceTrace = (val === true || val === 'true')
+                            $('#serviceTrace').prop('checked', serviceTrace);
                         } else {
                             $(elem).attr('value', val);
                             $(elem).focus();
@@ -239,13 +245,18 @@
             useHeroku ? $('[id^="cloudDiv"]').show() : $('[id^="cloudDiv"]').hide();
         });
         $("#serviceDebug").change(function() {
-            configData.settings.serviceDebug = getChecked('useHeroku');
+            configData.settings.serviceDebug = getChecked('serviceDebug');
             serviceDebug = configData.settings.serviceDebug;
             console.log(`serviceDebug: ${serviceDebug}`)
         });
+        $("#serviceTrace").change(function() {
+            configData.settings.serviceTrace = getChecked('serviceTrace');
+            serviceDebug = configData.settings.serviceTrace;
+            console.log(`serviceTrace: ${serviceTrace}`)
+        });
 
         $("#proxyLoginLink").click(function() {
-            let pUrl = useHeroku ? `https://${rootHost}/proxy` : `http://${rootHost}:${parseInt(configData.settings.serverPort)}/proxy`;
+            let pUrl = useHeroku ? `https://${rootHost}/proxy` : `http://${rootHost}:${configData.settings.serverPort}/proxy`;
             console.log('Proxy Url: ' + pUrl)
             window.location.href = pUrl;
         });
@@ -306,7 +317,7 @@
             var url = rootOrigin + '/configData';
             if (Object.keys(config).length) {
                 // console.log(config);
-                console.log(configData.state.loginComplete);
+                // console.log(configData.state.loginComplete);
                 if (configData.state.loginComplete === true) {
                     delete configData.settings.user;
                     delete configData.settings.password;
@@ -316,6 +327,8 @@
                 config.amazonDomain = configData.settings.amazonDomain;
                 config.useHeroku = configData.settings.useHeroku;
                 config.serviceDebug = configData.settings.serviceDebug;
+                config.serviceTrace = configData.settings.serviceTrace;
+                config.appCallbackUrl = configData.settings.appCallbackUrl;
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("POST", rootOrigin + '/configData');
                 xmlhttp.onreadystatechange = function() {
