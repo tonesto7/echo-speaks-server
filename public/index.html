@@ -245,20 +245,13 @@
         });
 
         $("#proxyLoginLink").click(function() {
-            let pUrl = `http://${rootHost}:${(parseInt(configData.settings.serverPort) + 1)}/`;
-            // let pUrl = 'http://' + rootHost + ':' + configData.settings.serverPort + '/proxy/alexa.' + $('#amazonDomain').val();
-            if (useHeroku) {
-                pUrl = `https://${rootHost}/proxy`;
-            }
+            let pUrl = useHeroku ? pUrl = `https://${rootHost}/proxy` : `http://${rootHost}:${configData.settings.serverPort}/proxy`;
             console.log('Proxy Url: ' + pUrl)
             window.location.href = pUrl;
         });
 
         $("#manualCookieLink").click(function() {
-            let pUrl = 'https://' + rootHost + ':' + configData.settings.serverPort + '/manualCookie';
-            if (useHeroku) {
-                pUrl = 'https://' + rootHost + '/manualCookie';
-            }
+            let pUrl = useHeroku ? pUrl = `https://${rootHost}/manualCookie` : `http://${rootHost}:${configData.settings.serverPort}/manualCookie`;
             console.log('Manual Cookie Url: ' + pUrl)
             window.location.href = pUrl;
         });

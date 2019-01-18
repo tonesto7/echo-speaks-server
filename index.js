@@ -1,7 +1,6 @@
 "use strict";
 
 const appVer = require('./package.json').version;
-const https = require('https');
 const alexaCookie = require('./alexa-cookie/alexa-cookie');
 const reqPromise = require("request-promise");
 const logger = require('./logger');
@@ -277,7 +276,6 @@ let clearAuth = function() {
     configFile.save();
     resolve(true);
   });
-
 };
 
 function startWebServer(checkForCookie = false) {
@@ -286,17 +284,16 @@ function startWebServer(checkForCookie = false) {
     debug: true, //(configData.settings.serviceDebug === true),
     trace: (configData.settings.serviceTrace === true),
     checkForCookie: checkForCookie,
-    serverPort: isHeroku ? configData.settings.serverPort : parseInt(configData.settings.serverPort) + 1,
+    serverPort: configData.settings.serverPort,
     amazonPage: configData.settings.amazonDomain,
     // alexaServiceHost: ((configData.settings.amazonDomain === 'amazon.de' || configData.settings.amazonDomain === 'amazon.co.uk') ? 'layla.' : 'pitangui.') + configData.settings.amazonDomain,
     setupProxy: true,
     proxyOwnIp: getIPAddress(),
-    proxyListenBind: getIPAddress(),
+    proxyListenBind: '0.0.0.0',
     transportPrefix: isHeroku ? 'https' : 'http',
     useHeroku: isHeroku,
     proxyHost: configData.settings.hostUrl,
-    proxyPort: isHeroku ? configData.settings.serverPort : parseInt(configData.settings.serverPort) + 1,
-    proxyRootPath: isHeroku ? '/proxy' : '',
+    proxyRootPath: '/proxy',
     acceptLanguage: configData.settings.regionLocale,
     callbackEndpoint: configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null
   };
@@ -662,7 +659,7 @@ process.on('uncaughtException', exitHandler.bind(null, {
 }));
 
 function exitHandler(options, exitCode) {
-  alexaCookie.stopProxyServer();
+  //   alexaCookie.stopProxyServer();
   if (runTimeData.scheduledUpdatesActive) {
     // stopScheduledDataUpdates();
   }
