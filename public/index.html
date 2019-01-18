@@ -245,11 +245,10 @@
         });
 
         $("#proxyLoginLink").click(function() {
-            let pUrl = 'https://' + rootHost + ':' + configData.settings.serverPort + '/proxy';
+            let pUrl = `http://${rootHost}:${(parseInt(configData.settings.serverPort) + 1)}/`;
             // let pUrl = 'http://' + rootHost + ':' + configData.settings.serverPort + '/proxy/alexa.' + $('#amazonDomain').val();
             if (useHeroku) {
-                // pUrl = 'https://' + rootHost + '/proxy/alexa.' + $('#amazonDomain').val()
-                pUrl = 'https://' + rootHost + '/proxy';
+                pUrl = `https://${rootHost}/proxy`;
             }
             console.log('Proxy Url: ' + pUrl)
             window.location.href = pUrl;

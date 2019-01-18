@@ -175,7 +175,7 @@ function initConfig() {
     _options.setupProxy = false;
     _options.debug && console.log('Alexa-Cookie: Proxy mode disabled');
   }
-  _options.proxyRootPath = _options.proxyRootPath || '/';
+  _options.proxyRootPath = _options.proxyRootPath || '';
   _options.proxyLogLevel = _options.proxyLogLevel || 'warn';
   _options.amazonPageProxyLanguage = _options.amazonPageProxyLanguage || 'en_US';
 
@@ -322,14 +322,14 @@ function generateAlexaCookie(email, password, __options, webapp, callback) {
             }
             if (_options.setupProxy) {
               if (proxyServer) {
-                errMessage += ` You can try to get the cookie manually by opening https://${getLocalHost()}/ with your browser.`;
+                errMessage += ` You can try to get the cookie manually by opening ${_options.transportPrefix}://${getLocalHost()}/ with your browser.`;
               } else {
                 amazonProxy.initAmazonProxy(_options, webApp, prepareResult, (server) => {
                   proxyServer = server;
                   if (_options.proxyPort === 0) {
                     _options.proxyPort = proxyServer.address().port;
                   }
-                  errMessage += ` You can try to get the cookie manually by opening https://${getLocalHost()}/ with your browser.`;
+                  errMessage += ` You can try to get the cookie manually by opening ${_options.transportPrefix}://${getLocalHost()}/ with your browser.`;
                   callback && callback(new Error(errMessage), null);
                 });
                 return;
@@ -349,7 +349,7 @@ function generateAlexaCookie(email, password, __options, webapp, callback) {
       if (_options.proxyPort === 0) {
         _options.proxyPort = proxyServer.address().port;
       }
-      const errMessage = `You can try to get the cookie manually by opening http://${getLocalHost()}/ with your browser.`;
+      const errMessage = `You can try to get the cookie manually by opening ${_options.transportPrefix}://${getLocalHost()}/ with your browser.`;
       callback && callback(new Error(errMessage), null);
     });
   }
@@ -362,7 +362,6 @@ function generateAlexaCookie(email, password, __options, webapp, callback) {
     handleTokenRegistration(_options, data, callback);
   }
 }
-
 
 function handleTokenRegistration(_options, loginData, callback) {
   _options.logger && _options.logger('Handle token registration Start: ' + JSON.stringify(loginData));
@@ -529,7 +528,7 @@ function handleTokenRegistration(_options, loginData, callback) {
         'source_token_type': 'refresh_token',
         'di.hw.version': 'iPhone',
         'di.sdk.version': '6.10.0',
-        'cookies': Buffer.from('{„cookies“:{".' + loginData.amazonPage + '":[]}}').toString('base64'),
+        'cookies': Buffer.from('{ï¿½cookiesï¿½:{".' + loginData.amazonPage + '":[]}}').toString('base64'),
         'app_name': 'Amazon Alexa',
         'di.os.version': '11.4.1'
       };

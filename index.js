@@ -88,20 +88,11 @@ function loadConfig() {
 function startWebConfig() {
   return new Promise(function(resolve, reject) {
     try {
-      if (!configData.settings.useHeroku) {
-        https.createServer({
-          key: fs.readFileSync('./server.key'),
-          cert: fs.readFileSync('./server.cert')
-        }, webApp).listen(configData.settings.serverPort, function() {
-          logger.info(`** Echo Speaks Config Service (v${appVer}) is Running at (IP: ${getIPAddress()} | Port: ${configData.settings.serverPort}) | ProcessId: ${process.pid} **`);
-          logger.info(`** On Heroku: (${configData.settings.useHeroku}) **`);
-        });
-      } else {
-        webApp.listen(configData.settings.serverPort, function() {
-          logger.info(`** Echo Speaks Config Service (v${appVer}) is Running at (IP: ${getIPAddress()} | Port: ${configData.settings.serverPort}) | ProcessId: ${process.pid} **`);
-          logger.info(`** On Heroku: (${configData.settings.useHeroku}) **`);
-        });
-      }
+      webApp.listen(configData.settings.serverPort, function() {
+        logger.info(`** Echo Speaks Config Service (v${appVer}) is Running at (IP: ${getIPAddress()} | Port: ${configData.settings.serverPort}) | ProcessId: ${process.pid} **`);
+        logger.info(`** On Heroku: (${configData.settings.useHeroku}) **`);
+      });
+      //   }
       webApp.use(function(req, res, next) {
         res.header("Access-Control-Allow-Origin", "*");
         res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
@@ -290,24 +281,24 @@ let clearAuth = function() {
 };
 
 function startWebServer(checkForCookie = false) {
+  const isHeroku = (configData.settings.useHeroku === true || configData.settings.useHeroku === 'true');
   const alexaOptions = {
-    debug: (configData.settings.serviceDebug === true),
+    debug: true, //(configData.settings.serviceDebug === true),
     trace: (configData.settings.serviceTrace === true),
     checkForCookie: checkForCookie,
-    serverPort: configData.settings.serverPort,
+    serverPort: isHeroku ? configData.settings.serverPort : parseInt(configData.settings.serverPort) + 1,
     amazonPage: configData.settings.amazonDomain,
     // alexaServiceHost: ((configData.settings.amazonDomain === 'amazon.de' || configData.settings.amazonDomain === 'amazon.co.uk') ? 'layla.' : 'pitangui.') + configData.settings.amazonDomain,
     setupProxy: true,
     proxyOwnIp: getIPAddress(),
-    proxyListenBind: '0.0.0.0',
-    transportPrefix: (configData.settings.useHeroku === true || configData.settings.useHeroku === 'true') ? 'https' : 'http',
-    useWebApp: true,
-    useHeroku: (configData.settings.useHeroku === true || configData.settings.useHeroku === 'true'),
+    proxyListenBind: getIPAddress(),
+    transportPrefix: isHeroku ? 'https' : 'http',
+    useHeroku: isHeroku,
     proxyHost: configData.settings.hostUrl,
+    proxyPort: isHeroku ? configData.settings.serverPort : parseInt(configData.settings.serverPort) + 1,
+    proxyRootPath: isHeroku ? '/proxy' : '',
     acceptLanguage: configData.settings.regionLocale,
-    proxyRootPath: '/proxy',
-
-    stEndpoint: configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null
+    callbackEndpoint: configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null
   };
 
   configFile.set('state.loginProxyActive', true);
@@ -435,12 +426,12 @@ function alexaLogin(username, password, alexaOptions, callback) {
               console.log('result: ', result);
               updSessionItem('cookieData', result);
               config.cookieData = result;
-              sendCookiesToEndpoint(alexaOptions.stEndpoint, result);
+              sendCookiesToEndpoint(alexaOptions.callbackEndpoint, result);
               callback(null, 'Login Successful', config);
             } else {
               callback(true, 'There was an error getting authentication', null);
-              if (alexaOptions.stEndpoint) {
-                clearSession(alexaOptions.stEndpoint);
+              if (alexaOptions.callbackEndpoint) {
+                clearSession(alexaOptions.callbackEndpoint);
               }
             }
           }
@@ -493,8 +484,8 @@ function getRemoteCookie(alexaOptions) {
       resolve(undefined);
     }
     let config = {};
-    if (alexaOptions.stEndpoint) {
-      getCookiesFromEndpoint(alexaOptions.stEndpoint)
+    if (alexaOptions.callbackEndpoint) {
+      getCookiesFromEndpoint(alexaOptions.callbackEndpoint)
         .then(function(data) {
           if (data) {
             updSessionItem('cookieData', data);
@@ -671,7 +662,7 @@ process.on('uncaughtException', exitHandler.bind(null, {
 }));
 
 function exitHandler(options, exitCode) {
-  // alexaCookie.stopProxyServer();
+  alexaCookie.stopProxyServer();
   if (runTimeData.scheduledUpdatesActive) {
     // stopScheduledDataUpdates();
   }

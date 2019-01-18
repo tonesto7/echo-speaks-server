@@ -132,9 +132,9 @@ function initAmazonProxy(_options, webapp, callbackCookie, callbackListening) {
       } else if (url.startsWith(`${_options.proxyRootPath}/alexa.amazon.com/`)) {
         return `https://alexa.amazon.com`;
       } else if (req.headers.referer) {
-        if (req.headers.referer.startsWith(`http://${localHost}${_options.proxyRootPath}/www.amazon.com/`) || req.headers.referer.startsWith(`https://${localHost}${_options.proxyRootPath}/www.amazon.com/`)) {
+        if (req.headers.referer.startsWith(`${_options.transportPrefix}://${localHost}${_options.proxyRootPath}/www.amazon.com/`)) {
           return `https://www.amazon.com`;
-        } else if (req.headers.referer.startsWith(`http://${localHost}${_options.proxyRootPath}/alexa.amazon.com/`) || req.headers.referer.startsWith(`https://${localHost}${_options.proxyRootPath}/alexa.amazon.com/`)) {
+        } else if (req.headers.referer.startsWith(`${_options.transportPrefix}://${localHost}${_options.proxyRootPath}/alexa.amazon.com/`)) {
           return `https://alexa.amazon.com`;
         }
       }
@@ -160,24 +160,18 @@ function initAmazonProxy(_options, webapp, callbackCookie, callbackListening) {
     const amazonRegex = new RegExp(`https?://www.amazon.com/`.replace(/\./g, "\\."), 'g');
     const alexaRegex = new RegExp(`https?://alexa.amazon.com/`.replace(/\./g, "\\."), 'g');
     data = data.replace(/&#x2F;/g, '/');
-    data = data.replace(amazonRegex, `https://${localHost}${_options.proxyRootPath}/www.amazon.com/`);
-    data = data.replace(alexaRegex, `https://${localHost}${_options.proxyRootPath}/alexa.amazon.com/`);
-    // data = data.replace(amazonRegex, `http://${localHost}${_options.proxyRootPath}/www.amazon.com/`);
-    // data = data.replace(alexaRegex, `http://${localHost}${_options.proxyRootPath}/alexa.amazon.com/`);
-    // _options.trace && console.log('REPLACEHOSTS: ' + dataOrig + ' --> ' + data);
+    data = data.replace(amazonRegex, `${_options.transportPrefix}://${localHost}${_options.proxyRootPath}/www.amazon.com/`);
+    data = data.replace(alexaRegex, `${_options.transportPrefix}://${localHost}${_options.proxyRootPath}/alexa.amazon.com/`);
+    //_options.trace && console.log('REPLACEHOSTS: ' + dataOrig + ' --> ' + data);
     return data;
   }
 
   function replaceHostsBack(data) {
     let localHost = getLocalHost();
-    const amazonRegex = new RegExp(`http://${localHost}${_options.proxyRootPath}/www.amazon.com/`.replace(/\./g, "\\."), 'g');
-    const amazonRegex2 = new RegExp(`https://${localHost}${_options.proxyRootPath}/www.amazon.com/`.replace(/\./g, "\\."), 'g');
-    const alexaRegex = new RegExp(`http://${localHost}${_options.proxyRootPath}/alexa.amazon.com/`.replace(/\./g, "\\."), 'g');
-    const alexaRegex2 = new RegExp(`https://${localHost}${_options.proxyRootPath}/alexa.amazon.com/`.replace(/\./g, "\\."), 'g');
+    const amazonRegex = new RegExp(`${_options.transportPrefix}://${localHost}${_options.proxyRootPath}/www.amazon.com/`.replace(/\./g, "\\."), 'g');
+    const alexaRegex = new RegExp(`${_options.transportPrefix}://${localHost}${_options.proxyRootPath}/alexa.amazon.com/`.replace(/\./g, "\\."), 'g');
     data = data.replace(amazonRegex, `https://www.amazon.com/`);
-    data = data.replace(amazonRegex2, `https://www.amazon.com/`);
     data = data.replace(alexaRegex, `https://alexa.amazon.com/`);
-    data = data.replace(alexaRegex2, `https://alexa.amazon.com/`);
     return data;
   }
 
@@ -232,6 +226,7 @@ function initAmazonProxy(_options, webapp, callbackCookie, callbackListening) {
       req.on('data', chunk => {
         postBody += chunk.toString(); // convert Buffer to string
       });
+      //   console.log('postBody: ', postBody);
     }
     (!_options.debug && _options.trace) && console.log('Alexa-Cookie: Proxy-Request: (modified:' + modified + ')' + customStringify(proxyReq, null, 2));
     _options.debug && console.log('Alexa-Cookie: Proxy-Request: (modified:' + modified + ')');
@@ -271,7 +266,7 @@ function initAmazonProxy(_options, webapp, callbackCookie, callbackListening) {
       const queryParams = querystring.parse(proxyRes.headers.location.substr(paramStart + 1));
 
       proxyRes.statusCode = 302;
-      proxyRes.headers.location = `https://${getLocalHost()}/cookie-success`;
+      proxyRes.headers.location = `${_options.transportPrefix}://${getLocalHost()}/cookie-success`;
       delete proxyRes.headers.referer;
 
       _options.debug && console.log('Alexa-Cookie: Proxy catched cookie: ' + proxyCookies);
@@ -292,7 +287,7 @@ function initAmazonProxy(_options, webapp, callbackCookie, callbackListening) {
       _options.debug && console.log('Redirect: Original Location ----> ' + proxyRes.headers.location);
       proxyRes.headers.location = replaceHosts(proxyRes.headers.location);
       if (reqestHost && proxyRes.headers.location.startsWith('/')) {
-        proxyRes.headers.location = `https://${getLocalHost()}${_options.proxyRootPath}/` + reqestHost + proxyRes.headers.location;
+        proxyRes.headers.location = `${_options.transportPrefix}://${getLocalHost()}${_options.proxyRootPath}/` + reqestHost + proxyRes.headers.location;
       }
       _options.debug && console.log('Redirect: Final Location ----> ' + proxyRes.headers.location);
       return;
@@ -313,12 +308,12 @@ function initAmazonProxy(_options, webapp, callbackCookie, callbackListening) {
 
   // create the proxy (without context)
   const myProxy = proxy(optionsAlexa);
-  let useWebApp = true;
-  if (useWebApp) {
+  if (_options.useHeroku && webApp !== undefined) {
     webApp.use(`${_options.proxyRootPath}`, myProxy);
     console.log('starting login proxy on port: ' + _options.serverPort);
     callbackListening(webApp);
   } else {
+    console.log("using express proxy...");
     const app = express();
     app.use(myProxy);
     let server = app.listen(_options.serverPort, _options.proxyListenBind, function() {
