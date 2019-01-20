@@ -9,7 +9,7 @@ const bodyParser = require('body-parser');
 const os = require('os');
 // const alexaCookie = require('./alexa-cookie/alexa-cookie');
 const editJsonFile = require("edit-json-file", {
-  autosave: true
+    autosave: true
 });
 const dataFolder = os.homedir();
 const configFile = editJsonFile(dataFolder + '/es_config.json');
@@ -17,7 +17,7 @@ const sessionFile = editJsonFile(dataFolder + '/session.json');
 const fs = require('fs');
 const webApp = express();
 const urlencodedParser = bodyParser.urlencoded({
-  extended: false
+    extended: false
 });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 sessionFile.save();
@@ -42,50 +42,50 @@ runTimeData.eventCount = 0;
 runTimeData.echoDevices = {};
 
 function initConfig() {
-  return new Promise(function(resolve, reject) {
-    // logger.debug('dataFolder: ' + dataFolder);
-    // Create the log directory if it does not exist
-    if (!fs.existsSync(dataFolder)) {
-      fs.mkdirSync(dataFolder);
-    }
-    if (!fs.existsSync(dataFolder + '/logs')) {
-      fs.mkdirSync(dataFolder + '/logs');
-    }
-    resolve(loadConfig());
-  });
+    return new Promise(function(resolve, reject) {
+        // logger.debug('dataFolder: ' + dataFolder);
+        // Create the log directory if it does not exist
+        if (!fs.existsSync(dataFolder)) {
+            fs.mkdirSync(dataFolder);
+        }
+        if (!fs.existsSync(dataFolder + '/logs')) {
+            fs.mkdirSync(dataFolder + '/logs');
+        }
+        resolve(loadConfig());
+    });
 }
 
 function loadConfig() {
-  configData = configFile.get() || {};
-  // console.log(configData);
-  if (!configData.settings) {
-    configData.settings = {};
-  }
-  if (process.env.hostUrl) {
-    configFile.set('settings.hostUrl', process.env.hostUrl);
-  }
-  configFile.set('settings.useHeroku', (forceHeroku || process.env.useHeroku === true || process.env.useHeroku === 'true'));
-  configFile.set('settings.amazonDomain', process.env.amazonDomain || (configData.settings.amazonDomain || 'amazon.com'));
-  configFile.set('settings.hubPlatform', process.env.hubPlatform || 'SmartThings');
-  configFile.set('settings.appCallbackUrl', (process.env.appCallbackUrl || configData.settings.appCallbackUrl || (process.env.smartThingsUrl !== null ? process.env.smartThingsUrl : configData.settings.smartThingsUrl)));
-  if (process.env.serviceDebug === true || process.env.serviceDebug === 'true') console.log('** SERVICE DEBUG IS ACTIVE **');
-  configFile.set('settings.serviceDebug', (process.env.serviceDebug === true || process.env.serviceDebug === 'true'));
-  configFile.set('settings.serviceTrace', (process.env.serviceTrace === true || process.env.serviceTrace === 'true'));
-  configFile.set('settings.regionLocale', (process.env.regionLocale || (configData.settings.regionLocale || 'en-US'))),
-    //     configFile.set('settings.serviceDebug', true);
-    //   configFile.set('settings.serviceTrace', true);
-    configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
-  if (!configData.state) {
-    configData.state = {};
-  }
-  configFile.set('state.scriptVersion', appVer);
-  configFile.save();
-  configData = configFile.get();
-  return true;
+    configData = configFile.get() || {};
+    // console.log(configData);
+    if (!configData.settings) {
+        configData.settings = {};
+    }
+    if (process.env.hostUrl) {
+        configFile.set('settings.hostUrl', process.env.hostUrl);
+    }
+    configFile.set('settings.useHeroku', (forceHeroku || process.env.useHeroku === true || process.env.useHeroku === 'true'));
+    configFile.set('settings.amazonDomain', process.env.amazonDomain || (configData.settings.amazonDomain || 'amazon.com'));
+    configFile.set('settings.hubPlatform', process.env.hubPlatform || 'SmartThings');
+    configFile.set('settings.appCallbackUrl', (process.env.appCallbackUrl || configData.settings.appCallbackUrl || (process.env.smartThingsUrl !== null ? process.env.smartThingsUrl : configData.settings.smartThingsUrl)));
+    if (process.env.serviceDebug === true || process.env.serviceDebug === 'true') console.log('** SERVICE DEBUG IS ACTIVE **');
+    configFile.set('settings.serviceDebug', (process.env.serviceDebug === true || process.env.serviceDebug === 'true'));
+    configFile.set('settings.serviceTrace', (process.env.serviceTrace === true || process.env.serviceTrace === 'true'));
+    configFile.set('settings.regionLocale', (process.env.regionLocale || (configData.settings.regionLocale || 'en-US'))),
+        //     configFile.set('settings.serviceDebug', true);
+        //   configFile.set('settings.serviceTrace', true);
+        configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
+    if (!configData.state) {
+        configData.state = {};
+    }
+    configFile.set('state.scriptVersion', appVer);
+    configFile.save();
+    configData = configFile.get();
+    return true;
 }
 
 const getLocalHost = function(noPort = false) {
-    return `${getIPAddress()}${(noPort || configData.settings.useHeroku) ? '' : `:${configData.settings.serverPort}`}`;
+        return `${getIPAddress()}${(noPort || configData.settings.useHeroku) ? '' : `:${configData.settings.serverPort}`}`;
 };
 
 const getProtoPrefix = function() {
@@ -160,8 +160,7 @@ function startWebConfig() {
                     sessionFile.save();
                     sessionData = sessionFile.get();
                     logger.debug('** Cookie Settings File Updated via Manual Entry **');
-                    // if (configData.settings.useHeroku === true) {
-                    sendCookiesToEndpoint(configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null, sessionData.cookie, sessionData.csrf)
+                    sendCookiesToEndpoint((configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null), sessionData.cookie, sessionData.csrf)
                         .then(function(sendResp) {
                             if (sendResp) {
                                 res.send('done');
@@ -169,9 +168,7 @@ function startWebConfig() {
                                 res.send('failed');
                             }
                         });
-                    // } else {
-                    //     res.send('done');
-                    // }
+
                 } else {
                     res.send('failed');
                 }
@@ -230,7 +227,6 @@ function startWebConfig() {
                     configFile.save();
                     const ls = loadConfig();
                     res.send('done');
-
                     configCheckOk()
                         .then(function(res) {
                             if (res) {
@@ -327,7 +323,8 @@ function sendServerDataToST() {
                 uri: url,
                 body: {
                     version: appVer,
-                    onHeroku: (configData.settings.useHeroku === true)
+                    onHeroku: (configData.settings.useHeroku === true),
+                    serverUrl: (configData.settings.useHeroku === true) ? null : `http://${getLocalHost()}`
                 },
                 json: true
             };
@@ -502,8 +499,8 @@ function sendCookiesToEndpoint(url, cookieData) {
                 body: {
                     cookieData: cookieData,
                     version: appVer,
-                    onHeroku: (configData.settings.useHeroku === true)
-
+                    onHeroku: (configData.settings.useHeroku === true),
+                    serverUrl: (configData.settings.useHeroku === true) ? null : `http://${getLocalHost()}`
                 },
                 json: true
             };
