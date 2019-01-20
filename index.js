@@ -339,7 +339,7 @@ function sendServerDataToST() {
                     }
                 })
                 .catch(function(err) {
-                    logger.error(`ERROR: Unable to send Server Version to ${configData.settings.hubPlatform}: ` + err.message);
+                    // logger.error(`ERROR: Unable to send Server Version to ${configData.settings.hubPlatform}: ` + err.message);
                     resolve(false);
                 });
         }
@@ -515,7 +515,7 @@ function sendCookiesToEndpoint(url, cookieData) {
                     }
                 })
                 .catch(function(err) {
-                    logger.error(`ERROR: Unable to send Alexa Cookie Data to ${configData.settings.hubPlatform}: ` + err.message);
+                    // logger.error(`ERROR: Unable to send Alexa Cookie Data to ${configData.settings.hubPlatform}: ` + err.message);
                     resolve(false);
                 });
         }
@@ -539,7 +539,7 @@ function getCookiesFromEndpoint(url) {
                 resolve(resp);
             })
             .catch(function(err) {
-                logger.error(`ERROR: Unable to retrieve Alexa Cookie Data from ${configData.settings.hubPlatform}: ` + err.message);
+                // logger.error(`ERROR: Unable to retrieve Alexa Cookie Data from ${configData.settings.hubPlatform}: ` + err.message);
                 resolve({});
             });
     });

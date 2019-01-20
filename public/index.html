@@ -100,6 +100,9 @@
                         <input type="checkbox" class="form-check-input" id="serviceTrace" disabled>
                         <label class="form-check-label" for="serviceTrace">Service Trace?</label>
                     </div>
+                    <div id="localServerUrlDiv">
+                        <p id="localServerUrl"></p>
+                    </div>
                 </div>
             </div>
 
@@ -127,6 +130,16 @@
                             Enter the IP Address xxx.xxx.xxx.xxx
                         </small>
                     </div> -->
+                    <div class="md-form mt-0">
+                        <select id="hubPlatform" class="browser-default custom-select">
+                            <option selected>Hubitat</option>
+                            <option value="SmartThings">SmartThings</option>
+                            <option value="Hubitat">Hubitat</option>
+                        </select>
+                        <small id="hubPlatformHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
+                            Select the hub platform
+                        </small>
+                    </div>
                     <div class="md-form mt-0" id="localDivHubPort">
                         <i class="fa fa-info prefix"></i>
                         <input type="text" id="serverPort" name="serverPort" class="form-control" aria-describedby="serverPortHelpBlockMD">
@@ -141,7 +154,7 @@
                         <input type="text" id="appCallbackUrl" name="appCallbackUrl" class="form-control" aria-describedby="appCallbackUrlHelpBlockMD">
                         <label for="appCallbackUrl" data-error="wrong" data-success="right">App Callback Url</label>
                         <small id="appCallbackUrlHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
-                            Enter the EchoSpeaks App Endpoint Url obtained from the App.
+                            Shows the EchoSpeaks App Endpoint Url obtained from the App.
                         </small>
                     </div>
                 </div>
@@ -206,6 +219,10 @@
                     if ($(elem)) {
                         if (key === 'amazonDomain') {
                             $('#amazonDomain').val(val);
+                        } else if (key === 'hubPlatform') {
+                            $('#hubPlatform').val(val);
+                        } else if (key === 'appCallbackUrl') {
+                            $('#appCallbackUrl').val(val);
                         } else if (key === 'useHeroku') {
                             console.log('useHeroku: ' + val);
                             useHeroku = (val === true || val === 'true')
@@ -214,7 +231,11 @@
                             useHeroku ? $('[id^="cloudDiv"]').show() : $('[id^="cloudDiv"]').hide();
                             if (useHeroku) {
                                 $('#settingsCard').hide();
+                                $('#localServerDiv').hide();
                                 $('#submitBtnDiv').hide();
+                            } else {
+                                $('#localServerDiv').show();
+                                $('#localServerUrl').text(`Local Server URL: ${rootOrigin}`);
                             }
                         } else if (key === 'serviceDebug') {
                             console.log('serviceDebug: ' + val);
@@ -236,6 +257,11 @@
         $("#amazonDomain").change(function() {
             console.log($(this).val());
             configData.settings.amazonDomain = $(this).val();
+        });
+
+        $("#hubPlatform").change(function() {
+            console.log($(this).val());
+            configData.settings.hubPlatform = $(this).val();
         });
         $("#useHeroku").change(function() {
             configData.settings.useHeroku = getChecked('useHeroku');
@@ -324,11 +350,12 @@
                     config.user = "";
                     config.password = "";
                 }
-                config.amazonDomain = configData.settings.amazonDomain;
-                config.useHeroku = configData.settings.useHeroku;
-                config.serviceDebug = configData.settings.serviceDebug;
-                config.serviceTrace = configData.settings.serviceTrace;
-                config.appCallbackUrl = configData.settings.appCallbackUrl;
+                // config.amazonDomain = configData.settings.amazonDomain;
+                config.hubPlatform = configData.settings.hubPlatform;
+                // config.useHeroku = configData.settings.useHeroku;
+                // config.serviceDebug = configData.settings.serviceDebug;
+                // config.serviceTrace = configData.settings.serviceTrace;
+                // config.appCallbackUrl = configData.settings.appCallbackUrl;
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("POST", rootOrigin + '/configData');
                 xmlhttp.onreadystatechange = function() {
@@ -357,6 +384,7 @@
                 }
                 xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
                 for (const h in config) {
+                    console.log('config item: ' + config[h] || undefined);
                     xmlhttp.setRequestHeader(h.toString(), config[h].toString())
                 }
                 xmlhttp.send(JSON.stringify(config));
