@@ -9,7 +9,7 @@ const bodyParser = require('body-parser');
 const os = require('os');
 // const alexaCookie = require('./alexa-cookie/alexa-cookie');
 const editJsonFile = require("edit-json-file", {
-    autosave: true
+  autosave: true
 });
 const dataFolder = os.homedir();
 const configFile = editJsonFile(dataFolder + '/es_config.json');
@@ -17,7 +17,7 @@ const sessionFile = editJsonFile(dataFolder + '/session.json');
 const fs = require('fs');
 const webApp = express();
 const urlencodedParser = bodyParser.urlencoded({
-    extended: false
+  extended: false
 });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 sessionFile.save();
@@ -42,50 +42,50 @@ runTimeData.eventCount = 0;
 runTimeData.echoDevices = {};
 
 function initConfig() {
-    return new Promise(function(resolve, reject) {
-        // logger.debug('dataFolder: ' + dataFolder);
-        // Create the log directory if it does not exist
-        if (!fs.existsSync(dataFolder)) {
-            fs.mkdirSync(dataFolder);
-        }
-        if (!fs.existsSync(dataFolder + '/logs')) {
-            fs.mkdirSync(dataFolder + '/logs');
-        }
-        resolve(loadConfig());
-    });
+  return new Promise(function(resolve, reject) {
+    // logger.debug('dataFolder: ' + dataFolder);
+    // Create the log directory if it does not exist
+    if (!fs.existsSync(dataFolder)) {
+      fs.mkdirSync(dataFolder);
+    }
+    if (!fs.existsSync(dataFolder + '/logs')) {
+      fs.mkdirSync(dataFolder + '/logs');
+    }
+    resolve(loadConfig());
+  });
 }
 
 function loadConfig() {
-    configData = configFile.get() || {};
-    // console.log(configData);
-    if (!configData.settings) {
-        configData.settings = {};
-    }
-    if (process.env.hostUrl) {
-        configFile.set('settings.hostUrl', process.env.hostUrl);
-    }
-    configFile.set('settings.useHeroku', (forceHeroku || process.env.useHeroku === true || process.env.useHeroku === 'true'));
-    configFile.set('settings.amazonDomain', process.env.amazonDomain || (configData.settings.amazonDomain || 'amazon.com'));
-    configFile.set('settings.hubPlatform', process.env.hubPlatform || 'SmartThings');
-    configFile.set('settings.appCallbackUrl', (process.env.appCallbackUrl || configData.settings.appCallbackUrl || (process.env.smartThingsUrl !== null ? process.env.smartThingsUrl : configData.settings.smartThingsUrl)));
-    if (process.env.serviceDebug === true || process.env.serviceDebug === 'true') console.log('** SERVICE DEBUG IS ACTIVE **');
-    configFile.set('settings.serviceDebug', (process.env.serviceDebug === true || process.env.serviceDebug === 'true'));
-    configFile.set('settings.serviceTrace', (process.env.serviceTrace === true || process.env.serviceTrace === 'true'));
-    configFile.set('settings.regionLocale', (process.env.regionLocale || (configData.settings.regionLocale || 'en-US'))),
-        //     configFile.set('settings.serviceDebug', true);
-        //   configFile.set('settings.serviceTrace', true);
-        configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
-    if (!configData.state) {
-        configData.state = {};
-    }
-    configFile.set('state.scriptVersion', appVer);
-    configFile.save();
-    configData = configFile.get();
-    return true;
+  configData = configFile.get() || {};
+  // console.log(configData);
+  if (!configData.settings) {
+    configData.settings = {};
+  }
+  if (process.env.hostUrl) {
+    configFile.set('settings.hostUrl', process.env.hostUrl);
+  }
+  configFile.set('settings.useHeroku', (forceHeroku || process.env.useHeroku === true || process.env.useHeroku === 'true'));
+  configFile.set('settings.amazonDomain', process.env.amazonDomain || (configData.settings.amazonDomain || 'amazon.com'));
+  configFile.set('settings.hubPlatform', process.env.hubPlatform || (configData.settings.hubPlatform || 'SmartThings'));
+  configFile.set('settings.appCallbackUrl', (process.env.appCallbackUrl || configData.settings.appCallbackUrl || (process.env.smartThingsUrl !== null ? process.env.smartThingsUrl : configData.settings.smartThingsUrl)));
+  if (process.env.serviceDebug === true || process.env.serviceDebug === 'true') console.log('** SERVICE DEBUG IS ACTIVE **');
+  configFile.set('settings.serviceDebug', (process.env.serviceDebug === true || process.env.serviceDebug === 'true'));
+  configFile.set('settings.serviceTrace', (process.env.serviceTrace === true || process.env.serviceTrace === 'true'));
+  configFile.set('settings.regionLocale', (process.env.regionLocale || (configData.settings.regionLocale || 'en-US'))),
+    //     configFile.set('settings.serviceDebug', true);
+    //   configFile.set('settings.serviceTrace', true);
+    configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
+  if (!configData.state) {
+    configData.state = {};
+  }
+  configFile.set('state.scriptVersion', appVer);
+  configFile.save();
+  configData = configFile.get();
+  return true;
 }
 
 const getLocalHost = function(noPort = false) {
-        return `${getIPAddress()}${(noPort || configData.settings.useHeroku) ? '' : `:${configData.settings.serverPort}`}`;
+    return `${getIPAddress()}${(noPort || configData.settings.useHeroku) ? '' : `:${configData.settings.serverPort}`}`;
 };
 
 const getProtoPrefix = function() {
@@ -152,15 +152,17 @@ function startWebConfig() {
                 if (req.headers.cookiedata) {
                     let cData = JSON.parse(req.headers.cookiedata);
                     // console.log(cData);
-                    sessionFile.set('cookie', cData.cookie);
-                    sessionFile.set('csrf', cData.csrf);
+                    sessionFile.set('cookieData', {
+                        localCookie: cData.cookie,
+                        csrf: cData.csrf
+                    });
                     saveFile = true;
                 };
                 if (saveFile) {
                     sessionFile.save();
                     sessionData = sessionFile.get();
                     logger.debug('** Cookie Settings File Updated via Manual Entry **');
-                    sendCookiesToEndpoint((configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null), sessionData.cookie, sessionData.csrf)
+                    sendCookiesToEndpoint((configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null), sessionData.cookieData)
                         .then(function(sendResp) {
                             if (sendResp) {
                                 res.send('done');
@@ -186,6 +188,7 @@ function startWebConfig() {
             });
             webApp.get('/refreshCookie', urlencodedParser, function(req, res) {
                 logger.verbose('refreshCookie request received');
+                console.log("cookieData: ", runTimeData.savedConfig || null);
                 alexaCookie.refreshAlexaCookie({
                     formerRegistrationData: runTimeData.savedConfig.cookieData
                 }, (err, result) => {
@@ -194,7 +197,7 @@ function startWebConfig() {
                         runTimeData.savedConfig.cookieData = result;
                         // console.log('RESULT: ' + err + ' / ' + JSON.stringify(result));
                         res.send({
-                            result: result
+                            result: JSON.stringify(result)
                         });
                     }
                 });
@@ -215,8 +218,12 @@ function startWebConfig() {
                     saveFile = true;
                 };
                 if (req.headers.appcallbackurl) {
-
                     configFile.set('settings.appCallbackUrl', req.headers.appcallbackurl);
+                    saveFile = true;
+                };
+                if (req.headers.hubplatform) {
+                    console.log('hubPlatform: ' + req.headers.hubplatform);
+                    configFile.set('settings.hubPlatform', req.headers.hubplatform);
                     saveFile = true;
                 };
                 if (req.headers.serverport) {
@@ -296,7 +303,9 @@ function startWebServer(checkForCookie = false) {
     runTimeData.loginProxyActive = true;
     alexaLogin(undefined, undefined, alexaOptions, function(error, response, config) {
         runTimeData.alexaUrl = `https://alexa.${configData.settings.amazonDomain}`;
-        runTimeData.savedConfig = config;
+        if (config) {
+            runTimeData.savedConfig = config;
+        }
         // console.log('error:', error);
         if (response !== undefined && response !== "") {
             logger.debug('Alexa Login Status: ' + response);
@@ -324,6 +333,7 @@ function sendServerDataToST() {
                 body: {
                     version: appVer,
                     onHeroku: (configData.settings.useHeroku === true),
+                    isLocal: (configData.settings.useHeroku !== true),
                     serverUrl: (configData.settings.useHeroku === true) ? null : `http://${getLocalHost()}`
                 },
                 json: true
@@ -339,7 +349,7 @@ function sendServerDataToST() {
                     }
                 })
                 .catch(function(err) {
-                    // logger.error(`ERROR: Unable to send Server Version to ${configData.settings.hubPlatform}: ` + err.message);
+                    logger.error(`ERROR: Unable to send Server Version to ${configData.settings.hubPlatform}: ` + err.message);
                     resolve(false);
                 });
         }
@@ -449,7 +459,7 @@ var clearSession = function(url) {
     remSessionItem('csrf');
     remSessionItem('cookie');
     remSessionItem('cookieData');
-    delete runTimeData.savedConfig.cookieData;
+    if (runTimeData.savedConfig.cookieData) delete runTimeData.savedConfig.cookieData;
     if (url) {
         let options = {
             method: 'DELETE',
@@ -471,9 +481,9 @@ var clearSession = function(url) {
 
 function getRemoteCookie(alexaOptions) {
     return new Promise(resolve => {
-        if (alexaOptions.checkForCookie === false) {
-            resolve(undefined);
-        }
+        // if (alexaOptions.checkForCookie === false) {
+        //     resolve(undefined);
+        // }
         let config = {};
         if (alexaOptions.callbackEndpoint) {
             getCookiesFromEndpoint(alexaOptions.callbackEndpoint)
@@ -500,6 +510,7 @@ function sendCookiesToEndpoint(url, cookieData) {
                     cookieData: cookieData,
                     version: appVer,
                     onHeroku: (configData.settings.useHeroku === true),
+                    isLocal: (configData.settings.useHeroku !== true),
                     serverUrl: (configData.settings.useHeroku === true) ? null : `http://${getLocalHost()}`
                 },
                 json: true
@@ -515,7 +526,7 @@ function sendCookiesToEndpoint(url, cookieData) {
                     }
                 })
                 .catch(function(err) {
-                    // logger.error(`ERROR: Unable to send Alexa Cookie Data to ${configData.settings.hubPlatform}: ` + err.message);
+                    logger.error(`ERROR: Unable to send Alexa Cookie Data to ${configData.settings.hubPlatform}: ` + err.message);
                     resolve(false);
                 });
         }
@@ -528,7 +539,9 @@ function getCookiesFromEndpoint(url) {
                 method: 'GET',
                 uri: url,
                 headers: {
-                    serverVersion: appVer
+                    serverVersion: appVer,
+                    onHeroku: (configData.settings.useHeroku === true),
+                    isLocal: (configData.settings.useHeroku !== true),
                 },
                 json: true
             })
@@ -539,7 +552,7 @@ function getCookiesFromEndpoint(url) {
                 resolve(resp);
             })
             .catch(function(err) {
-                // logger.error(`ERROR: Unable to retrieve Alexa Cookie Data from ${configData.settings.hubPlatform}: ` + err.message);
+                logger.error(`ERROR: Unable to retrieve Alexa Cookie Data from ${configData.settings.hubPlatform}: ` + err.message);
                 resolve({});
             });
     });
