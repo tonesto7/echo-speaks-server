@@ -136,573 +136,571 @@ function getFields(body) {
 }
 
 let getLocalHost = function(noPort = false) {
-  return (_options.proxyHost || _options.proxyOwnIp) + ((_options.useHeroku || noPort) ? '' : ':' + _options.serverPort);
+    return `${(_options.proxyHost || _options.proxyOwnIp)}${(noPort || _options.useHeroku) ? '' : `:${_options.proxyPort}`}`;
 };
 
 function initConfig() {
-  // _options.amazonPage = _options.amazonPage || defaultAmazonPage;
-  if (_options.formerRegistrationData && _options.formerRegistrationData.amazonPage) _options.amazonPage = _options.formerRegistrationData.amazonPage;
+    // _options.amazonPage = _options.amazonPage || defaultAmazonPage;
+    if (_options.formerRegistrationData && _options.formerRegistrationData.amazonPage) _options.amazonPage = _options.formerRegistrationData.amazonPage;
 
-  _options.debug && console.log('Alexa-Cookie: Use as Login-Amazon-URL: ' + _options.amazonPage);
+    _options.debug && console.log('Alexa-Cookie: Use as Login-Amazon-URL: ' + _options.amazonPage);
 
-  if (!_options.userAgent) {
-    let platform = os.platform();
-    if (platform === 'win32') {
-      _options.userAgent = defaultUserAgent;
+    if (!_options.userAgent) {
+        let platform = os.platform();
+        if (platform === 'win32') {
+            _options.userAgent = defaultUserAgent;
+        }
+        /*else if (platform === 'darwin') {
+            _options.userAgent = defaultUserAgentMacOs;
+        }*/
+        else {
+            _options.userAgent = defaultUserAgentLinux;
+        }
     }
-    /*else if (platform === 'darwin') {
-        _options.userAgent = defaultUserAgentMacOs;
-    }*/
-    else {
-      _options.userAgent = defaultUserAgentLinux;
+    _options.debug && console.log('Alexa-Cookie: Use as User-Agent: ' + _options.userAgent);
+
+    _options.acceptLanguage = _options.acceptLanguage || defaultAcceptLanguage;
+    _options.debug && console.log('Alexa-Cookie: Use as Accept-Language: ' + _options.acceptLanguage);
+
+    if (_options.setupProxy && (!_options.proxyOwnIp && !_options.proxyHost)) {
+        _options.debug && console.log('Alexa-Cookie: Own-IP Setting missing for Proxy. Disabling!');
+        _options.setupProxy = false;
     }
-  }
-  _options.debug && console.log('Alexa-Cookie: Use as User-Agent: ' + _options.userAgent);
+    if (_options.setupProxy) {
+        _options.setupProxy = true;
+        _options.proxyPort = _options.proxyPort || 0;
+        _options.proxyListenBind = _options.proxyListenBind || '0.0.0.0';
+        _options.debug && console.log('Alexa-Cookie: Proxy-Mode enabled if needed: ' + getLocalHost() + ' to listen on ' + _options.proxyListenBind);
+    } else {
+        _options.setupProxy = false;
+        _options.debug && console.log('Alexa-Cookie: Proxy mode disabled');
+    }
+    _options.proxyRootPath = _options.proxyRootPath || '';
+    _options.proxyLogLevel = _options.proxyLogLevel || 'warn';
+    _options.amazonPageProxyLanguage = _options.amazonPageProxyLanguage || 'en_US';
 
-  _options.acceptLanguage = _options.acceptLanguage || defaultAcceptLanguage;
-  _options.debug && console.log('Alexa-Cookie: Use as Accept-Language: ' + _options.acceptLanguage);
-
-  if (_options.setupProxy && (!_options.proxyOwnIp && !_options.proxyHost)) {
-    _options.debug && console.log('Alexa-Cookie: Own-IP Setting missing for Proxy. Disabling!');
-    _options.setupProxy = false;
-  }
-  if (_options.setupProxy) {
-    _options.setupProxy = true;
-    _options.proxyPort = _options.serverPort || 0;
-    _options.proxyListenBind = _options.proxyListenBind || '0.0.0.0';
-    _options.debug && console.log('Alexa-Cookie: Proxy-Mode enabled if needed: ' + getLocalHost() + ' to listen on ' + _options.proxyListenBind);
-  } else {
-    _options.setupProxy = false;
-    _options.debug && console.log('Alexa-Cookie: Proxy mode disabled');
-  }
-  _options.proxyLogLevel = _options.proxyLogLevel || 'warn';
-  _options.amazonPageProxyLanguage = _options.amazonPageProxyLanguage || 'en_US';
-
-  if (_options.formerRegistrationData) _options.proxyOnly = true;
+    if (_options.formerRegistrationData) _options.proxyOnly = true;
 }
 
 function getCSRFFromCookies(cookie, _options, callback) {
-  // get CSRF
-  let options = {
-    'host': 'alexa.' + _options.amazonPage,
-    'path': '/api/language',
-    'method': 'GET',
-    'headers': {
-      'DNT': '1',
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36',
-      'Connection': 'keep-alive',
-      'Referer': 'https://alexa.' + _options.amazonPage + '/spa/index.html',
-      'Cookie': cookie,
-      'Accept': '*/*',
-      'Origin': 'https://alexa.' + _options.amazonPage
-    }
-  };
+    // get CSRF
+    let options = {
+        'host': 'alexa.' + _options.amazonPage,
+        'path': '/api/language',
+        'method': 'GET',
+        'headers': {
+            'DNT': '1',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36',
+            'Connection': 'keep-alive',
+            'Referer': 'https://alexa.' + _options.amazonPage + '/spa/index.html',
+            'Cookie': cookie,
+            'Accept': '*/*',
+            'Origin': 'https://alexa.' + _options.amazonPage
+        }
+    };
 
-  _options.logger && _options.logger('Alexa-Cookie: Step 4: get CSRF');
-  request(options, (error, response) => {
-    cookie = addCookies(cookie, response.headers);
-    let ar = /csrf=([^;]+)/.exec(cookie);
-    let csrf = ar ? ar[1] : undefined;
-    _options.logger && _options.logger('Alexa-Cookie: Result: csrf=' + csrf + ', Cookie=' + cookie);
-    callback && callback(null, {
-      cookie: cookie,
-      csrf: csrf
+    _options.logger && _options.logger('Alexa-Cookie: Step 4: get CSRF');
+    request(options, (error, response) => {
+        cookie = addCookies(cookie, response.headers);
+        let ar = /csrf=([^;]+)/.exec(cookie);
+        let csrf = ar ? ar[1] : undefined;
+        _options.logger && _options.logger('Alexa-Cookie: Result: csrf=' + csrf + ', Cookie=' + cookie);
+        callback && callback(null, {
+            cookie: cookie,
+            csrf: csrf
+        });
     });
-  });
 }
 
 function generateAlexaCookie(email, password, __options, webapp, callback) {
-  if (webapp) {
-    webApp = webapp;
-  }
-  if (email !== undefined && typeof email !== 'string') {
-    callback = __options;
-    __options = password;
-    password = email;
-    email = null;
-  }
-  if (password !== undefined && typeof password !== 'string') {
-    callback = __options;
-    __options = password;
-    password = null;
-  }
-
-  if (typeof __options === 'function') {
-    callback = __options;
-    __options = {};
-  }
-
-  _options = __options;
-
-  if (!email || !password) {
-    __options.proxyOnly = true;
-  }
-
-  initConfig();
-
-  if (!_options.proxyOnly) {
-    // get first cookie and write redirection target into referer
-    let options = {
-      host: 'alexa.' + _options.amazonPage,
-      path: '',
-      method: 'GET',
-      headers: {
-        'DNT': '1',
-        'Upgrade-Insecure-Requests': '1',
-        'User-Agent': _options.userAgent,
-        'Accept-Language': _options.acceptLanguage,
-        'Connection': 'keep-alive',
-        'Accept': '*/*'
-      },
-    };
-    _options.debug && console.log('Alexa-Cookie: Step 1: get first cookie and authentication redirect');
-    request(options, (error, response, body, info) => {
-      if (error) {
-        callback && callback(error, null);
-        return;
-      }
-
-      let lastRequestOptions = info.requests[info.requests.length - 1].options;
-      // login empty to generate session
-      Cookie = addCookies(Cookie, response.headers);
-      let options = {
-        host: 'www.' + _options.amazonPage,
-        path: '/ap/signin',
-        method: 'POST',
-        headers: {
-          'DNT': '1',
-          'Upgrade-Insecure-Requests': '1',
-          'User-Agent': _options.userAgent,
-          'Accept-Language': _options.acceptLanguage,
-          'Connection': 'keep-alive',
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Referer': 'https://' + lastRequestOptions.host + lastRequestOptions.path,
-          'Cookie': Cookie,
-          'Accept': '*/*'
-        },
-        gzip: true,
-        body: querystring.stringify(getFields(body))
-      };
-      _options.debug && console.log('Alexa-Cookie: Step 2: login empty to generate session');
-      request(options, (error, response, body) => {
-        if (error) {
-          callback && callback(error, null);
-          return;
-        }
-
-        // login with filled out form
-        //  !!! referer now contains session in URL
-        options.host = 'www.' + _options.amazonPage;
-        options.path = '/ap/signin';
-        options.method = 'POST';
-        options.headers.Cookie = Cookie = addCookies(Cookie, response.headers);
-        let ar = options.headers.Cookie.match(/session-id=([^;]+)/);
-        options.headers.Referer = `https://www.${_options.amazonPage}/ap/signin/${ar[1]}`;
-        options.body = getFields(body);
-        options.body.email = email || '';
-        options.body.password = password || '';
-        options.body = querystring.stringify(options.body, null, null, {
-          encodeURIComponent: encodeURIComponent
-        });
-
-        _options.debug && console.log('Alexa-Cookie: Step 3: login with filled form, referer contains session id');
-        request(options, (error, response, body, info) => {
-          if (error) {
-            callback && callback(error, null);
-            return;
-          }
-
-          let lastRequestOptions = info.requests[info.requests.length - 1].options;
-
-          // check whether the login has been successful or exit otherwise
-          if (!lastRequestOptions.host.startsWith('alexa') || !lastRequestOptions.path.endsWith('.html')) {
-            let errMessage = 'Login unsuccessfull. Please check credentials.';
-            const amazonMessage = body.match(/auth-warning-message-box[\S\s]*"a-alert-heading">([^<]*)[\S\s]*<li><[^>]*>\s*([^<\n]*)\s*</);
-            if (amazonMessage && amazonMessage[1] && amazonMessage[2]) {
-              errMessage = `Amazon-Login-Error: ${amazonMessage[1]}: ${amazonMessage[2]}`;
-            }
-            if (_options.setupProxy) {
-              if (proxyServer) {
-                errMessage += ` You can try to get the cookie manually by opening https://${getLocalHost()}/ with your browser.`;
-              } else {
-                amazonProxy.initAmazonProxy(_options, prepareResult,
-                  (server) => {
-                    proxyServer = server;
-                    if (_options.proxyPort === 0) {
-                      _options.proxyPort = proxyServer.address().port;
-                    }
-                    errMessage += ` You can try to get the cookie manually by opening https://${getLocalHost()}/ with your browser.`;
-                    callback && callback(new Error(errMessage), null);
-                  }
-                );
-                return;
-              }
-            }
-            callback && callback(new Error(errMessage), null);
-            return;
-          }
-
-          return getCSRFFromCookies(Cookie, _options, callback);
-        });
-      });
-    });
-  } else {
-    amazonProxy.initAmazonProxy(_options, webApp, prepareResult, (server) => {
-      proxyServer = server;
-      if (_options.proxyPort === 0) {
-        _options.proxyPort = proxyServer.address().port;
-      }
-      const errMessage = `You can try to get the cookie manually by opening http://${getLocalHost()}/ with your browser.`;
-      callback && callback(new Error(errMessage), null);
-    });
-  }
-
-  function prepareResult(err, data) {
-    if (err || !data.accessToken) {
-      callback && callback(err, data.loginCookie);
-      return;
+    if (webapp) webApp = webapp;
+    if (email !== undefined && typeof email !== 'string') {
+        callback = __options;
+        __options = password;
+        password = email;
+        email = null;
     }
-    handleTokenRegistration(_options, data, callback);
-  }
+    if (password !== undefined && typeof password !== 'string') {
+        callback = __options;
+        __options = password;
+        password = null;
+    }
+
+    if (typeof __options === 'function') {
+        callback = __options;
+        __options = {};
+    }
+
+    _options = __options;
+
+    if (!email || !password) {
+        __options.proxyOnly = true;
+    }
+
+    initConfig();
+
+    if (!_options.proxyOnly) {
+        // get first cookie and write redirection target into referer
+        let options = {
+            host: 'alexa.' + _options.amazonPage,
+            path: '',
+            method: 'GET',
+            headers: {
+                'DNT': '1',
+                'Upgrade-Insecure-Requests': '1',
+                'User-Agent': _options.userAgent,
+                'Accept-Language': _options.acceptLanguage,
+                'Connection': 'keep-alive',
+                'Accept': '*/*'
+            },
+        };
+        _options.debug && console.log('Alexa-Cookie: Step 1: get first cookie and authentication redirect');
+        request(options, (error, response, body, info) => {
+            if (error) {
+                callback && callback(error, null);
+                return;
+            }
+
+            let lastRequestOptions = info.requests[info.requests.length - 1].options;
+            // login empty to generate session
+            Cookie = addCookies(Cookie, response.headers);
+            let options = {
+                host: 'www.' + _options.amazonPage,
+                path: '/ap/signin',
+                method: 'POST',
+                headers: {
+                    'DNT': '1',
+                    'Upgrade-Insecure-Requests': '1',
+                    'User-Agent': _options.userAgent,
+                    'Accept-Language': _options.acceptLanguage,
+                    'Connection': 'keep-alive',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Referer': 'https://' + lastRequestOptions.host + lastRequestOptions.path,
+                    'Cookie': Cookie,
+                    'Accept': '*/*'
+                },
+                gzip: true,
+                body: querystring.stringify(getFields(body))
+            };
+            _options.debug && console.log('Alexa-Cookie: Step 2: login empty to generate session');
+            request(options, (error, response, body) => {
+                if (error) {
+                    callback && callback(error, null);
+                    return;
+                }
+
+                // login with filled out form
+                //  !!! referer now contains session in URL
+                options.host = 'www.' + _options.amazonPage;
+                options.path = '/ap/signin';
+                options.method = 'POST';
+                options.headers.Cookie = Cookie = addCookies(Cookie, response.headers);
+                let ar = options.headers.Cookie.match(/session-id=([^;]+)/);
+                options.headers.Referer = `https://www.${_options.amazonPage}/ap/signin/${ar[1]}`;
+                options.body = getFields(body);
+                options.body.email = email || '';
+                options.body.password = password || '';
+                options.body = querystring.stringify(options.body, null, null, {
+                    encodeURIComponent: encodeURIComponent
+                });
+
+                _options.debug && console.log('Alexa-Cookie: Step 3: login with filled form, referer contains session id');
+                request(options, (error, response, body, info) => {
+                    if (error) {
+                        callback && callback(error, null);
+                        return;
+                    }
+
+                    let lastRequestOptions = info.requests[info.requests.length - 1].options;
+
+                    // check whether the login has been successful or exit otherwise
+                    if (!lastRequestOptions.host.startsWith('alexa') || !lastRequestOptions.path.endsWith('.html')) {
+                        let errMessage = 'Login unsuccessfull. Please check credentials.';
+                        const amazonMessage = body.match(/auth-warning-message-box[\S\s]*"a-alert-heading">([^<]*)[\S\s]*<li><[^>]*>\s*([^<\n]*)\s*</);
+                        if (amazonMessage && amazonMessage[1] && amazonMessage[2]) {
+                            errMessage = `Amazon-Login-Error: ${amazonMessage[1]}: ${amazonMessage[2]}`;
+                        }
+                        if (_options.setupProxy) {
+                            if (proxyServer) {
+                                errMessage += ` You can try to get the cookie manually by opening ${_options.protocolPrefix}://${getLocalHost()}/ with your browser.`;
+                            } else {
+                                amazonProxy.initAmazonProxy(_options, webApp, prepareResult, (server) => {
+                                    proxyServer = server;
+                                    if (_options.proxyPort === 0) {
+                                        _options.proxyPort = proxyServer.address().port;
+                                    }
+                                    errMessage += ` You can try to get the cookie manually by opening ${_options.protocolPrefix}://${getLocalHost()}/ with your browser.`;
+                                    callback && callback(new Error(errMessage), null);
+                                });
+                                return;
+                            }
+                        }
+                        callback && callback(new Error(errMessage), null);
+                        return;
+                    }
+
+                    return getCSRFFromCookies(Cookie, _options, callback);
+                });
+            });
+        });
+    } else {
+        amazonProxy.initAmazonProxy(_options, webApp, prepareResult, (server) => {
+            proxyServer = server;
+            if (_options.proxyPort === 0) {
+                _options.proxyPort = proxyServer.address().port;
+            }
+            const errMessage = `You can try to get the cookie manually by opening ${_options.protocolPrefix}://${getLocalHost()}/ with your browser.`;
+            callback && callback(new Error(errMessage), null);
+        });
+    }
+
+    function prepareResult(err, data) {
+        if (err || !data.accessToken) {
+            callback && callback(err, data.loginCookie);
+            return;
+        }
+        handleTokenRegistration(_options, data, callback);
+    }
 }
 
-
 function handleTokenRegistration(_options, loginData, callback) {
-  _options.logger && _options.logger('Handle token registration Start: ' + JSON.stringify(loginData));
+    _options.logger && _options.logger('Handle token registration Start: ' + JSON.stringify(loginData));
 
-  let deviceSerial;
-  if (!_options.formerRegistrationData || !_options.formerRegistrationData.deviceSerial) {
-    const deviceSerialBuffer = Buffer.alloc(16);
-    for (let i = 0; i < 16; i++) {
-      deviceSerialBuffer.writeUInt8(Math.floor(Math.random() * 255), i);
+    let deviceSerial;
+    if (!_options.formerRegistrationData || !_options.formerRegistrationData.deviceSerial) {
+        const deviceSerialBuffer = Buffer.alloc(16);
+        for (let i = 0; i < 16; i++) {
+            deviceSerialBuffer.writeUInt8(Math.floor(Math.random() * 255), i);
+        }
+        deviceSerial = deviceSerialBuffer.toString('hex');
+    } else {
+        _options.logger && _options.logger('Proxy Init: reuse deviceSerial from former data');
+        deviceSerial = _options.formerRegistrationData.deviceSerial;
     }
-    deviceSerial = deviceSerialBuffer.toString('hex');
-  } else {
-    _options.logger && _options.logger('Proxy Init: reuse deviceSerial from former data');
-    deviceSerial = _options.formerRegistrationData.deviceSerial;
-  }
-  loginData.deviceSerial = deviceSerial;
+    loginData.deviceSerial = deviceSerial;
 
-  const cookies = cookieTools.parse(loginData.loginCookie);
-  Cookie = loginData.loginCookie;
-
-  /*
-      Register App
-   */
-
-  const registerData = {
-    "requested_extensions": [
-      "device_info",
-      "customer_info"
-    ],
-    "cookies": {
-      "website_cookies": [
-        /*{
-            "Value": cookies["session-id-time"],
-            "Name": "session-id-time"
-        }*/
-      ],
-      "domain": ".amazon.com"
-    },
-    "registration_data": {
-      "domain": "Device",
-      "app_version": "2.2.223830.0",
-      "device_type": "A2IVLV5VM2W81",
-      "device_name": "%FIRST_NAME%\u0027s%DUPE_STRATEGY_1ST%Echo Speaks",
-      "os_version": "11.4.1",
-      "device_serial": deviceSerial,
-      "device_model": "iPhone",
-      "app_name": "Echo Speaks",
-      "software_version": "1"
-    },
-    "auth_data": {
-      "access_token": loginData.accessToken
-    },
-    "user_context_map": {
-      "frc": cookies.frc
-    },
-    "requested_token_type": [
-      "bearer",
-      "mac_dms",
-      "website_cookies"
-    ]
-  };
-  for (let key in cookies) {
-    if (!cookies.hasOwnProperty(key)) continue;
-    registerData.cookies.website_cookies.push({
-      "Value": cookies[key],
-      "Name": key
-    });
-  }
-
-  let options = {
-    host: 'api.amazon.com',
-    path: '/auth/register',
-    method: 'POST',
-    headers: {
-      'User-Agent': 'AmazonWebView/Amazon Alexa/2.2.223830.0/iOS/11.4.1/iPhone',
-      'Accept-Language': _options.acceptLanguage,
-      'Accept-Charset': 'utf-8',
-      'Connection': 'keep-alive',
-      'Content-Type': 'application/json',
-      'Cookie': loginData.loginCookie,
-      'Accept': '*/*',
-      'x-amzn-identity-auth-domain': 'api.amazon.com'
-    },
-    body: JSON.stringify(registerData)
-  };
-  _options.logger && _options.logger('Alexa-Cookie: Register App');
-  _options.logger && _options.logger(JSON.stringify(options));
-  request(options, (error, response, body) => {
-    if (error) {
-      callback && callback(error, null);
-      return;
-    }
-    try {
-      if (typeof body !== 'object') body = JSON.parse(body);
-    } catch (err) {
-      _options.logger && _options.logger('Register App Response: ' + JSON.stringify(body));
-      callback && callback(err, null);
-      return;
-    }
-    _options.logger && _options.logger('Register App Response: ' + JSON.stringify(body));
-
-    if (!body.response || !body.response.success || !body.response.success.tokens || !body.response.success.tokens.bearer) {
-      callback && callback(new Error('No tokens in Register response'), null);
-      return;
-    }
-    Cookie = addCookies(Cookie, response.headers);
-    loginData.refreshToken = body.response.success.tokens.bearer.refresh_token;
-    loginData.tokenDate = Date.now();
-
+    const cookies = cookieTools.parse(loginData.loginCookie);
+    Cookie = loginData.loginCookie;
 
     /*
-        Get Amazon Marketplace Country
-    */
+        Register App
+     */
+
+    const registerData = {
+        "requested_extensions": [
+            "device_info",
+            "customer_info"
+        ],
+        "cookies": {
+            "website_cookies": [
+                /*{
+                    "Value": cookies["session-id-time"],
+                    "Name": "session-id-time"
+                }*/
+            ],
+            "domain": ".amazon.com"
+        },
+        "registration_data": {
+            "domain": "Device",
+            "app_version": "2.2.223830.0",
+            "device_type": "A2IVLV5VM2W81",
+            "device_name": "%FIRST_NAME%\u0027s%DUPE_STRATEGY_1ST%Echo Speaks",
+            "os_version": "11.4.1",
+            "device_serial": deviceSerial,
+            "device_model": "iPhone",
+            "app_name": "Echo Speaks",
+            "software_version": "1"
+        },
+        "auth_data": {
+            "access_token": loginData.accessToken
+        },
+        "user_context_map": {
+            "frc": cookies.frc
+        },
+        "requested_token_type": [
+            "bearer",
+            "mac_dms",
+            "website_cookies"
+        ]
+    };
+    for (let key in cookies) {
+        if (!cookies.hasOwnProperty(key)) continue;
+        registerData.cookies.website_cookies.push({
+            "Value": cookies[key],
+            "Name": key
+        });
+    }
 
     let options = {
-      host: 'alexa.amazon.com',
-      path: '/api/users/me?platform=ios&version=2.2.223830.0',
-      method: 'GET',
-      headers: {
-        'User-Agent': 'AmazonWebView/Amazon Alexa/2.2.223830.0/iOS/11.4.1/iPhone',
-        'Accept-Language': _options.acceptLanguage,
-        'Accept-Charset': 'utf-8',
-        'Connection': 'keep-alive',
-        'Accept': 'application/json',
-        'Cookie': Cookie
-      }
-    };
-    _options.logger && _options.logger('Alexa-Cookie: Get User data');
-    _options.logger && _options.logger(JSON.stringify(options));
-    request(options, (error, response, body) => {
-      if (error) {
-        callback && callback(error, null);
-        return;
-      }
-      try {
-        if (typeof body !== 'object') body = JSON.parse(body);
-      } catch (err) {
-        _options.logger && _options.logger('Get User data Response: ' + JSON.stringify(body));
-        callback && callback(err, null);
-        return;
-      }
-      _options.logger && _options.logger('Get User data Response: ' + JSON.stringify(body));
-
-      Cookie = addCookies(Cookie, response.headers);
-
-      if (body.marketPlaceDomainName) {
-        const pos = body.marketPlaceDomainName.indexOf('.');
-        if (pos !== -1) _options.amazonPage = body.marketPlaceDomainName.substr(pos + 1);
-      }
-      loginData.amazonPage = _options.amazonPage;
-
-      loginData.loginCookie = Cookie;
-      Cookie = ''; // Reset because we are switching domains
-      /*
-          Token Exchange to Amazon Country Page
-      */
-
-      const exchangeParams = {
-        'di.os.name': 'iOS',
-        'app_version': '2.2.223830.0',
-        'domain': '.' + loginData.amazonPage,
-        'source_token': loginData.refreshToken,
-        'requested_token_type': 'auth_cookies',
-        'source_token_type': 'refresh_token',
-        'di.hw.version': 'iPhone',
-        'di.sdk.version': '6.10.0',
-        'cookies': Buffer.from('{„cookies“:{".' + loginData.amazonPage + '":[]}}').toString('base64'),
-        'app_name': 'Amazon Alexa',
-        'di.os.version': '11.4.1'
-      };
-      let options = {
-        host: 'www.' + loginData.amazonPage,
-        path: '/ap/exchangetoken',
+        host: 'api.amazon.com',
+        path: '/auth/register',
         method: 'POST',
         headers: {
-          'User-Agent': 'AmazonWebView/Amazon Alexa/2.2.223830.0/iOS/11.4.1/iPhone',
-          'Accept-Language': _options.acceptLanguage,
-          'Accept-Charset': 'utf-8',
-          'Connection': 'keep-alive',
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': '*/*'
+            'User-Agent': 'AmazonWebView/Amazon Alexa/2.2.223830.0/iOS/11.4.1/iPhone',
+            'Accept-Language': _options.acceptLanguage,
+            'Accept-Charset': 'utf-8',
+            'Connection': 'keep-alive',
+            'Content-Type': 'application/json',
+            'Cookie': loginData.loginCookie,
+            'Accept': '*/*',
+            'x-amzn-identity-auth-domain': 'api.amazon.com'
         },
-        body: querystring.stringify(exchangeParams, null, null, {
-          encodeURIComponent: encodeURIComponent
-        })
-      };
-      _options.logger && _options.logger('Alexa-Cookie: Exchange tokens');
-      _options.logger && _options.logger(JSON.stringify(options));
-
-      request(options, (error, response, body) => {
+        body: JSON.stringify(registerData)
+    };
+    _options.logger && _options.logger('Alexa-Cookie: Register App');
+    _options.logger && _options.logger(JSON.stringify(options));
+    request(options, (error, response, body) => {
         if (error) {
-          callback && callback(error, null);
-          return;
+            callback && callback(error, null);
+            return;
         }
         try {
-          if (typeof body !== 'object') body = JSON.parse(body);
+            if (typeof body !== 'object') body = JSON.parse(body);
         } catch (err) {
-          _options.logger && _options.logger('Exchange Token Response: ' + JSON.stringify(body));
-          callback && callback(err, null);
-          return;
-        }
-        _options.logger && _options.logger('Exchange Token Response: ' + JSON.stringify(body));
-
-        if (!body.response || !body.response.tokens || !body.response.tokens.cookies) {
-          callback && callback(new Error('No cookies in Exchange response'), null);
-          return;
-        }
-        if (!body.response.tokens.cookies['.' + loginData.amazonPage]) {
-          callback && callback(new Error('No cookies for ' + loginData.amazonPage + ' in Exchange response'), null);
-          return;
-        }
-
-        Cookie = addCookies(Cookie, response.headers);
-        const cookies = cookieTools.parse(Cookie);
-        body.response.tokens.cookies['.' + loginData.amazonPage].forEach((cookie) => {
-          if (cookies[cookie.Name] && cookies[cookie.Name] !== cookie.Value) {
-            _options.logger && _options.logger('Alexa-Cookie: Update Cookie ' + cookie.Name + ' = ' + cookie.Value);
-          } else if (!cookies[cookie.Name]) {
-            _options.logger && _options.logger('Alexa-Cookie: Add Cookie ' + cookie.Name + ' = ' + cookie.Value);
-          }
-          cookies[cookie.Name] = cookie.Value;
-
-        });
-        let localCookie = '';
-        for (let name in cookies) {
-          if (!cookies.hasOwnProperty(name)) continue;
-          localCookie += name + '=' + cookies[name] + '; ';
-        }
-        loginData.localCookie = localCookie.replace(/[; ]*$/, '');
-
-        getCSRFFromCookies(loginData.localCookie, _options, (err, resData) => {
-          if (err) {
-            callback && callback(new Error('Error getting csrf for ' + loginData.amazonPage), null);
+            _options.logger && _options.logger('Register App Response: ' + JSON.stringify(body));
+            callback && callback(err, null);
             return;
-          }
-          loginData.localCookie = resData.cookie;
-          loginData.csrf = resData.csrf;
-          delete loginData.accessToken;
-          _options.logger && _options.logger('Final Registraton Result: ' + JSON.stringify(loginData));
-          callback && callback(null, loginData);
+        }
+        _options.logger && _options.logger('Register App Response: ' + JSON.stringify(body));
+
+        if (!body.response || !body.response.success || !body.response.success.tokens || !body.response.success.tokens.bearer) {
+            callback && callback(new Error('No tokens in Register response'), null);
+            return;
+        }
+        Cookie = addCookies(Cookie, response.headers);
+        loginData.refreshToken = body.response.success.tokens.bearer.refresh_token;
+        loginData.tokenDate = Date.now();
+
+
+        /*
+            Get Amazon Marketplace Country
+        */
+
+        let options = {
+            host: 'alexa.amazon.com',
+            path: '/api/users/me?platform=ios&version=2.2.223830.0',
+            method: 'GET',
+            headers: {
+                'User-Agent': 'AmazonWebView/Amazon Alexa/2.2.223830.0/iOS/11.4.1/iPhone',
+                'Accept-Language': _options.acceptLanguage,
+                'Accept-Charset': 'utf-8',
+                'Connection': 'keep-alive',
+                'Accept': 'application/json',
+                'Cookie': Cookie
+            }
+        };
+        _options.logger && _options.logger('Alexa-Cookie: Get User data');
+        _options.logger && _options.logger(JSON.stringify(options));
+        request(options, (error, response, body) => {
+            if (error) {
+                callback && callback(error, null);
+                return;
+            }
+            try {
+                if (typeof body !== 'object') body = JSON.parse(body);
+            } catch (err) {
+                _options.logger && _options.logger('Get User data Response: ' + JSON.stringify(body));
+                callback && callback(err, null);
+                return;
+            }
+            _options.logger && _options.logger('Get User data Response: ' + JSON.stringify(body));
+
+            Cookie = addCookies(Cookie, response.headers);
+
+            if (body.marketPlaceDomainName) {
+                const pos = body.marketPlaceDomainName.indexOf('.');
+                if (pos !== -1) _options.amazonPage = body.marketPlaceDomainName.substr(pos + 1);
+            }
+            loginData.amazonPage = _options.amazonPage;
+
+            loginData.loginCookie = Cookie;
+            Cookie = ''; // Reset because we are switching domains
+            /*
+                Token Exchange to Amazon Country Page
+            */
+
+            const exchangeParams = {
+                'di.os.name': 'iOS',
+                'app_version': '2.2.223830.0',
+                'domain': '.' + loginData.amazonPage,
+                'source_token': loginData.refreshToken,
+                'requested_token_type': 'auth_cookies',
+                'source_token_type': 'refresh_token',
+                'di.hw.version': 'iPhone',
+                'di.sdk.version': '6.10.0',
+                'cookies': Buffer.from('{„cookies“:{".' + loginData.amazonPage + '":[]}}').toString('base64'),
+                'app_name': 'Amazon Alexa',
+                'di.os.version': '11.4.1'
+            };
+            let options = {
+                host: 'www.' + loginData.amazonPage,
+                path: '/ap/exchangetoken',
+                method: 'POST',
+                headers: {
+                    'User-Agent': 'AmazonWebView/Amazon Alexa/2.2.223830.0/iOS/11.4.1/iPhone',
+                    'Accept-Language': _options.acceptLanguage,
+                    'Accept-Charset': 'utf-8',
+                    'Connection': 'keep-alive',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Accept': '*/*'
+                },
+                body: querystring.stringify(exchangeParams, null, null, {
+                    encodeURIComponent: encodeURIComponent
+                })
+            };
+            _options.logger && _options.logger('Alexa-Cookie: Exchange tokens');
+            _options.logger && _options.logger(JSON.stringify(options));
+
+            request(options, (error, response, body) => {
+                if (error) {
+                    callback && callback(error, null);
+                    return;
+                }
+                try {
+                    if (typeof body !== 'object') body = JSON.parse(body);
+                } catch (err) {
+                    _options.logger && _options.logger('Exchange Token Response: ' + JSON.stringify(body));
+                    callback && callback(err, null);
+                    return;
+                }
+                _options.logger && _options.logger('Exchange Token Response: ' + JSON.stringify(body));
+
+                if (!body.response || !body.response.tokens || !body.response.tokens.cookies) {
+                    callback && callback(new Error('No cookies in Exchange response'), null);
+                    return;
+                }
+                if (!body.response.tokens.cookies['.' + loginData.amazonPage]) {
+                    callback && callback(new Error('No cookies for ' + loginData.amazonPage + ' in Exchange response'), null);
+                    return;
+                }
+
+                Cookie = addCookies(Cookie, response.headers);
+                const cookies = cookieTools.parse(Cookie);
+                body.response.tokens.cookies['.' + loginData.amazonPage].forEach((cookie) => {
+                    if (cookies[cookie.Name] && cookies[cookie.Name] !== cookie.Value) {
+                        _options.logger && _options.logger('Alexa-Cookie: Update Cookie ' + cookie.Name + ' = ' + cookie.Value);
+                    } else if (!cookies[cookie.Name]) {
+                        _options.logger && _options.logger('Alexa-Cookie: Add Cookie ' + cookie.Name + ' = ' + cookie.Value);
+                    }
+                    cookies[cookie.Name] = cookie.Value;
+
+                });
+                let localCookie = '';
+                for (let name in cookies) {
+                    if (!cookies.hasOwnProperty(name)) continue;
+                    localCookie += name + '=' + cookies[name] + '; ';
+                }
+                loginData.localCookie = localCookie.replace(/[; ]*$/, '');
+
+                getCSRFFromCookies(loginData.localCookie, _options, (err, resData) => {
+                    if (err) {
+                        callback && callback(new Error('Error getting csrf for ' + loginData.amazonPage), null);
+                        return;
+                    }
+                    loginData.localCookie = resData.cookie;
+                    loginData.csrf = resData.csrf;
+                    delete loginData.accessToken;
+                    _options.logger && _options.logger('Final Registraton Result: ' + JSON.stringify(loginData));
+                    callback && callback(null, loginData);
+                });
+            });
         });
-      });
     });
-  });
 }
 
 function refreshAlexaCookie(__options, callback) {
-  if (!__options || !__options.formerRegistrationData || !__options.formerRegistrationData.loginCookie || !__options.formerRegistrationData.refreshToken) {
-    callback && callback(new Error('No former registration data provided for Cookie Refresh'), null);
-    return;
-  }
-
-  if (typeof __options === 'function') {
-    callback = __options;
-    __options = {};
-  }
-
-  _options = __options;
-
-  __options.proxyOnly = true;
-
-  initConfig();
-
-  const refreshData = {
-    "app_name": "Echo Speaks",
-    "app_version": "2.2.223830.0",
-    "di.sdk.version": "6.10.0",
-    "source_token": _options.formerRegistrationData.refreshToken,
-    "package_name": "com.amazon.echo",
-    "di.hw.version": "iPhone",
-    "platform": "iOS",
-    "requested_token_type": "access_token",
-    "source_token_type": "refresh_token",
-    "di.os.name": "iOS",
-    "di.os.version": "11.4.1",
-    "current_version": "6.10.0"
-  };
-
-  let options = {
-    host: 'api.amazon.com',
-    path: '/auth/token',
-    method: 'POST',
-    headers: {
-      'User-Agent': 'AmazonWebView/Amazon Alexa/2.2.223830.0/iOS/11.4.1/iPhone',
-      'Accept-Language': _options.acceptLanguage,
-      'Accept-Charset': 'utf-8',
-      'Connection': 'keep-alive',
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Cookie': _options.formerRegistrationData.loginCookie,
-      'Accept': 'application/json',
-      'x-amzn-identity-auth-domain': 'api.amazon.com'
-    },
-    body: querystring.stringify(refreshData)
-  };
-  Cookie = _options.formerRegistrationData.loginCookie;
-  _options.logger && _options.logger('Alexa-Cookie: Refresh Token');
-  _options.logger && _options.logger(JSON.stringify(options));
-  request(options, (error, response, body) => {
-    if (error) {
-      callback && callback(error, null);
-      return;
+    if (!__options || !__options.formerRegistrationData || !__options.formerRegistrationData.loginCookie || !__options.formerRegistrationData.refreshToken) {
+        callback && callback(new Error('No former registration data provided for Cookie Refresh'), null);
+        return;
     }
-    try {
-      if (typeof body !== 'object') body = JSON.parse(body);
-    } catch (err) {
-      _options.logger && _options.logger('Refresh Token Response: ' + JSON.stringify(body));
-      callback && callback(err, null);
-      return;
-    }
-    _options.logger && _options.logger('Refresh Token Response: ' + JSON.stringify(body));
 
-    _options.formerRegistrationData.loginCookie = addCookies(_options.formerRegistrationData.loginCookie, response.headers);
-
-    if (!body.access_token) {
-      callback && callback(new Error('No new access token in Refresh Token response'), null);
-      return;
+    if (typeof __options === 'function') {
+        callback = __options;
+        __options = {};
     }
-    _options.formerRegistrationData.loginCookie = addCookies(Cookie, response.headers);
-    _options.formerRegistrationData.accessToken = body.access_token;
-    handleTokenRegistration(_options, _options.formerRegistrationData, callback);
-  });
+
+    _options = __options;
+
+    __options.proxyOnly = true;
+
+    initConfig();
+
+    const refreshData = {
+        "app_name": "Echo Speaks",
+        "app_version": "2.2.223830.0",
+        "di.sdk.version": "6.10.0",
+        "source_token": _options.formerRegistrationData.refreshToken,
+        "package_name": "com.amazon.echo",
+        "di.hw.version": "iPhone",
+        "platform": "iOS",
+        "requested_token_type": "access_token",
+        "source_token_type": "refresh_token",
+        "di.os.name": "iOS",
+        "di.os.version": "11.4.1",
+        "current_version": "6.10.0"
+    };
+
+    let options = {
+        host: 'api.amazon.com',
+        path: '/auth/token',
+        method: 'POST',
+        headers: {
+            'User-Agent': 'AmazonWebView/Amazon Alexa/2.2.223830.0/iOS/11.4.1/iPhone',
+            'Accept-Language': _options.acceptLanguage,
+            'Accept-Charset': 'utf-8',
+            'Connection': 'keep-alive',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Cookie': _options.formerRegistrationData.loginCookie,
+            'Accept': 'application/json',
+            'x-amzn-identity-auth-domain': 'api.amazon.com'
+        },
+        body: querystring.stringify(refreshData)
+    };
+
+    Cookie = _options.formerRegistrationData.loginCookie;
+    _options.logger && _options.logger('Alexa-Cookie: Refresh Token');
+    _options.logger && _options.logger(JSON.stringify(options));
+    request(options, (error, response, body) => {
+        // console.log('request: ', request);
+        if (error) {
+            callback && callback(error, null);
+            return;
+        }
+        try {
+            if (typeof body !== 'object') body = JSON.parse(body);
+        } catch (err) {
+            _options.logger && _options.logger('Refresh Token Response: ' + JSON.stringify(body));
+            callback && callback(err, null);
+            return;
+        }
+        _options.logger && _options.logger('Refresh Token Response: ' + JSON.stringify(body));
+
+        _options.formerRegistrationData.loginCookie = addCookies(_options.formerRegistrationData.loginCookie, response.headers);
+
+        if (!body.access_token) {
+            callback && callback(new Error('No new access token in Refresh Token response'), null);
+            return;
+        }
+        _options.formerRegistrationData.loginCookie = addCookies(Cookie, response.headers);
+        _options.formerRegistrationData.accessToken = body.access_token;
+        handleTokenRegistration(_options, _options.formerRegistrationData, callback);
+    });
 }
 
 
 function stopProxyServer(callback) {
-  if (proxyServer) {
-    if (webApp) {
-      console.log('removing path');
-      removeRoute(webApp, '/proxy');
-      // webApp = null;
-    } else {
-      proxyServer.close(() => {
-        callback && callback();
-      });
+    if (proxyServer) {
+        if (webApp) {
+            console.log('removing path');
+            removeRoute(webApp, '/proxy');
+            // webApp = null;
+        } else {
+            proxyServer.close(() => {
+                callback && callback();
+            });
+        }
+        proxyServer = null;
     }
-    proxyServer = null;
-  }
 }
 
 module.exports.generateAlexaCookie = generateAlexaCookie;
