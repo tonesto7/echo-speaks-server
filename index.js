@@ -9,15 +9,15 @@ const bodyParser = require('body-parser');
 const os = require('os');
 // const alexaCookie = require('./alexa-cookie/alexa-cookie');
 const editJsonFile = require("edit-json-file", {
-    autosave: true
+  autosave: true
 });
-const dataFolder = os.homedir() + '/.echo-speaks';
+const dataFolder = os.homedir();
 const configFile = editJsonFile(dataFolder + '/es_config.json');
 const sessionFile = editJsonFile(dataFolder + '/session.json');
 const fs = require('fs');
 const webApp = express();
 const urlencodedParser = bodyParser.urlencoded({
-    extended: false
+  extended: false
 });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 sessionFile.save();
@@ -42,53 +42,65 @@ runTimeData.eventCount = 0;
 runTimeData.echoDevices = {};
 
 function initConfig() {
-    return new Promise(function(resolve, reject) {
-        // logger.debug('dataFolder: ' + dataFolder);
-        // Create the log directory if it does not exist
-        if (!fs.existsSync(dataFolder)) {
-            fs.mkdirSync(dataFolder);
-        }
-        if (!fs.existsSync(dataFolder + '/logs')) {
-            fs.mkdirSync(dataFolder + '/logs');
-        }
-        resolve(loadConfig());
-    });
+  return new Promise(function(resolve, reject) {
+    // logger.debug('dataFolder: ' + dataFolder);
+    // Create the log directory if it does not exist
+    if (!fs.existsSync(dataFolder)) {
+      fs.mkdirSync(dataFolder);
+    }
+    if (!fs.existsSync(dataFolder + '/logs')) {
+      fs.mkdirSync(dataFolder + '/logs');
+    }
+    resolve(loadConfig());
+  });
 }
 
 function loadConfig() {
-    configData = configFile.get() || {};
-    // console.log(configData);
-    if (!configData.settings) {
-        configData.settings = {};
-    }
-    if (process.env.hostUrl) {
-        configFile.set('settings.hostUrl', process.env.hostUrl);
-    }
-    configFile.set('settings.useHeroku', (forceHeroku || process.env.useHeroku === true || process.env.useHeroku === 'true'));
-    configFile.set('settings.amazonDomain', process.env.amazonDomain || (configData.settings.amazonDomain || 'amazon.com'));
-    configFile.set('settings.smartThingsUrl', process.env.smartThingsUrl || configData.settings.smartThingsUrl);
-    if (process.env.serviceDebug === true || process.env.serviceDebug === 'true') console.log('** SERVICE DEBUG IS ACTIVE **');
-    configFile.set('settings.serviceDebug', (process.env.serviceDebug === true || process.env.serviceDebug === 'true'));
-    configFile.set('settings.serviceTrace', (process.env.serviceTrace === true || process.env.serviceTrace === 'true'));
-    //   configFile.set('settings.serviceDebug', true);
+  configData = configFile.get() || {};
+  // console.log(configData);
+  if (!configData.settings) {
+    configData.settings = {};
+  }
+  if (process.env.hostUrl) {
+    configFile.set('settings.hostUrl', process.env.hostUrl);
+  }
+  configFile.set('settings.useHeroku', (forceHeroku || process.env.useHeroku === true || process.env.useHeroku === 'true'));
+  configFile.set('settings.amazonDomain', process.env.amazonDomain || (configData.settings.amazonDomain || 'amazon.com'));
+  configFile.set('settings.hubPlatform', process.env.hubPlatform || (configData.settings.hubPlatform || 'SmartThings'));
+  configFile.set('settings.appCallbackUrl', (process.env.appCallbackUrl || configData.settings.appCallbackUrl || (process.env.smartThingsUrl !== null ? process.env.smartThingsUrl : configData.settings.smartThingsUrl)));
+  if (process.env.serviceDebug === true || process.env.serviceDebug === 'true') console.log('** SERVICE DEBUG IS ACTIVE **');
+  configFile.set('settings.serviceDebug', (process.env.serviceDebug === true || process.env.serviceDebug === 'true'));
+  configFile.set('settings.serviceTrace', (process.env.serviceTrace === true || process.env.serviceTrace === 'true'));
+  configFile.set('settings.regionLocale', (process.env.regionLocale || (configData.settings.regionLocale || 'en-US'))),
+    //     configFile.set('settings.serviceDebug', true);
     //   configFile.set('settings.serviceTrace', true);
     configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
-    configFile.set('settings.refreshSeconds', process.env.refreshSeconds ? parseInt(process.env.refreshSeconds) : (configData.settings.refreshSeconds || 60));
-    if (!configData.state) {
-        configData.state = {};
-    }
-    configFile.set('state.scriptVersion', appVer);
-    configFile.save();
-    configData = configFile.get();
-    return true;
+  if (!configData.state) {
+    configData.state = {};
+  }
+  configFile.set('state.scriptVersion', appVer);
+  configFile.save();
+  configData = configFile.get();
+  return true;
 }
+
+const getLocalHost = function(noPort = false) {
+    return `${getIPAddress()}${(noPort || configData.settings.useHeroku) ? '' : `:${configData.settings.serverPort}`}`;
+};
+
+const getProtoPrefix = function() {
+    return `${configData.settings.useHeroku ? 'https' : 'http'}`;
+};
 
 function startWebConfig() {
     return new Promise(function(resolve, reject) {
         try {
             webApp.listen(configData.settings.serverPort, function() {
-                logger.info('** Echo Speaks Config Service (v' + appVer + ') is Running at (IP: ' + getIPAddress() + ' | Port: ' + configData.settings.serverPort + ') | ProcessId: ' + process.pid + ' **');
+                logger.info(`** Echo Speaks Config Service (v${appVer}) is Running at (IP: ${getIPAddress()} | Port: ${configData.settings.serverPort}) | ProcessId: ${process.pid} **`);
+                logger.info(`** To Signin to Amazon please open your browser to: (${getProtoPrefix()}://${getLocalHost()}) **`);
+                logger.info(`** On Heroku: (${configData.settings.useHeroku}) **`);
             });
+            //   }
             webApp.use(function(req, res, next) {
                 res.header("Access-Control-Allow-Origin", "*");
                 res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
@@ -140,16 +152,17 @@ function startWebConfig() {
                 if (req.headers.cookiedata) {
                     let cData = JSON.parse(req.headers.cookiedata);
                     // console.log(cData);
-                    sessionFile.set('cookie', cData.cookie);
-                    sessionFile.set('csrf', cData.csrf);
+                    sessionFile.set('cookieData', {
+                        localCookie: cData.cookie,
+                        csrf: cData.csrf
+                    });
                     saveFile = true;
                 };
                 if (saveFile) {
                     sessionFile.save();
                     sessionData = sessionFile.get();
                     logger.debug('** Cookie Settings File Updated via Manual Entry **');
-                    // if (configData.settings.useHeroku === true) {
-                    sendCookiesToST(configData.settings.smartThingsUrl ? String(configData.settings.smartThingsUrl).replace("/receiveData?", "/cookie?") : null, sessionData.cookie, sessionData.csrf)
+                    sendCookiesToEndpoint((configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null), sessionData.cookieData)
                         .then(function(sendResp) {
                             if (sendResp) {
                                 res.send('done');
@@ -157,9 +170,7 @@ function startWebConfig() {
                                 res.send('failed');
                             }
                         });
-                    // } else {
-                    //     res.send('done');
-                    // }
+
                 } else {
                     res.send('failed');
                 }
@@ -177,15 +188,16 @@ function startWebConfig() {
             });
             webApp.get('/refreshCookie', urlencodedParser, function(req, res) {
                 logger.verbose('refreshCookie request received');
+                console.log("cookieData: ", runTimeData.savedConfig || null);
                 alexaCookie.refreshAlexaCookie({
                     formerRegistrationData: runTimeData.savedConfig.cookieData
                 }, (err, result) => {
                     if (result && Object.keys(result).length >= 2) {
-                        sendCookiesToST((configData.settings.smartThingsUrl ? String(configData.settings.smartThingsUrl).replace("/receiveData?", "/cookie?") : null), result);
+                        sendCookiesToEndpoint((configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null), result);
                         runTimeData.savedConfig.cookieData = result;
                         // console.log('RESULT: ' + err + ' / ' + JSON.stringify(result));
                         res.send({
-                            result: result
+                            result: JSON.stringify(result)
                         });
                     }
                 });
@@ -205,24 +217,13 @@ function startWebConfig() {
                     configFile.set('settings.password', req.headers.password);
                     saveFile = true;
                 };
-                if (req.headers.smartthingshubip) {
-                    configFile.set('settings.smartThingsHubIP', req.headers.smartthingshubip);
+                if (req.headers.appcallbackurl) {
+                    configFile.set('settings.appCallbackUrl', req.headers.appcallbackurl);
                     saveFile = true;
                 };
-                if (req.headers.smartthingsurl) {
-                    configFile.set('settings.smartThingsUrl', req.headers.smartthingsurl);
-                    saveFile = true;
-                };
-                if (req.headers.smartthingstoken) {
-                    configFile.set('settings.smartThingsToken', req.headers.smartthingstoken);
-                    saveFile = true;
-                };
-                if (req.headers.amazondomain) {
-                    configFile.set('settings.amazonDomain', req.headers.amazondomain);
-                    saveFile = true;
-                };
-                if (req.headers.refreshseconds) {
-                    configFile.set('settings.refreshSeconds', parseInt(req.headers.refreshseconds));
+                if (req.headers.hubplatform) {
+                    console.log('hubPlatform: ' + req.headers.hubplatform);
+                    configFile.set('settings.hubPlatform', req.headers.hubplatform);
                     saveFile = true;
                 };
                 if (req.headers.serverport) {
@@ -233,7 +234,6 @@ function startWebConfig() {
                     configFile.save();
                     const ls = loadConfig();
                     res.send('done');
-
                     configCheckOk()
                         .then(function(res) {
                             if (res) {
@@ -261,7 +261,7 @@ function startWebConfig() {
 let clearAuth = function() {
     return new Promise(resolve => {
         logger.verbose('got request for to clear authentication');
-        let clearUrl = configData.settings.smartThingsUrl ? String(configData.settings.smartThingsUrl).replace("/receiveData?", "/cookie?") : null;
+        let clearUrl = configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null;
         clearSession(clearUrl, configData.settings.useHeroku);
         configFile.set('state.loginProxyActive', true);
         configData.state.loginProxyActive = true;
@@ -273,10 +273,10 @@ let clearAuth = function() {
         configFile.save();
         resolve(true);
     });
-
 };
 
 function startWebServer(checkForCookie = false) {
+    const isHeroku = (configData.settings.useHeroku === true || configData.settings.useHeroku === 'true');
     const alexaOptions = {
         debug: (configData.settings.serviceDebug === true),
         trace: (configData.settings.serviceTrace === true),
@@ -287,10 +287,13 @@ function startWebServer(checkForCookie = false) {
         setupProxy: true,
         proxyOwnIp: getIPAddress(),
         proxyListenBind: '0.0.0.0',
-        useWebApp: true,
-        useHeroku: (configData.settings.useHeroku === true || configData.settings.useHeroku === 'true'),
+        protocolPrefix: isHeroku ? 'https' : 'http',
+        useHeroku: isHeroku,
         proxyHost: configData.settings.hostUrl,
-        stEndpoint: configData.settings.smartThingsUrl ? String(configData.settings.smartThingsUrl).replace("/receiveData?", "/cookie?") : null
+        proxyPort: configData.settings.serverPort,
+        proxyRootPath: isHeroku ? '/proxy' : '/proxy',
+        acceptLanguage: configData.settings.regionLocale,
+        callbackEndpoint: configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null
     };
 
     configFile.set('state.loginProxyActive', true);
@@ -300,13 +303,15 @@ function startWebServer(checkForCookie = false) {
     runTimeData.loginProxyActive = true;
     alexaLogin(undefined, undefined, alexaOptions, function(error, response, config) {
         runTimeData.alexaUrl = `https://alexa.${configData.settings.amazonDomain}`;
-        runTimeData.savedConfig = config;
+        if (config) {
+            runTimeData.savedConfig = config;
+        }
         // console.log('error:', error);
         if (response !== undefined && response !== "") {
             logger.debug('Alexa Login Status: ' + response);
         }
         sendServerDataToST();
-        console.log('response: ', response);
+        // console.log('response: ', response);
         if (response.startsWith('Login Successful') && config.devicesArray) {
             configFile.set('state.loginProxyActive', false);
             configData.state.loginProxyActive = false;
@@ -319,14 +324,17 @@ function startWebServer(checkForCookie = false) {
 }
 
 function sendServerDataToST() {
-    let url = configData.settings.smartThingsUrl;
+    let url = configData.settings.appCallbackUrl;
     return new Promise(resolve => {
         if (url) {
             let options = {
                 method: 'POST',
                 uri: url,
                 body: {
-                    version: appVer
+                    version: appVer,
+                    onHeroku: (configData.settings.useHeroku === true),
+                    isLocal: (configData.settings.useHeroku !== true),
+                    serverUrl: (configData.settings.useHeroku === true) ? null : `http://${getLocalHost()}`
                 },
                 json: true
             };
@@ -334,14 +342,14 @@ function sendServerDataToST() {
                 .then(function(resp) {
                     // console.log('resp:', resp);
                     if (resp) {
-                        logger.info(`** ServerVersion Sent to SmartThings Cloud Endpoint Successfully! **`);
+                        logger.info(`** ServerVersion Sent to ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
                         resolve(true);
                     } else {
                         resolve(false);
                     }
                 })
                 .catch(function(err) {
-                    logger.error("ERROR: Unable to send Server Version to SmartThings: " + err.message);
+                    logger.error(`ERROR: Unable to send Server Version to ${configData.settings.hubPlatform}: ` + err.message);
                     resolve(false);
                 });
         }
@@ -350,7 +358,7 @@ function sendServerDataToST() {
 
 function configCheckOk() {
     return new Promise(function(resolve) {
-        let res = (((configData.settings.useHeroku === true && !configData.settings.smartThingsUrl) || !configData.settings.amazonDomain || (!configData.settings.useHeroku && !configData.settings.smartThingsHubIP)) !== true);
+        let res = (((configData.settings.useHeroku === true && !configData.settings.appCallbackUrl) || !configData.settings.amazonDomain || (!configData.settings.useHeroku && !configData.settings.appCallbackUrl)) !== true);
         resolve(res);
     });
 };
@@ -363,11 +371,11 @@ initConfig()
                     configCheckOk()
                         .then(function(res) {
                             if (res === true) {
-                                if (configData.state.loginComplete === true || (configData.settings.hostUrl && configData.settings.smartThingsUrl)) {
+                                if (configData.state.loginComplete === true || (configData.settings.hostUrl && configData.settings.appCallbackUrl)) {
                                     logger.info('-- Echo Speaks Web Service Starting Up! Takes about 10 seconds before it\'s available... --');
-                                    startWebServer((configData.settings.useHeroku === true && configData.settings.smartThingsUrl !== undefined));
+                                    startWebServer((configData.settings.useHeroku === true && configData.settings.appCallbackUrl !== undefined));
                                 } else {
-                                    logger.info(`** Echo Speaks Web Service is Waiting for Amazon Login to Start... loginComplete: ${configData.state.loginComplete || undefined} | hostUrl: ${configData.settings.hostUrl || undefined} | smartThingsUrl: ${configData.settings.smartThingsUrl} **`);
+                                    logger.info(`** Echo Speaks Web Service is Waiting for Amazon Login to Start... loginComplete: ${configData.state.loginComplete || undefined} | hostUrl: ${configData.settings.hostUrl || undefined} | appCallbackUrl: ${configData.settings.appCallbackUrl} **`);
                                 }
                             } else {
                                 logger.error('Config Check Did Not Pass');
@@ -392,10 +400,10 @@ function alexaLogin(username, password, alexaOptions, callback) {
     getRemoteCookie(alexaOptions)
         .then(function(remoteCookies) {
             // console.log('remoteCookies: ', remoteCookies || undefined, 'keys: ', Object.keys(remoteCookies) || {});
-            if (remoteCookies !== undefined && Object.keys(remoteCookies).length > 0 && remoteCookies.cookieData) {
+            if (remoteCookies !== undefined && Object.keys(remoteCookies).length > 0 && remoteCookies.cookieData && remoteCookies.cookieData.localCookie && remoteCookies.cookieData.csrf) {
                 updSessionItem('cookieData', remoteCookies.cookieData);
                 config.cookieData = remoteCookies.cookieData;
-                callback(null, 'Login Successful (Retreived from ST)', config);
+                callback(null, `Login Successful (Retreived from ${configData.settings.hubPlatform})`, config);
             } else if (sessionData && sessionData.cookieData && Object.keys(sessionData.cookieData) >= 2) {
                 config.cookieData = sessionData.cookieData || {};
                 callback(null, 'Login Successful (Stored Session)', config);
@@ -404,7 +412,7 @@ function alexaLogin(username, password, alexaOptions, callback) {
                     //   console.log('generateAlexaCookie error: ', err);
                     //   console.log('generateAlexaCookie result: ', result);
                     if (err && (err.message.startsWith('Login unsuccessful') || err.message.startsWith('Amazon-Login-Error:') || err.message.startsWith(' You can try to get the cookie manually by opening'))) {
-                        logger.debug('Please complete Amazon login by going here: (http://' + alexaOptions.proxyHost + ':' + alexaOptions.serverPort + '/config)');
+                        logger.debug('Please complete Amazon login by going here: (http://' + alexaOptions.proxyHost + ':' + alexaOptions.proxyPort + '/config)');
                     } else if (err && !result) {
                         logger.error('generateAlexaCookie: ' + err.message);
                         callback(err, 'There was an error', null);
@@ -418,12 +426,13 @@ function alexaLogin(username, password, alexaOptions, callback) {
                             console.log('result: ', result);
                             updSessionItem('cookieData', result);
                             config.cookieData = result;
-                            sendCookiesToST(alexaOptions.stEndpoint, result);
+                            sendCookiesToEndpoint(alexaOptions.callbackEndpoint, result);
+                            alexaCookie.stopProxyServer();
                             callback(null, 'Login Successful', config);
                         } else {
                             callback(true, 'There was an error getting authentication', null);
-                            if (alexaOptions.stEndpoint) {
-                                clearSession(alexaOptions.stEndpoint);
+                            if (alexaOptions.callbackEndpoint) {
+                                clearSession(alexaOptions.callbackEndpoint);
                             }
                         }
                     }
@@ -450,7 +459,7 @@ var clearSession = function(url) {
     remSessionItem('csrf');
     remSessionItem('cookie');
     remSessionItem('cookieData');
-    delete runTimeData.savedConfig.cookieData;
+    if (runTimeData.savedConfig.cookieData) delete runTimeData.savedConfig.cookieData;
     if (url) {
         let options = {
             method: 'DELETE',
@@ -461,23 +470,23 @@ var clearSession = function(url) {
             .then(function(resp) {
                 // console.log('resp:', resp);
                 if (resp) {
-                    logger.info(`** Sent Remove Alexa Cookie Data Request to SmartThings Successfully! **`);
+                    logger.info(`** Sent Remove Alexa Cookie Data Request to ${configData.settings.hubPlatform} Successfully! **`);
                 }
             })
             .catch(function(err) {
-                logger.error("ERROR: Unable to send Alexa Cookie Data to SmartThings: " + err.message);
+                logger.error(`ERROR: Unable to send Alexa Cookie Data to ${configData.settings.hubPlatform}: ` + err.message);
             });
     }
 };
 
 function getRemoteCookie(alexaOptions) {
     return new Promise(resolve => {
-        if (alexaOptions.checkForCookie === false) {
-            resolve(undefined);
-        }
+        // if (alexaOptions.checkForCookie === false) {
+        //     resolve(undefined);
+        // }
         let config = {};
-        if (alexaOptions.stEndpoint) {
-            getCookiesFromST(alexaOptions.stEndpoint)
+        if (alexaOptions.callbackEndpoint) {
+            getCookiesFromEndpoint(alexaOptions.callbackEndpoint)
                 .then(function(data) {
                     if (data) {
                         updSessionItem('cookieData', data);
@@ -491,7 +500,7 @@ function getRemoteCookie(alexaOptions) {
     });
 };
 
-function sendCookiesToST(url, cookieData) {
+function sendCookiesToEndpoint(url, cookieData) {
     return new Promise(resolve => {
         if (url && cookieData) {
             let options = {
@@ -499,7 +508,10 @@ function sendCookiesToST(url, cookieData) {
                 uri: url,
                 body: {
                     cookieData: cookieData,
-                    version: appVer
+                    version: appVer,
+                    onHeroku: (configData.settings.useHeroku === true),
+                    isLocal: (configData.settings.useHeroku !== true),
+                    serverUrl: (configData.settings.useHeroku === true) ? null : `http://${getLocalHost()}`
                 },
                 json: true
             };
@@ -507,38 +519,40 @@ function sendCookiesToST(url, cookieData) {
                 .then(function(resp) {
                     // console.log('resp:', resp);
                     if (resp) {
-                        logger.info(`** Alexa Cookie Data sent to SmartThings Cloud Endpoint Successfully! **`);
+                        logger.info(`** Alexa Cookie Data sent to ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
                         resolve(true);
                     } else {
                         resolve(false);
                     }
                 })
                 .catch(function(err) {
-                    logger.error("ERROR: Unable to send Alexa Cookie Data to SmartThings: " + err.message);
+                    logger.error(`ERROR: Unable to send Alexa Cookie Data to ${configData.settings.hubPlatform}: ` + err.message);
                     resolve(false);
                 });
         }
     });
 };
 
-function getCookiesFromST(url) {
+function getCookiesFromEndpoint(url) {
     return new Promise(resolve => {
         reqPromise({
                 method: 'GET',
                 uri: url,
                 headers: {
-                    serverVersion: appVer
+                    serverVersion: appVer,
+                    onHeroku: (configData.settings.useHeroku === true),
+                    isLocal: (configData.settings.useHeroku !== true),
                 },
                 json: true
             })
             .then(function(resp) {
-                // console.log('getCookiesFromST resp: ', resp);
+                // console.log('getCookiesFromEndpoint resp: ', resp);
                 if (resp && Object.keys(resp).length >= 2)
-                    logger.info(`** Retrieved Alexa Cookie Data from SmartThings Cloud Endpoint Successfully! **`);
+                    logger.info(`** Retrieved Alexa Cookie Data from ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
                 resolve(resp);
             })
             .catch(function(err) {
-                logger.error("ERROR: Unable to retrieve Alexa Cookie Data from SmartThings: " + err.message);
+                logger.error(`ERROR: Unable to retrieve Alexa Cookie Data from ${configData.settings.hubPlatform}: ` + err.message);
                 resolve({});
             });
     });
@@ -654,7 +668,7 @@ process.on('uncaughtException', exitHandler.bind(null, {
 }));
 
 function exitHandler(options, exitCode) {
-    // alexaCookie.stopProxyServer();
+    alexaCookie.stopProxyServer();
     if (runTimeData.scheduledUpdatesActive) {
         // stopScheduledDataUpdates();
     }
