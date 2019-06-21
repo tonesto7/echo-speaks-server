@@ -3,8 +3,7 @@
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
-    "configurations": [
-        {
+    "configurations": [{
             "type": "node",
             "request": "launch",
             "name": "Launch Program",
@@ -33,8 +32,8 @@
             "request": "launch",
             "name": "Launch Chrome",
             "port": 9222,
-            "file": "${workspaceRoot}/website/index.html",
+            "file": "${workspaceRoot}/public/index.html",
             "sourceMaps": true
-        } 
+        }
     ]
 }

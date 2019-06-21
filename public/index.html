@@ -35,7 +35,7 @@
         }
         
         .btn-rounded {
-            border-radius: 50px!important;
+            border-radius: 50px !important;
         }
         
         form div label,
@@ -55,7 +55,7 @@
             <div class="card w-100 mb-3">
                 <div class="card-header deep-orange lighten-1 white-text w-100 text-center">Amazon Login</div>
                 <div id="loginInputDiv" class="card-body w-100">
-                    <div class="md-form mt-0">
+                    <div class="md-form my-2">
                         <i class="fas fa-user prefix"></i>
                         <input type="email" id="user" name="user" class="form-control" aria-describedby="emailHelpBlockMD">
                         <label for="user" data-error="wrong" data-success="right">Email</label>
@@ -63,7 +63,7 @@
                             Enter your Amazon login email.
                         </small>
                     </div>
-                    <div class="md-form">
+                    <div class="md-form my-2">
                         <i class="fas fa-lock prefix"></i>
                         <input type="password" id="password" name="password" class="form-control" aria-describedby="passwordHelpBlockMD">
                         <label for="password" data-error="wrong" data-success="right">Password</label>
@@ -86,8 +86,8 @@
             </div>
 
             <div id="statusCard" class="card w-100 mb-3">
-                <div class="card-header blue lighten-1 w-100 text-white text-center">Status Info</div>
-                <div class="card-body w-100">
+                <div class="card-header blue lighten-1 w-100 text-white text-center p-1">Status Info</div>
+                <div class="card-body w-100 py-2">
                     <div class="form-check">
                         <input type="checkbox" class="form-check-input" id="useHeroku" disabled>
                         <label class="form-check-label" for="useHeroku">Running on Heroku?</label>
@@ -106,10 +106,17 @@
                 </div>
             </div>
 
+            <div id="noticesCard" class="card w-100 mb-3">
+                <div class="card-header gray lighten-1 w-100 text-center p-1">Developer Notices</div>
+                <div class="card-body w-100 py-2">
+                    <ul id="noticesList" class="mb-0 px-2"></ul>
+                </div>
+            </div>
+
             <!-- Material input -->
             <div id="settingsCard" class="card w-100 mb-3">
-                <div class="card-header grey lighten-1 w-100 text-center">Required Settings</div>
-                <div class="card-body w-100">
+                <div class="card-header grey lighten-1 w-100 text-center p-1">Required Settings</div>
+                <div class="card-body w-100 py-2">
                     <!-- <div class="md-form mt-0">
                         <select id="amazonDomain" class="browser-default custom-select">
                             <option selected>Amazon Domain for your region</option>
@@ -130,7 +137,7 @@
                             Enter the IP Address xxx.xxx.xxx.xxx
                         </small>
                     </div> -->
-                    <div class="md-form mt-0">
+                    <div class="md-form my-2">
                         <select id="hubPlatform" class="browser-default custom-select">
                             <option value="Hubitat" selected>Hubitat</option>
                             <option value="SmartThings">SmartThings</option>
@@ -139,7 +146,7 @@
                             Select the hub platform
                         </small>
                     </div>
-                    <div class="md-form mt-0" id="localDivHubPort">
+                    <div class="md-form my-2" id="localDivHubPort">
                         <i class="fa fa-info prefix"></i>
                         <input type="text" id="serverPort" name="serverPort" class="form-control" aria-describedby="serverPortHelpBlockMD">
                         <label for="serverPort" data-error="wrong" data-success="right">Server Port</label>
@@ -148,7 +155,7 @@
                         </small>
                     </div>
 
-                    <div class="md-form" id="callbackDivUrl">
+                    <div class="md-form my-2" id="callbackDivUrl">
                         <i class="fa fa-at prefix"></i>
                         <input type="text" id="appCallbackUrl" name="appCallbackUrl" class="form-control" aria-describedby="appCallbackUrlHelpBlockMD">
                         <label for="appCallbackUrl" data-error="wrong" data-success="right">App Callback Url</label>
@@ -161,10 +168,10 @@
 
             <!-- Sign in button -->
             <div id="submitBtnDiv" class="text-center">
-                <button class="btn btn-success btn-rounded my-4" type="submit"><i class="fa fa-save mr-1"></i>Save Settings</button>
+                <button class="btn btn-success btn-rounded my-2" type="submit"><i class="fa fa-save mr-1"></i>Save Settings</button>
             </div>
             <div class="text-center">
-                <button id="manualCookieLink" class="btn btn-rounded text-dark my-4" type="submit"><i class="fa fa-cookie mr-1"></i></i>Manual Cookie Entry</button>
+                <button id="manualCookieLink" class="btn btn-rounded text-dark my-2" type="submit"><i class="fa fa-cookie mr-1"></i></i>Manual Cookie Entry</button>
             </div>
         </form>
     </div>
@@ -173,6 +180,7 @@
     <!-- Settings Form -->
     <script>
         // Get Root Page URL for Callback to Send Settings
+        let esGithubNotices = "https://raw.githubusercontent.com/tonesto7/echo-speaks/master/notices.json";
         let rootOrigin = window.location.origin;
         let rootHost = window.location.hostname;
 
@@ -192,6 +200,8 @@
         // $('#submitBtnDiv').hide();
         // $('#statusCard').hide();
         // $('[id^="callbackDiv"]').hide()
+
+
 
         var configData = {};
         $(document).ready(function() {
@@ -250,6 +260,19 @@
                         }
                     }
                 });
+            });
+
+            $.getJSON(esGithubNotices, function(noticeData) {
+                console.log(noticeData)
+                if (noticeData && noticeData.notices && Object.keys(noticeData.notices).length) {
+                    let html = ''
+                    for (const i in noticeData.notices) {
+                        html += '<li class="font-small">' + noticeData.notices[i] + '</li>'
+                    }
+                    $('#noticesList').html(html)
+                } else {
+                    $('#noticesList').html('<li class="font-small">All is well... No Issues to report...</li>')
+                }
             });
         });
 
