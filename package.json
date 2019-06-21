@@ -1,22 +1,20 @@
 {
     "name": "echo-speaks-server",
-    "version": "2.2.1",
+    "version": "2.2.2",
     "author": "Anthony Santilli",
-    "contributors": [
-        {
-            "name": "Apollon77",
-            "email": "ingo@fischer-ka.de"
-        }
-    ],
+    "contributors": [{
+        "name": "Apollon77",
+        "email": "ingo@fischer-ka.de"
+    }],
     "engines": {
         "node": "10.12.0"
     },
     "dependencies": {
-        "@types/underscore": "^1.8.9",
-        "body-parser": "^1.18.3",
+        "@types/underscore": "^1.9.0",
+        "body-parser": "^1.19.0",
         "dateformat": "^3.0.3",
         "edit-json-file": "^1.2.1",
-        "express": "^4.16.4",
+        "express": "^4.17.1",
         "express-remove-route": "1.0.0",
         "find-free-port": "^2.0.0",
         "getos": "^3.1.1",
@@ -29,10 +27,10 @@
         "extend": "^3.0.2",
         "querystring": "^0.2.0",
         "request": "^2.88.0",
-        "request-promise": "^4.2.2",
+        "request-promise": "^4.2.4",
         "underscore": "^1.9.1",
-        "winston": "^3.1.0",
-        "winston-daily-rotate-file": "^3.6.0"
+        "winston": "^3.2.1",
+        "winston-daily-rotate-file": "^3.9.0"
     },
     "repository": {
         "type": "git",
