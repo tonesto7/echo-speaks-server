@@ -6,10 +6,12 @@
         "name": "Apollon77",
         "email": "ingo@fischer-ka.de"
     },
-    "contributors": [{
-        "name": "Apollon77",
-        "email": "ingo@fischer-ka.de"
-    }],
+    "contributors": [
+        {
+            "name": "Apollon77",
+            "email": "ingo@fischer-ka.de"
+        }
+    ],
     "homepage": "https://github.com/Apollon77/alexa-cookie",
     "license": "MIT",
     "keywords": [
@@ -27,9 +29,9 @@
         "querystring": "^0.2.0"
     },
     "devDependencies": {
-        "mocha": "^6.1.4",
+        "mocha": "^6.2.0",
         "chai": "^4.2.0",
-        "@types/node": "^12.0.8"
+        "@types/node": "^12.6.8"
     },
     "scripts": {
         "test": "node node_modules/mocha/bin/mocha"
