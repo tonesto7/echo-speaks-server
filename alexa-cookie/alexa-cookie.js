@@ -551,6 +551,7 @@ function handleTokenRegistration(_options, loginData, callback) {
                     loginData.localCookie = resData.cookie;
                     loginData.csrf = resData.csrf;
                     delete loginData.accessToken;
+                    console.log('loginData: ', loginData);
                     _options.logger && _options.logger('Final Registraton Result: ' + JSON.stringify(loginData));
                     callback && callback(null, loginData);
                 });
