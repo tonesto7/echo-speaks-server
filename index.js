@@ -180,7 +180,7 @@ function startWebConfig() {
                 logger.verbose('got request for to clear authentication');
                 clearAuth()
                     .then(function() {
-                        runTimeData.savedConfig.cookieData = undefined;
+
                         startWebServer();
                         res.send({
                             result: 'Clear Complete'
