@@ -2,15 +2,17 @@
     "name": "echo-speaks-server",
     "version": "2.2.2",
     "author": "Anthony Santilli",
-    "contributors": [{
-        "name": "Apollon77",
-        "email": "ingo@fischer-ka.de"
-    }],
+    "contributors": [
+        {
+            "name": "Apollon77",
+            "email": "ingo@fischer-ka.de"
+        }
+    ],
     "engines": {
         "node": "10.12.0"
     },
     "dependencies": {
-        "@types/underscore": "^1.9.0",
+        "@types/underscore": "^1.9.2",
         "body-parser": "^1.19.0",
         "dateformat": "^3.0.3",
         "edit-json-file": "^1.2.1",
@@ -30,7 +32,7 @@
         "request-promise": "^4.2.4",
         "underscore": "^1.9.1",
         "winston": "^3.2.1",
-        "winston-daily-rotate-file": "^3.9.0"
+        "winston-daily-rotate-file": "^3.10.0"
     },
     "repository": {
         "type": "git",

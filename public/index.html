@@ -51,7 +51,10 @@
     <div style="margin: 0 auto; max-width: 500px;">
         <form class="p-5">
             <p class="h4 mb-0 text-center">Echo Speaks Service</p>
-            <p id="scriptVer" class="h5 mt-0 mb-4 text-center"></p>
+            <div class="mt-0 mb-2 text-center">
+                <p id="scriptVer" class="h5 my-0"></p>
+                <p id="verStatus" class="h5 my-0 red-text"></p>
+            </div>
             <div class="card w-100 mb-3">
                 <div class="card-header deep-orange lighten-1 white-text w-100 text-center">Amazon Login</div>
                 <div id="loginInputDiv" class="card-body w-100">
@@ -181,8 +184,10 @@
     <script>
         // Get Root Page URL for Callback to Send Settings
         let esGithubNotices = "https://raw.githubusercontent.com/tonesto7/echo-speaks/master/notices.json";
+        let esVersionInfo = "https://raw.githubusercontent.com/tonesto7/echo-speaks/master/appData2.json";
         let rootOrigin = window.location.origin;
         let rootHost = window.location.hostname;
+        let serverVer;
 
         function getChecked(name) {
             return ($(`#${name}`).prop("checked") === true);
@@ -216,6 +221,7 @@
                     }
                     if (key === 'scriptVersion') {
                         $('#scriptVer').text('v' + val);
+                        serverVer = val
                     }
                     if (key === 'loginComplete' && val === true) {
                         $('#loginInputDiv').hide();
@@ -269,9 +275,13 @@
                     for (const i in noticeData.notices) {
                         html += '<li class="font-small">' + noticeData.notices[i] + '</li>'
                     }
+
                     $('#noticesList').html(html)
                 } else {
                     $('#noticesList').html('<li class="font-small">All is well... No Issues to report...</li>')
+                }
+                if (noticeData && serverVer && noticeData.versions && noticeData.versions.server && serverVer !== noticeData.versions.server) {
+                    $('#verStatus').text(`(Update Available: v${noticeData.versions.server})`)
                 }
             });
         });
