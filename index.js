@@ -19,7 +19,7 @@ const webApp = express();
 const urlencodedParser = bodyParser.urlencoded({
     extended: false
 });
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+// process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 sessionFile.save();
 
 // These the config variables
@@ -195,7 +195,7 @@ function startWebConfig() {
                     if (result && Object.keys(result).length >= 2) {
                         sendCookiesToEndpoint((configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null), result);
                         runTimeData.savedConfig.cookieData = result;
-                        // console.log('RESULT: ' + err + ' / ' + JSON.stringify(result));
+                        console.log('RESULT: ' + err + ' / ' + JSON.stringify(result));
                         res.send({
                             result: JSON.stringify(result)
                         });

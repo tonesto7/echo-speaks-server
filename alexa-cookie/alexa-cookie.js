@@ -28,8 +28,9 @@ const defaultAcceptLanguage = 'en-US';
 
 const csrfOptions = [
     '/api/language',
+    '/spa/index.html',
     '/api/devices-v2/device?cached=false',
-    '/templates/oobe/d-device-pick.handlebars'
+    '/api/strings'
 ];
 
 let proxyServer;
@@ -214,7 +215,7 @@ function getCSRFFromCookies(cookie, _options, callback) {
             cookie = addCookies(cookie, response.headers);
             let ar = /csrf=([^;]+)/.exec(cookie);
             let csrf = ar ? ar[1] : undefined;
-            _options.logger && _options.logger('Alexa-Cookie: Result: csrf=' + csrf + ', Cookie=' + cookie);
+            _options.debug && console.log('Alexa-Cookie: Result: csrf=' + csrf + ', Cookie=' + cookie);
             if (!csrf && csrfUrls.length) {
                 csrfTry();
                 return;
