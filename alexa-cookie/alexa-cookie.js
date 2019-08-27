@@ -30,6 +30,7 @@ const csrfOptions = [
     '/api/language',
     '/spa/index.html',
     '/api/devices-v2/device?cached=false',
+    '/templates/oobe/d-device-pick.handlebars',
     '/api/strings'
 ];
 
