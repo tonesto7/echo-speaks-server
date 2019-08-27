@@ -7,7 +7,7 @@
         "email": "ingo@fischer-ka.de"
     }],
     "engines": {
-        "node": "10.12.0"
+        "node": "12.9.1"
     },
     "dependencies": {
         "@types/underscore": "^1.9.2",
@@ -38,6 +38,9 @@
     },
     "bugs": {
         "url": "https://github.com/tonesto7/echo-speaks-server/issues"
+    },
+    "scripts": {
+        "start": "npm index.js"
     },
     "main": "index.js",
     "readmeFilename": "readme.md",
