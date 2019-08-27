@@ -180,7 +180,6 @@ function startWebConfig() {
                 logger.verbose('got request for to clear authentication');
                 clearAuth()
                     .then(function() {
-
                         startWebServer();
                         res.send({
                             result: 'Clear Complete'
@@ -266,6 +265,7 @@ let clearAuth = function() {
         clearSession(clearUrl, configData.settings.useHeroku);
         configFile.set('state.loginProxyActive', true);
         configData.state.loginProxyActive = true;
+        runTimeData.savedConfig.cookieData = undefined;
         runTimeData.authenticated = false;
         configFile.set('state.loginComplete', false);
         configData.state.loginComplete = false;
