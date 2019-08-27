@@ -30,7 +30,7 @@ const csrfOptions = [
     '/api/language',
     '/spa/index.html',
     '/api/devices-v2/device?cached=false',
-    '/templates/oobe/d-device-pick.handlebars'
+    '/api/strings'
 ];
 
 let proxyServer;
@@ -215,7 +215,7 @@ function getCSRFFromCookies(cookie, _options, callback) {
             cookie = addCookies(cookie, response.headers);
             let ar = /csrf=([^;]+)/.exec(cookie);
             let csrf = ar ? ar[1] : undefined;
-            console.log('Alexa-Cookie: Result: csrf=' + csrf + ', Cookie=' + cookie);
+            _options.debug && console.log('Alexa-Cookie: Result: csrf=' + csrf + ', Cookie=' + cookie);
             if (!csrf && csrfUrls.length) {
                 csrfTry();
                 return;
@@ -552,7 +552,6 @@ function handleTokenRegistration(_options, loginData, callback) {
                     loginData.localCookie = resData.cookie;
                     loginData.csrf = resData.csrf;
                     delete loginData.accessToken;
-                    console.log('loginData: ', loginData);
                     _options.logger && _options.logger('Final Registraton Result: ' + JSON.stringify(loginData));
                     callback && callback(null, loginData);
                 });
