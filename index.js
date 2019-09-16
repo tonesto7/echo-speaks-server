@@ -388,7 +388,6 @@ function getGuardDataSupport(cookieData) {
                         let locDetails = details.locationDetails.locationDetails.Default_Location.amazonBridgeDetails.amazonBridgeDetails["LambdaBridge_AAA/OnGuardSmartHomeBridgeService"] || undefined;
                         if (locDetails && locDetails.applianceDetails && locDetails.applianceDetails.applianceDetails) {
                             console.log(locDetails.applianceDetails.applianceDetails);
-                            resolve(true)
                             let guardKey = Object.keys(locDetails.applianceDetails.applianceDetails).find(key => {
                                 key.startsWith("AAA_OnGuardSmartHomeBridgeService_");
                             });
