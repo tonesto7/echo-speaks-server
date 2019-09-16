@@ -302,12 +302,13 @@ function startWebServer(checkForCookie = false) {
     configFile.save();
     configData = configFile.get();
     runTimeData.loginProxyActive = true;
-    alexaLogin(undefined, undefined, alexaOptions, function(error, response, config) {
+    alexaLogin(undefined, undefined, alexaOptions, async function(error, response, config) {
         runTimeData.alexaUrl = `https://alexa.${configData.settings.amazonDomain}`;
         if (config) {
             console.log('config: ', config);
             runTimeData.savedConfig = config;
         }
+        let guardSupport = await getGuardDataSupport();
         // console.log('error:', error);
         if (response !== undefined && response !== "") {
             logger.debug('Alexa Login Status: ' + response);
