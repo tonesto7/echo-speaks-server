@@ -380,6 +380,7 @@ function getGuardDataSupport(cookieData) {
                 },
                 json: true
             };
+
             reqPromise(options)
                 .then(function(resp) {
                     // console.log('guardresp:', resp);
@@ -387,33 +388,38 @@ function getGuardDataSupport(cookieData) {
                         let details = JSON.parse(resp.networkDetail);
                         let locDetails = details.locationDetails.locationDetails.Default_Location.amazonBridgeDetails.amazonBridgeDetails["LambdaBridge_AAA/OnGuardSmartHomeBridgeService"] || undefined;
                         if (locDetails && locDetails.applianceDetails && locDetails.applianceDetails.applianceDetails) {
-                            console.log(locDetails.applianceDetails.applianceDetails);
-                            let guardKey = Object.keys(locDetails.applianceDetails.applianceDetails).find(key => {
-                                key.startsWith("AAA_OnGuardSmartHomeBridgeService_");
+                            let applKey = Object.keys(locDetails.applianceDetails.applianceDetails).filter(i => {
+                                return i.includes("AAA_OnGuardSmartHomeBridgeService_");
                             });
-                            console.log('guardKey: ', guardKey);
-                            let guardData = locDetails.applianceDetails.applianceDetails[guardKey]
-                            console.log('guardData: ', guardData);
-                            // log.debug "Guard: ${guardData}"
-                            if (guardData.modelName === "REDROCK_GUARD_PANEL") {
-                                sendGuardDataToEndpoint({
-                                    entityId: guardData.entityId,
-                                    applianceId: guardData.applianceId,
-                                    friendlyName: guardData.friendlyName,
-                                    supported: true
-                                });
-
+                            if (Object.keys(applKey).length >= 1) {
+                                let guardData = locDetails.applianceDetails.applianceDetails[applKey[0]]
+                                // console.log('guardData: ', guardData);
+                                if (guardData.modelName === "REDROCK_GUARD_PANEL") {
+                                    let gData = {
+                                        entityId: guardData.entityId,
+                                        applianceId: guardData.applianceId,
+                                        friendlyName: guardData.friendlyName,
+                                        supported: true
+                                    };
+                                    console.log(JSON.stringify(gData));
+                                    sendGuardDataToEndpoint(gData);
+                                    logger.info(`** Alexa Guard Data sent to ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
+                                    resolve(true);
+                                } else {
+                                    logger.error("getGuardDataSupport Error | No Guard Appliance Data found...")
+                                    resolve(false);
+                                }
                             } else {
-                                logError("checkGuardSupportResponse Error | No data received...")
+                                logger.error("getGuardDataSupport Error | No Guard Appliance Details found...")
+                                resolve(false);
                             }
+                        } else {
+                            logger.error("getGuardDataSupport Error | No Guard Appliance Location Data found...")
+                            resolve(false);
                         }
-                        console.log(locDetails);
-                        // logger.info(`** Guard Data sent to ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
-                        sendGuardDataToEndpoint({
-                            data: "nothing"
-                        });
-                        resolve(true);
+
                     } else {
+                        logger.error("getGuardDataSupport Error | No Guard Response Data Received...")
                         resolve(false);
                     }
                 })
@@ -421,6 +427,8 @@ function getGuardDataSupport(cookieData) {
                     logger.error(`ERROR: Unable to send Alexa Guard Data to ${configData.settings.hubPlatform}: ` + err.message);
                     resolve(false);
                 });
+        } else {
+            resolve(false)
         }
     });
 }
@@ -608,15 +616,15 @@ function sendCookiesToEndpoint(url, cookieData) {
 function getCookiesFromEndpoint(url) {
     return new Promise(resolve => {
         reqPromise({
-                method: 'GET',
-                uri: url,
-                headers: {
-                    serverVersion: appVer,
-                    onHeroku: (configData.settings.useHeroku === true),
-                    isLocal: (configData.settings.useHeroku !== true),
-                },
-                json: true
-            })
+            method: 'GET',
+            uri: url,
+            headers: {
+                serverVersion: appVer,
+                onHeroku: (configData.settings.useHeroku === true),
+                isLocal: (configData.settings.useHeroku !== true),
+            },
+            json: true
+        })
             .then(function(resp) {
                 // console.log('getCookiesFromEndpoint resp: ', resp);
                 if (resp && Object.keys(resp).length >= 2)
@@ -630,9 +638,9 @@ function getCookiesFromEndpoint(url) {
     });
 };
 
-function sendGuardDataToEndpoint(url, guardData) {
+function sendGuardDataToEndpoint(guardData) {
     return new Promise(resolve => {
-        let url = (configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/guardSupportData?") : null)
+        let url = (configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/agsData?") : null)
         if (url && guardData) {
             let options = {
                 method: 'POST',
