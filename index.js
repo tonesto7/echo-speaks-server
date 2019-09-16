@@ -452,7 +452,7 @@ function alexaLogin(username, password, alexaOptions, callback) {
                 let guardSupport = await getGuardDataSupport();
                 callback(null, 'Login Successful (Stored Session)', config);
             } else {
-                alexaCookie.generateAlexaCookie(username, password, alexaOptions, webApp, (err, result) => {
+                alexaCookie.generateAlexaCookie(username, password, alexaOptions, webApp, async (err, result) => {
                     //   console.log('generateAlexaCookie error: ', err);
                     //   console.log('generateAlexaCookie result: ', result);
                     if (err && (err.message.startsWith('Login unsuccessful') || err.message.startsWith('Amazon-Login-Error:') || err.message.startsWith(' You can try to get the cookie manually by opening'))) {
