@@ -147,6 +147,12 @@ function startWebConfig() {
                 // console.log(configData)
                 res.send(JSON.stringify(sessionFile.get() || {}));
             });
+            webApp.get('/guardSupportData', async function(req, res) {
+                await getGuardDataSupport()
+                res.send(JSON.stringify({
+                    status: "ok"
+                }));
+            });
             webApp.post('/cookieData', function(req, res) {
                 let saveFile = false;
                 if (req.headers.cookiedata) {
@@ -381,6 +387,8 @@ function getGuardDataSupport(cookieData) {
                         let details = JSON.parse(resp.networkDetail);
                         let locDetails = details.locationDetails.locationDetails.Default_Location.amazonBridgeDetails.amazonBridgeDetails["LambdaBridge_AAA/OnGuardSmartHomeBridgeService"] || undefined;
                         if (locDetails && locDetails.applianceDetails && locDetails.applianceDetails.applianceDetails) {
+                            console.log(locDetails.applianceDetails.applianceDetails);
+                            resolve(true)
                             let guardKey = locDetails.applianceDetails.applianceDetails.find((k, v) => {
                                 return k.startsWith("AAA_OnGuardSmartHomeBridgeService_")
                             });
