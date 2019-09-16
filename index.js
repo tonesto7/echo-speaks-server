@@ -359,12 +359,11 @@ function sendServerDataToST() {
 
 function getGuardDataSupport(cookieData) {
     return new Promise(resolve => {
-        if (cookieData || sessionData.cookieData) {
-            let cData = cookieData || sessionData.cookieData;
+        let cData = cookieData || sessionData.cookieData;
+        if (runTimeData.alexaUrl && cData) {
             let options = {
                 method: 'GET',
-                uri: runTimeData.alexaUrl,
-                path: '/api/phoenix',
+                uri: `${runTimeData.alexaUrl}/api/phoenix`,
                 query: {
                     'cached': true,
                     '_': new Date().getTime()
@@ -377,7 +376,7 @@ function getGuardDataSupport(cookieData) {
             };
             reqPromise(options)
                 .then(function(resp) {
-                    console.log('resp:', resp);
+                    console.log('guardresp:', resp);
                     if (resp && resp.networkDetail) {
                         let details = JSON.parse(resp.networkDetail);
                         let locDetails = details.locationDetails.locationDetails.Default_Location.amazonBridgeDetails.amazonBridgeDetails["LambdaBridge_AAA/OnGuardSmartHomeBridgeService"] || undefined;
