@@ -305,6 +305,7 @@ function startWebServer(checkForCookie = false) {
     alexaLogin(undefined, undefined, alexaOptions, function(error, response, config) {
         runTimeData.alexaUrl = `https://alexa.${configData.settings.amazonDomain}`;
         if (config) {
+            console.log('config: ', config);
             runTimeData.savedConfig = config;
         }
         // console.log('error:', error);
@@ -356,6 +357,42 @@ function sendServerDataToST() {
         }
     });
 };
+
+function getGuardDataSupport(cookieData) {
+    return new Promise(resolve => {
+        if (cookieData || sessionData.cookieData) {
+            let cData = cookieData || sessionData.cookieData;
+            let options = {
+                method: 'GET',
+                uri: runTimeData.alexaUrl,
+                path: '/api/phoenix',
+                query: {
+                    'cached': true,
+                    '_': new Date().getTime()
+                },
+                headers: {
+                    cookie: cData.localCookie,
+                    csrf: cData.csrf
+                },
+                json: true
+            };
+            reqPromise(options)
+                .then(function(resp) {
+                    console.log('resp:', resp);
+                    if (resp) {
+                        // logger.info(`** Guard Data sent to ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
+                        resolve(true);
+                    } else {
+                        resolve(false);
+                    }
+                })
+                .catch(function(err) {
+                    logger.error(`ERROR: Unable to send Alexa Cookie Data to ${configData.settings.hubPlatform}: ` + err.message);
+                    resolve(false);
+                });
+        }
+    });
+}
 
 function configCheckOk() {
     return new Promise(function(resolve) {
