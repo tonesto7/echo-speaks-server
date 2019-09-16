@@ -149,7 +149,7 @@ function startWebConfig() {
             });
             webApp.get('/agsData', async function(req, res) {
                 let resp = await getGuardDataSupport(true)
-                res.send(JSON.stringify(resp));
+                res.send(JSON.stringify(resp || { guardData: null }));
             });
             webApp.post('/cookieData', function(req, res) {
                 let saveFile = false;
@@ -324,7 +324,7 @@ function startWebServer(checkForCookie = false) {
             configData.state.loginComplete = true;
             configFile.save();
             logger.silly('Echo Speaks Alexa API is Actively Running at (IP: ' + getIPAddress() + ' | Port: ' + configData.settings.serverPort + ') | ProcessId: ' + process.pid);
-            await getGuardDataSupport();
+            //await getGuardDataSupport();
         }
     });
 }
