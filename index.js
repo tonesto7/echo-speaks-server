@@ -147,6 +147,10 @@ function startWebConfig() {
                 // console.log(configData)
                 res.send(JSON.stringify(sessionFile.get() || {}));
             });
+            webApp.get('/agsData', async function(req, res) {
+                let resp = await getGuardDataSupport()
+                res.send(JSON.stringify({ guardData: resp || null }));
+            });
             webApp.post('/cookieData', function(req, res) {
                 let saveFile = false;
                 if (req.headers.cookiedata) {
@@ -265,6 +269,7 @@ let clearAuth = function() {
         clearSession(clearUrl, configData.settings.useHeroku);
         configFile.set('state.loginProxyActive', true);
         configData.state.loginProxyActive = true;
+        runTimeData.savedConfig.cookieData = undefined;
         runTimeData.authenticated = false;
         configFile.set('state.loginComplete', false);
         configData.state.loginComplete = false;
@@ -301,7 +306,7 @@ function startWebServer(checkForCookie = false) {
     configFile.save();
     configData = configFile.get();
     runTimeData.loginProxyActive = true;
-    alexaLogin(undefined, undefined, alexaOptions, function(error, response, config) {
+    alexaLogin(undefined, undefined, alexaOptions, async function(error, response, config) {
         runTimeData.alexaUrl = `https://alexa.${configData.settings.amazonDomain}`;
         if (config) {
             runTimeData.savedConfig = config;
@@ -319,6 +324,7 @@ function startWebServer(checkForCookie = false) {
             configData.state.loginComplete = true;
             configFile.save();
             logger.silly('Echo Speaks Alexa API is Actively Running at (IP: ' + getIPAddress() + ' | Port: ' + configData.settings.serverPort + ') | ProcessId: ' + process.pid);
+            //await getGuardDataSupport();
         }
     });
 }
@@ -355,6 +361,72 @@ function sendServerDataToST() {
         }
     });
 };
+
+function getGuardDataSupport() {
+    return new Promise(resolve => {
+        if (runTimeData.alexaUrl && sessionData.cookieData) {
+            let options = {
+                method: 'GET',
+                uri: `${runTimeData.alexaUrl}/api/phoenix`,
+                query: {
+                    'cached': true,
+                    '_': new Date().getTime()
+                },
+                headers: {
+                    cookie: sessionData.cookieData.localCookie,
+                    csrf: sessionData.cookieData.csrf
+                },
+                json: true
+            };
+            reqPromise(options)
+                .then(function(resp) {
+                    // console.log('guardresp:', resp);
+                    if (resp && resp.networkDetail) {
+                        let details = JSON.parse(resp.networkDetail);
+                        let locDetails = details.locationDetails.locationDetails.Default_Location.amazonBridgeDetails.amazonBridgeDetails["LambdaBridge_AAA/OnGuardSmartHomeBridgeService"] || undefined;
+                        if (locDetails && locDetails.applianceDetails && locDetails.applianceDetails.applianceDetails) {
+                            let applKey = Object.keys(locDetails.applianceDetails.applianceDetails).filter(i => {
+                                return i.includes("AAA_OnGuardSmartHomeBridgeService_");
+                            });
+                            if (Object.keys(applKey).length >= 1) {
+                                let guardData = locDetails.applianceDetails.applianceDetails[applKey[0]]
+                                // console.log('guardData: ', guardData);
+                                if (guardData.modelName === "REDROCK_GUARD_PANEL") {
+                                    let gData = {
+                                        entityId: guardData.entityId,
+                                        applianceId: guardData.applianceId,
+                                        friendlyName: guardData.friendlyName,
+                                        supported: true
+                                    };
+                                    console.log(JSON.stringify(gData));
+                                    resolve(gData);
+                                } else {
+                                    logger.error("getGuardDataSupport Error | No Guard Appliance Data found...")
+                                    resolve(undefined);
+                                }
+                            } else {
+                                logger.error("getGuardDataSupport Error | No Guard Appliance Details found...")
+                                resolve(undefined);
+                            }
+                        } else {
+                            logger.error("getGuardDataSupport Error | No Guard Appliance Location Data found...")
+                            resolve(undefined);
+                        }
+
+                    } else {
+                        logger.error("getGuardDataSupport Error | No Guard Response Data Received...")
+                        resolve(undefined);
+                    }
+                })
+                .catch(function(err) {
+                    logger.error(`ERROR: Unable to send Alexa Guard Data to ${configData.settings.hubPlatform}: ` + err.message);
+                    resolve(undefined);
+                });
+        } else {
+            resolve(undefined);
+        }
+    });
+}
 
 function configCheckOk() {
     return new Promise(function(resolve) {
@@ -398,7 +470,7 @@ function alexaLogin(username, password, alexaOptions, callback) {
     config.alexaURL = alexaOptions.amazonPage;
 
     getRemoteCookie(alexaOptions)
-        .then(function(remoteCookies) {
+        .then(async function(remoteCookies) {
             // console.log('remoteCookies: ', remoteCookies || undefined, 'keys: ', Object.keys(remoteCookies) || {});
             if (remoteCookies !== undefined && Object.keys(remoteCookies).length > 0 && remoteCookies.cookieData && remoteCookies.cookieData.localCookie && remoteCookies.cookieData.csrf) {
                 updSessionItem('cookieData', remoteCookies.cookieData);
@@ -408,7 +480,7 @@ function alexaLogin(username, password, alexaOptions, callback) {
                 config.cookieData = sessionData.cookieData || {};
                 callback(null, 'Login Successful (Stored Session)', config);
             } else {
-                alexaCookie.generateAlexaCookie(username, password, alexaOptions, webApp, (err, result) => {
+                alexaCookie.generateAlexaCookie(username, password, alexaOptions, webApp, async (err, result) => {
                     //   console.log('generateAlexaCookie error: ', err);
                     //   console.log('generateAlexaCookie result: ', result);
                     if (err && (err.message.startsWith('Login unsuccessful') || err.message.startsWith('Amazon-Login-Error:') || err.message.startsWith(' You can try to get the cookie manually by opening'))) {
@@ -536,15 +608,15 @@ function sendCookiesToEndpoint(url, cookieData) {
 function getCookiesFromEndpoint(url) {
     return new Promise(resolve => {
         reqPromise({
-                method: 'GET',
-                uri: url,
-                headers: {
-                    serverVersion: appVer,
-                    onHeroku: (configData.settings.useHeroku === true),
-                    isLocal: (configData.settings.useHeroku !== true),
-                },
-                json: true
-            })
+            method: 'GET',
+            uri: url,
+            headers: {
+                serverVersion: appVer,
+                onHeroku: (configData.settings.useHeroku === true),
+                isLocal: (configData.settings.useHeroku !== true),
+            },
+            json: true
+        })
             .then(function(resp) {
                 // console.log('getCookiesFromEndpoint resp: ', resp);
                 if (resp && Object.keys(resp).length >= 2)

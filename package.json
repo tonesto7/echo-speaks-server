@@ -1,11 +1,13 @@
 {
     "name": "echo-speaks-server",
-    "version": "2.2.3",
+    "version": "2.3.0",
     "author": "Anthony Santilli",
-    "contributors": [{
-        "name": "Apollon77",
-        "email": "ingo@fischer-ka.de"
-    }],
+    "contributors": [
+        {
+            "name": "Apollon77",
+            "email": "ingo@fischer-ka.de"
+        }
+    ],
     "engines": {
         "node": "12.9.1"
     },
@@ -18,7 +20,7 @@
         "express-remove-route": "1.0.0",
         "find-free-port": "^2.0.0",
         "getos": "^3.1.1",
-        "http-proxy-middleware": "^0.19.1",
+        "http-proxy-middleware": "^0.20.0",
         "http-proxy-response-rewrite": "^0.0.1",
         "https": "^1.0.0",
         "moment": "^2.24.0",
@@ -30,7 +32,7 @@
         "request-promise": "^4.2.4",
         "underscore": "^1.9.1",
         "winston": "^3.2.1",
-        "winston-daily-rotate-file": "^3.10.0"
+        "winston-daily-rotate-file": "^4.1.0"
     },
     "repository": {
         "type": "git",
