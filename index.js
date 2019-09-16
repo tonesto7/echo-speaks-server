@@ -379,7 +379,10 @@ function getGuardDataSupport(cookieData) {
             reqPromise(options)
                 .then(function(resp) {
                     console.log('resp:', resp);
-                    if (resp) {
+                    if (resp && resp.networkDetail) {
+                        let details = JSON.parse(resp.networkDetail);
+                        let locDetails = details.locationDetails.locationDetails.Default_Location.amazonBridgeDetails.amazonBridgeDetails["LambdaBridge_AAA/OnGuardSmartHomeBridgeService"] || undefined;
+                        console.log(locDetails);
                         // logger.info(`** Guard Data sent to ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
                         resolve(true);
                     } else {
