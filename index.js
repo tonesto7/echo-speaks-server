@@ -376,10 +376,30 @@ function getGuardDataSupport(cookieData) {
             };
             reqPromise(options)
                 .then(function(resp) {
-                    console.log('guardresp:', resp);
+                    // console.log('guardresp:', resp);
                     if (resp && resp.networkDetail) {
                         let details = JSON.parse(resp.networkDetail);
                         let locDetails = details.locationDetails.locationDetails.Default_Location.amazonBridgeDetails.amazonBridgeDetails["LambdaBridge_AAA/OnGuardSmartHomeBridgeService"] || undefined;
+                        if (locDetails && locDetails.applianceDetails && locDetails.applianceDetails.applianceDetails) {
+                            let guardKey = locDetails.applianceDetails.applianceDetails.find((k, v) => {
+                                return k.startsWith("AAA_OnGuardSmartHomeBridgeService_")
+                            });
+                            console.log('guardKey: ', guardKey);
+                            let guardData = locDetails.applianceDetails.applianceDetails[guardKey[0]]
+                            console.log('guardData: ', guardData);
+                            // log.debug "Guard: ${guardData}"
+                            if (guardData.modelName === "REDROCK_GUARD_PANEL") {
+                                sendGuardDataToEndpoint({
+                                    entityId: guardData.entityId,
+                                    applianceId: guardData.applianceId,
+                                    friendlyName: guardData.friendlyName,
+                                    supported: true
+                                });
+
+                            } else {
+                                logError("checkGuardSupportResponse Error | No data received...")
+                            }
+                        }
                         console.log(locDetails);
                         // logger.info(`** Guard Data sent to ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
                         sendGuardDataToEndpoint({
@@ -445,11 +465,11 @@ function alexaLogin(username, password, alexaOptions, callback) {
             if (remoteCookies !== undefined && Object.keys(remoteCookies).length > 0 && remoteCookies.cookieData && remoteCookies.cookieData.localCookie && remoteCookies.cookieData.csrf) {
                 updSessionItem('cookieData', remoteCookies.cookieData);
                 config.cookieData = remoteCookies.cookieData;
-                let guardSupport = await getGuardDataSupport();
+                await getGuardDataSupport();
                 callback(null, `Login Successful (Retreived from ${configData.settings.hubPlatform})`, config);
             } else if (sessionData && sessionData.cookieData && Object.keys(sessionData.cookieData) >= 2) {
                 config.cookieData = sessionData.cookieData || {};
-                let guardSupport = await getGuardDataSupport();
+                await getGuardDataSupport();
                 callback(null, 'Login Successful (Stored Session)', config);
             } else {
                 alexaCookie.generateAlexaCookie(username, password, alexaOptions, webApp, async (err, result) => {
@@ -472,7 +492,7 @@ function alexaLogin(username, password, alexaOptions, callback) {
                             config.cookieData = result;
                             sendCookiesToEndpoint(alexaOptions.callbackEndpoint, result);
                             alexaCookie.stopProxyServer();
-                            let guardSupport = await getGuardDataSupport();
+                            await getGuardDataSupport();
                             callback(null, 'Login Successful', config);
                         } else {
                             callback(true, 'There was an error getting authentication', null);
