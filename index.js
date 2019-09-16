@@ -148,10 +148,8 @@ function startWebConfig() {
                 res.send(JSON.stringify(sessionFile.get() || {}));
             });
             webApp.get('/guardSupportData', async function(req, res) {
-                await getGuardDataSupport()
-                res.send(JSON.stringify({
-                    status: "ok"
-                }));
+                let resp = await getGuardDataSupport(true)
+                res.send(JSON.stringify(resp));
             });
             webApp.post('/cookieData', function(req, res) {
                 let saveFile = false;
@@ -308,7 +306,7 @@ function startWebServer(checkForCookie = false) {
     configFile.save();
     configData = configFile.get();
     runTimeData.loginProxyActive = true;
-    alexaLogin(undefined, undefined, alexaOptions, function(error, response, config) {
+    alexaLogin(undefined, undefined, alexaOptions, async function(error, response, config) {
         runTimeData.alexaUrl = `https://alexa.${configData.settings.amazonDomain}`;
         if (config) {
             runTimeData.savedConfig = config;
@@ -326,6 +324,7 @@ function startWebServer(checkForCookie = false) {
             configData.state.loginComplete = true;
             configFile.save();
             logger.silly('Echo Speaks Alexa API is Actively Running at (IP: ' + getIPAddress() + ' | Port: ' + configData.settings.serverPort + ') | ProcessId: ' + process.pid);
+            await getGuardDataSupport();
         }
     });
 }
@@ -363,10 +362,9 @@ function sendServerDataToST() {
     });
 };
 
-function getGuardDataSupport(cookieData) {
+function getGuardDataSupport(rData = false) {
     return new Promise(resolve => {
-        let cData = cookieData || sessionData.cookieData;
-        if (runTimeData.alexaUrl && cData) {
+        if (runTimeData.alexaUrl && sessionData.cookieData) {
             let options = {
                 method: 'GET',
                 uri: `${runTimeData.alexaUrl}/api/phoenix`,
@@ -375,12 +373,11 @@ function getGuardDataSupport(cookieData) {
                     '_': new Date().getTime()
                 },
                 headers: {
-                    cookie: cData.localCookie,
-                    csrf: cData.csrf
+                    cookie: sessionData.cookieData.localCookie,
+                    csrf: sessionData.cookieData.csrf
                 },
                 json: true
             };
-
             reqPromise(options)
                 .then(function(resp) {
                     // console.log('guardresp:', resp);
@@ -404,31 +401,31 @@ function getGuardDataSupport(cookieData) {
                                     console.log(JSON.stringify(gData));
                                     sendGuardDataToEndpoint(gData);
                                     logger.info(`** Alexa Guard Data sent to ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
-                                    resolve(true);
+                                    resolve(rData ? gData : true);
                                 } else {
                                     logger.error("getGuardDataSupport Error | No Guard Appliance Data found...")
-                                    resolve(false);
+                                    resolve(rData ? undefined : false);
                                 }
                             } else {
                                 logger.error("getGuardDataSupport Error | No Guard Appliance Details found...")
-                                resolve(false);
+                                resolve(rData ? undefined : false);
                             }
                         } else {
                             logger.error("getGuardDataSupport Error | No Guard Appliance Location Data found...")
-                            resolve(false);
+                            resolve(rData ? undefined : false);
                         }
 
                     } else {
                         logger.error("getGuardDataSupport Error | No Guard Response Data Received...")
-                        resolve(false);
+                        resolve(rData ? undefined : false);
                     }
                 })
                 .catch(function(err) {
                     logger.error(`ERROR: Unable to send Alexa Guard Data to ${configData.settings.hubPlatform}: ` + err.message);
-                    resolve(false);
+                    resolve(rData ? undefined : false);
                 });
         } else {
-            resolve(false)
+            resolve(rData ? undefined : false);
         }
     });
 }
@@ -480,11 +477,9 @@ function alexaLogin(username, password, alexaOptions, callback) {
             if (remoteCookies !== undefined && Object.keys(remoteCookies).length > 0 && remoteCookies.cookieData && remoteCookies.cookieData.localCookie && remoteCookies.cookieData.csrf) {
                 updSessionItem('cookieData', remoteCookies.cookieData);
                 config.cookieData = remoteCookies.cookieData;
-                await getGuardDataSupport();
                 callback(null, `Login Successful (Retreived from ${configData.settings.hubPlatform})`, config);
             } else if (sessionData && sessionData.cookieData && Object.keys(sessionData.cookieData) >= 2) {
                 config.cookieData = sessionData.cookieData || {};
-                await getGuardDataSupport();
                 callback(null, 'Login Successful (Stored Session)', config);
             } else {
                 alexaCookie.generateAlexaCookie(username, password, alexaOptions, webApp, async (err, result) => {
@@ -507,7 +502,6 @@ function alexaLogin(username, password, alexaOptions, callback) {
                             config.cookieData = result;
                             sendCookiesToEndpoint(alexaOptions.callbackEndpoint, result);
                             alexaCookie.stopProxyServer();
-                            await getGuardDataSupport();
                             callback(null, 'Login Successful', config);
                         } else {
                             callback(true, 'There was an error getting authentication', null);
