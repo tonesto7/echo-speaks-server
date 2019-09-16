@@ -399,8 +399,10 @@ function getGuardDataSupport(rData = false) {
                                         supported: true
                                     };
                                     console.log(JSON.stringify(gData));
-                                    sendGuardDataToEndpoint(gData);
-                                    logger.info(`** Alexa Guard Data sent to ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
+                                    if (!rData) {
+                                        sendGuardDataToEndpoint(gData);
+                                        logger.info(`** Alexa Guard Data sent to ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
+                                    }
                                     resolve(rData ? gData : true);
                                 } else {
                                     logger.error("getGuardDataSupport Error | No Guard Appliance Data found...")
