@@ -389,11 +389,11 @@ function getGuardDataSupport(cookieData) {
                         if (locDetails && locDetails.applianceDetails && locDetails.applianceDetails.applianceDetails) {
                             console.log(locDetails.applianceDetails.applianceDetails);
                             resolve(true)
-                            let guardKey = locDetails.applianceDetails.applianceDetails.find((k, v) => {
-                                return k.startsWith("AAA_OnGuardSmartHomeBridgeService_")
+                            let guardKey = Object.keys(locDetails.applianceDetails.applianceDetails).find(key => {
+                                key.startsWith("AAA_OnGuardSmartHomeBridgeService_");
                             });
                             console.log('guardKey: ', guardKey);
-                            let guardData = locDetails.applianceDetails.applianceDetails[guardKey[0]]
+                            let guardData = locDetails.applianceDetails.applianceDetails[guardKey]
                             console.log('guardData: ', guardData);
                             // log.debug "Guard: ${guardData}"
                             if (guardData.modelName === "REDROCK_GUARD_PANEL") {
@@ -419,7 +419,7 @@ function getGuardDataSupport(cookieData) {
                     }
                 })
                 .catch(function(err) {
-                    logger.error(`ERROR: Unable to send Alexa Cookie Data to ${configData.settings.hubPlatform}: ` + err.message);
+                    logger.error(`ERROR: Unable to send Alexa Guard Data to ${configData.settings.hubPlatform}: ` + err.message);
                     resolve(false);
                 });
         }
