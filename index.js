@@ -302,13 +302,11 @@ function startWebServer(checkForCookie = false) {
     configFile.save();
     configData = configFile.get();
     runTimeData.loginProxyActive = true;
-    alexaLogin(undefined, undefined, alexaOptions, async function(error, response, config) {
+    alexaLogin(undefined, undefined, alexaOptions, function(error, response, config) {
         runTimeData.alexaUrl = `https://alexa.${configData.settings.amazonDomain}`;
         if (config) {
-            console.log('config: ', config);
             runTimeData.savedConfig = config;
         }
-        let guardSupport = await getGuardDataSupport();
         // console.log('error:', error);
         if (response !== undefined && response !== "") {
             logger.debug('Alexa Login Status: ' + response);
@@ -385,6 +383,9 @@ function getGuardDataSupport(cookieData) {
                         let locDetails = details.locationDetails.locationDetails.Default_Location.amazonBridgeDetails.amazonBridgeDetails["LambdaBridge_AAA/OnGuardSmartHomeBridgeService"] || undefined;
                         console.log(locDetails);
                         // logger.info(`** Guard Data sent to ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
+                        sendGuardDataToEndpoint({
+                            data: "nothing"
+                        });
                         resolve(true);
                     } else {
                         resolve(false);
@@ -440,14 +441,16 @@ function alexaLogin(username, password, alexaOptions, callback) {
     config.alexaURL = alexaOptions.amazonPage;
 
     getRemoteCookie(alexaOptions)
-        .then(function(remoteCookies) {
+        .then(async function(remoteCookies) {
             // console.log('remoteCookies: ', remoteCookies || undefined, 'keys: ', Object.keys(remoteCookies) || {});
             if (remoteCookies !== undefined && Object.keys(remoteCookies).length > 0 && remoteCookies.cookieData && remoteCookies.cookieData.localCookie && remoteCookies.cookieData.csrf) {
                 updSessionItem('cookieData', remoteCookies.cookieData);
                 config.cookieData = remoteCookies.cookieData;
+                let guardSupport = await getGuardDataSupport();
                 callback(null, `Login Successful (Retreived from ${configData.settings.hubPlatform})`, config);
             } else if (sessionData && sessionData.cookieData && Object.keys(sessionData.cookieData) >= 2) {
                 config.cookieData = sessionData.cookieData || {};
+                let guardSupport = await getGuardDataSupport();
                 callback(null, 'Login Successful (Stored Session)', config);
             } else {
                 alexaCookie.generateAlexaCookie(username, password, alexaOptions, webApp, (err, result) => {
@@ -470,6 +473,7 @@ function alexaLogin(username, password, alexaOptions, callback) {
                             config.cookieData = result;
                             sendCookiesToEndpoint(alexaOptions.callbackEndpoint, result);
                             alexaCookie.stopProxyServer();
+                            let guardSupport = await getGuardDataSupport();
                             callback(null, 'Login Successful', config);
                         } else {
                             callback(true, 'There was an error getting authentication', null);
@@ -597,6 +601,37 @@ function getCookiesFromEndpoint(url) {
                 logger.error(`ERROR: Unable to retrieve Alexa Cookie Data from ${configData.settings.hubPlatform}: ` + err.message);
                 resolve({});
             });
+    });
+};
+
+function sendGuardDataToEndpoint(url, guardData) {
+    return new Promise(resolve => {
+        let url = (configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/guardSupportData?") : null)
+        if (url && guardData) {
+            let options = {
+                method: 'POST',
+                uri: url,
+                body: {
+                    guardData: guardData,
+                    version: appVer
+                },
+                json: true
+            };
+            reqPromise(options)
+                .then(function(resp) {
+                    // console.log('resp:', resp);
+                    if (resp) {
+                        logger.info(`** Alexa Guard Data sent to ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
+                        resolve(true);
+                    } else {
+                        resolve(false);
+                    }
+                })
+                .catch(function(err) {
+                    logger.error(`ERROR: Unable to send Alexa Guard Data to ${configData.settings.hubPlatform}: ` + err.message);
+                    resolve(false);
+                });
+        }
     });
 };
 
