@@ -148,7 +148,7 @@ function startWebConfig() {
                 res.send(JSON.stringify(sessionFile.get() || {}));
             });
             webApp.get('/agsData', async function(req, res) {
-                let resp = await getGuardDataSupport(true)
+                let resp = await getGuardDataSupport()
                 res.send(JSON.stringify({ guardData: resp || null }));
             });
             webApp.post('/cookieData', function(req, res) {
@@ -362,7 +362,7 @@ function sendServerDataToST() {
     });
 };
 
-function getGuardDataSupport(rData = false) {
+function getGuardDataSupport() {
     return new Promise(resolve => {
         if (runTimeData.alexaUrl && sessionData.cookieData) {
             let options = {
@@ -399,35 +399,31 @@ function getGuardDataSupport(rData = false) {
                                         supported: true
                                     };
                                     console.log(JSON.stringify(gData));
-                                    if (!rData) {
-                                        sendGuardDataToEndpoint(gData);
-                                        logger.info(`** Alexa Guard Data sent to ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
-                                    }
-                                    resolve(rData ? gData : true);
+                                    resolve(gData);
                                 } else {
                                     logger.error("getGuardDataSupport Error | No Guard Appliance Data found...")
-                                    resolve(rData ? undefined : false);
+                                    resolve(undefined);
                                 }
                             } else {
                                 logger.error("getGuardDataSupport Error | No Guard Appliance Details found...")
-                                resolve(rData ? undefined : false);
+                                resolve(undefined);
                             }
                         } else {
                             logger.error("getGuardDataSupport Error | No Guard Appliance Location Data found...")
-                            resolve(rData ? undefined : false);
+                            resolve(undefined);
                         }
 
                     } else {
                         logger.error("getGuardDataSupport Error | No Guard Response Data Received...")
-                        resolve(rData ? undefined : false);
+                        resolve(undefined);
                     }
                 })
                 .catch(function(err) {
                     logger.error(`ERROR: Unable to send Alexa Guard Data to ${configData.settings.hubPlatform}: ` + err.message);
-                    resolve(rData ? undefined : false);
+                    resolve(undefined);
                 });
         } else {
-            resolve(rData ? undefined : false);
+            resolve(undefined);
         }
     });
 }
@@ -631,37 +627,6 @@ function getCookiesFromEndpoint(url) {
                 logger.error(`ERROR: Unable to retrieve Alexa Cookie Data from ${configData.settings.hubPlatform}: ` + err.message);
                 resolve({});
             });
-    });
-};
-
-function sendGuardDataToEndpoint(guardData) {
-    return new Promise(resolve => {
-        let url = (configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/agsData?") : null)
-        if (url && guardData) {
-            let options = {
-                method: 'POST',
-                uri: url,
-                body: {
-                    guardData: guardData,
-                    version: appVer
-                },
-                json: true
-            };
-            reqPromise(options)
-                .then(function(resp) {
-                    // console.log('resp:', resp);
-                    if (resp) {
-                        logger.info(`** Alexa Guard Data sent to ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
-                        resolve(true);
-                    } else {
-                        resolve(false);
-                    }
-                })
-                .catch(function(err) {
-                    logger.error(`ERROR: Unable to send Alexa Guard Data to ${configData.settings.hubPlatform}: ` + err.message);
-                    resolve(false);
-                });
-        }
     });
 };
 
