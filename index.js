@@ -149,7 +149,7 @@ function startWebConfig() {
             });
             webApp.get('/agsData', async function(req, res) {
                 let resp = await getGuardDataSupport(true)
-                res.send(JSON.stringify(resp || { guardData: null }));
+                res.send(JSON.stringify({ guardData: resp || null }));
             });
             webApp.post('/cookieData', function(req, res) {
                 let saveFile = false;
