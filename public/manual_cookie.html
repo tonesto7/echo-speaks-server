@@ -30,7 +30,7 @@
         }
         
         .btn-rounded {
-            border-radius: 50px!important;
+            border-radius: 50px !important;
         }
         
         form div label,
@@ -164,6 +164,10 @@
                 xmlhttp.send(JSON.stringify({
                     cookieData: config
                 }));
+                setTimeout(function() {
+                    window.location.href = rootOrigin + '/config';
+                }, 5000);
+
             }
         });
     </script>

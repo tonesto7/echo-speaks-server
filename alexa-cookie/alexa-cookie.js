@@ -26,6 +26,14 @@ const defaultUserAgentLinux = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.3
 //const defaultUserAgentMacOs = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36';
 const defaultAcceptLanguage = 'en-US';
 
+const csrfOptions = [
+    '/api/language',
+    '/spa/index.html',
+    '/api/devices-v2/device?cached=false',
+    '/templates/oobe/d-device-pick.handlebars',
+    '/api/strings'
+];
+
 let proxyServer;
 let webApp;
 let _options;
@@ -184,32 +192,43 @@ function initConfig() {
 
 function getCSRFFromCookies(cookie, _options, callback) {
     // get CSRF
-    let options = {
-        'host': 'alexa.' + _options.amazonPage,
-        'path': '/api/language',
-        'method': 'GET',
-        'headers': {
-            'DNT': '1',
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36',
-            'Connection': 'keep-alive',
-            'Referer': 'https://alexa.' + _options.amazonPage + '/spa/index.html',
-            'Cookie': cookie,
-            'Accept': '*/*',
-            'Origin': 'https://alexa.' + _options.amazonPage
-        }
-    };
+    const csrfUrls = csrfOptions;
 
-    _options.logger && _options.logger('Alexa-Cookie: Step 4: get CSRF');
-    request(options, (error, response) => {
-        cookie = addCookies(cookie, response.headers);
-        let ar = /csrf=([^;]+)/.exec(cookie);
-        let csrf = ar ? ar[1] : undefined;
-        _options.logger && _options.logger('Alexa-Cookie: Result: csrf=' + csrf + ', Cookie=' + cookie);
-        callback && callback(null, {
-            cookie: cookie,
-            csrf: csrf
+    function csrfTry() {
+        const path = csrfUrls.shift();
+        let options = {
+            'host': 'alexa.' + _options.amazonPage,
+            'path': path,
+            'method': 'GET',
+            'headers': {
+                'DNT': '1',
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36',
+                'Connection': 'keep-alive',
+                'Referer': 'https://alexa.' + _options.amazonPage + '/spa/index.html',
+                'Cookie': cookie,
+                'Accept': '*/*',
+                'Origin': 'https://alexa.' + _options.amazonPage
+            }
+        };
+
+        _options.logger && _options.logger('Alexa-Cookie: Step 4: get CSRF via ' + path);
+        request(options, (error, response) => {
+            cookie = addCookies(cookie, response.headers);
+            let ar = /csrf=([^;]+)/.exec(cookie);
+            let csrf = ar ? ar[1] : undefined;
+            _options.debug && console.log('Alexa-Cookie: Result: csrf=' + csrf + ', Cookie=' + cookie);
+            if (!csrf && csrfUrls.length) {
+                csrfTry();
+                return;
+            }
+            callback && callback(null, {
+                cookie: cookie,
+                csrf: csrf
+            });
         });
-    });
+    }
+
+    csrfTry();
 }
 
 function generateAlexaCookie(email, password, __options, webapp, callback) {
@@ -326,7 +345,7 @@ function generateAlexaCookie(email, password, __options, webapp, callback) {
                             } else {
                                 amazonProxy.initAmazonProxy(_options, webApp, prepareResult, (server) => {
                                     proxyServer = server;
-                                    if (_options.proxyPort === 0) {
+                                    if (!_options.proxyPort || _options.proxyPort === 0) {
                                         _options.proxyPort = proxyServer.address().port;
                                     }
                                     errMessage += ` You can try to get the cookie manually by opening ${_options.protocolPrefix}://${getLocalHost()}/ with your browser.`;
@@ -346,7 +365,7 @@ function generateAlexaCookie(email, password, __options, webapp, callback) {
     } else {
         amazonProxy.initAmazonProxy(_options, webApp, prepareResult, (server) => {
             proxyServer = server;
-            if (_options.proxyPort === 0) {
+            if (!_options.proxyPort || _options.proxyPort === 0) {
                 _options.proxyPort = proxyServer.address().port;
             }
             const errMessage = `You can try to get the cookie manually by opening ${_options.protocolPrefix}://${getLocalHost()}/ with your browser.`;
