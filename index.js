@@ -1,24 +1,25 @@
 "use strict";
 
-const appVer = require('./package.json').version;
-const alexaCookie = require('./alexa-cookie/alexa-cookie');
-const reqPromise = require("request-promise");
-const logger = require('./logger');
-const express = require('express');
-const bodyParser = require('body-parser');
-const os = require('os');
-// const alexaCookie = require('./alexa-cookie/alexa-cookie');
-const editJsonFile = require("edit-json-file", {
-    autosave: true
-});
-const dataFolder = os.homedir();
-const configFile = editJsonFile(dataFolder + '/es_config.json');
-const sessionFile = editJsonFile(dataFolder + '/session.json');
-const fs = require('fs');
-const webApp = express();
-const urlencodedParser = bodyParser.urlencoded({
-    extended: false
-});
+const appVer = require('./package.json').version,
+    alexaCookie = require('./alexa-cookie/alexa-cookie'),
+    reqPromise = require("request-promise"),
+    logger = require('./logger'),
+    express = require('express'),
+    bodyParser = require('body-parser'),
+    childProcess = require("child_process"),
+    compareVersions = require("compare-versions"),
+    os = require('os'),
+    editJsonFile = require("edit-json-file", {
+        autosave: true
+    }),
+    dataFolder = os.homedir(),
+    configFile = editJsonFile(dataFolder + '/es_config.json'),
+    sessionFile = editJsonFile(dataFolder + '/session.json'),
+    fs = require('fs'),
+    webApp = express(),
+    urlencodedParser = bodyParser.urlencoded({
+        extended: false
+    });
 // process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 sessionFile.save();
 
@@ -146,6 +147,10 @@ function startWebConfig() {
             webApp.get('/cookieData', function(req, res) {
                 // console.log(configData)
                 res.send(JSON.stringify(sessionFile.get() || {}));
+            });
+            webApp.get('/checkVersion', function(req, res) {
+                // console.log(configData)
+                res.send(JSON.stringify(checkVersion()));
             });
             webApp.get('/agsData', async function(req, res) {
                 let resp = await getGuardDataSupport()
@@ -711,6 +716,27 @@ const loginSuccessHtml = function() {
     html += '</html>';
     return html;
 };
+
+function checkVersion() {
+    logger.info("Checking Package Version for Updates...");
+    try {
+    childProcess.exec(`npm view ${packageFile.name} version`, (error, stdout) => {
+            const newVer = stdout && stdout.trim();
+            if (newVer && compareVersions(stdout.trim(), packageFile.version) > 0) {
+                logger.warn(`---------------------------------------------------------------`);
+                logger.warn(`NOTICE: New version of ${packageFile.name} available: ${newVer}`);
+                logger.warn(`---------------------------------------------------------------`);
+                return { update: true, version: newVer };
+            } else {
+                logger.info(`INFO: Your plugin version is up-to-date`);
+                return { update: false, version: undefined };
+            }
+        }
+    );
+    } catch (e) {
+        return { update: false, version: undefined };
+    }
+}
 
 
 /*******************************************************************************
