@@ -32,7 +32,7 @@
         "request-promise": "^4.2.5",
         "underscore": "^1.9.1",
         "winston": "^3.2.1",
-        "winston-daily-rotate-file": "^4.3.0",
+        "winston-daily-rotate-file": "^4.3.1",
         "compare-versions": "^3.5.1"
     },
     "repository": {
