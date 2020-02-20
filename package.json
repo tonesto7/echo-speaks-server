@@ -30,7 +30,7 @@
         "querystring": "^0.2.0",
         "request": "^2.88.0",
         "request-promise": "^4.2.5",
-        "underscore": "^1.9.1",
+        "underscore": "^1.9.2",
         "winston": "^3.2.1",
         "winston-daily-rotate-file": "^4.4.1",
         "compare-versions": "^3.5.1"
