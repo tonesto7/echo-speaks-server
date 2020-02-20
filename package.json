@@ -19,7 +19,7 @@
         "express": "^4.17.1",
         "express-remove-route": "1.0.0",
         "find-free-port": "^2.0.0",
-        "getos": "^3.1.1",
+        "getos": "^3.1.4",
         "http-proxy-middleware": "^0.20.0",
         "http-proxy-response-rewrite": "^0.0.1",
         "https": "^1.0.0",
