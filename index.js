@@ -1,27 +1,27 @@
 "use strict";
-
-const appVer = require('./package.json').version;
-const alexaCookie = require('./alexa-cookie/alexa-cookie');
-const reqPromise = require("request-promise");
-const logger = require('./logger');
-const express = require('express');
-const bodyParser = require('body-parser');
-const os = require('os');
-// const alexaCookie = require('./alexa-cookie/alexa-cookie');
-const editJsonFile = require("edit-json-file", {
-    autosave: true
-});
-const dataFolder = os.homedir();
-const configFile = editJsonFile(dataFolder + '/es_config.json');
-const sessionFile = editJsonFile(dataFolder + '/session.json');
-const fs = require('fs');
-const webApp = express();
-const urlencodedParser = bodyParser.urlencoded({
-    extended: false
-});
+const packageFile = require('./package.json'),
+    appVer = packageFile.version,
+    alexaCookie = require('./alexa-cookie/alexa-cookie'),
+    reqPromise = require("request-promise"),
+    logger = require('./logger'),
+    express = require('express'),
+    bodyParser = require('body-parser'),
+    childProcess = require("child_process"),
+    compareVersions = require("compare-versions"),
+    os = require('os'),
+    editJsonFile = require("edit-json-file", {
+        autosave: true
+    }),
+    dataFolder = os.homedir(),
+    configFile = editJsonFile(dataFolder + '/es_config.json'),
+    sessionFile = editJsonFile(dataFolder + '/session.json'),
+    fs = require('fs'),
+    webApp = express(),
+    urlencodedParser = bodyParser.urlencoded({
+        extended: false
+    });
 // process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 sessionFile.save();
-
 // These the config variables
 let configData = {};
 let sessionData = sessionFile.get() || {};
@@ -42,7 +42,7 @@ runTimeData.eventCount = 0;
 runTimeData.echoDevices = {};
 
 function initConfig() {
-    return new Promise(function(resolve, reject) {
+    return new Promise(function(resolve) {
         // logger.debug('dataFolder: ' + dataFolder);
         // Create the log directory if it does not exist
         if (!fs.existsSync(dataFolder)) {
@@ -148,8 +148,10 @@ function startWebConfig() {
                 res.send(JSON.stringify(sessionFile.get() || {}));
             });
             webApp.get('/agsData', async function(req, res) {
-                let resp = await getGuardDataSupport()
-                res.send(JSON.stringify({ guardData: resp || null }));
+                let resp = await getGuardDataSupport();
+                res.send(JSON.stringify({
+                    guardData: resp || null
+                }));
             });
             webApp.post('/cookieData', function(req, res) {
                 let saveFile = false;
@@ -236,7 +238,7 @@ function startWebConfig() {
                 };
                 if (saveFile) {
                     configFile.save();
-                    const ls = loadConfig();
+                    loadConfig();
                     res.send('done');
                     configCheckOk()
                         .then(function(res) {
@@ -389,7 +391,7 @@ function getGuardDataSupport() {
                                 return i.includes("AAA_OnGuardSmartHomeBridgeService_");
                             });
                             if (Object.keys(applKey).length >= 1) {
-                                let guardData = locDetails.applianceDetails.applianceDetails[applKey[0]]
+                                let guardData = locDetails.applianceDetails.applianceDetails[applKey[0]];
                                 // console.log('guardData: ', guardData);
                                 if (guardData.modelName === "REDROCK_GUARD_PANEL") {
                                     let gData = {
@@ -401,20 +403,20 @@ function getGuardDataSupport() {
                                     console.log(JSON.stringify(gData));
                                     resolve(gData);
                                 } else {
-                                    logger.error("getGuardDataSupport Error | No Guard Appliance Data found...")
+                                    logger.error("getGuardDataSupport Error | No Guard Appliance Data found...");
                                     resolve(undefined);
                                 }
                             } else {
-                                logger.error("getGuardDataSupport Error | No Guard Appliance Details found...")
+                                logger.error("getGuardDataSupport Error | No Guard Appliance Details found...");
                                 resolve(undefined);
                             }
                         } else {
-                            logger.error("getGuardDataSupport Error | No Guard Appliance Location Data found...")
+                            logger.error("getGuardDataSupport Error | No Guard Appliance Location Data found...");
                             resolve(undefined);
                         }
 
                     } else {
-                        logger.error("getGuardDataSupport Error | No Guard Response Data Received...")
+                        logger.error("getGuardDataSupport Error | No Guard Response Data Received...");
                         resolve(undefined);
                     }
                 })
@@ -522,7 +524,7 @@ let updSessionItem = (key, value) => {
 };
 
 let remSessionItem = (key) => {
-    sessionFile.unset('csrf');
+    sessionFile.unset(key);
     sessionFile.save();
     sessionData = sessionFile.get();
 };
@@ -574,7 +576,7 @@ function getRemoteCookie(alexaOptions) {
 
 function sendCookiesToEndpoint(url, cookieData) {
     return new Promise(resolve => {
-        if (url && cookieData) {
+        if (url && cookieData && Object.keys(cookieData).length >= 2) {
             let options = {
                 method: 'POST',
                 uri: url,
@@ -605,25 +607,65 @@ function sendCookiesToEndpoint(url, cookieData) {
     });
 };
 
+function isCookieValid(cookieData) {
+    return new Promise(resolve => {
+        if (!(cookieData && cookieData.loginCookie && cookieData.csrf)) resolve(false);
+        reqPromise({
+                method: 'GET',
+                uri: `${configData.settings.amazonDomain}/api/bootstrap`,
+                query: {
+                    "version": 0
+                },
+                headers: {
+                    Cookie: cookieData.loginCookie,
+                    csrf: cookieData.csrf
+                },
+                json: true
+            })
+            .then((resp) => {
+                if (resp && resp.authentication) {
+                    let valid = (resp.authentication.authenticated !== false);
+                    logger.info(`** Alexa Cookie Valid (${valid}) **`);
+                    resolve(valid);
+                }
+                resolve(false);
+            })
+            .catch((err) => {
+                logger.error(`ERROR: Unable to validate Alexa Cookie Data: ` + err.message);
+                resolve(false);
+            });
+    });
+}
+
 function getCookiesFromEndpoint(url) {
     return new Promise(resolve => {
         reqPromise({
-            method: 'GET',
-            uri: url,
-            headers: {
-                serverVersion: appVer,
-                onHeroku: (configData.settings.useHeroku === true),
-                isLocal: (configData.settings.useHeroku !== true),
-            },
-            json: true
-        })
-            .then(function(resp) {
-                // console.log('getCookiesFromEndpoint resp: ', resp);
-                if (resp && Object.keys(resp).length >= 2)
-                    logger.info(`** Retrieved Alexa Cookie Data from ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
-                resolve(resp);
+                method: 'GET',
+                uri: url,
+                headers: {
+                    serverVersion: appVer,
+                    onHeroku: (configData.settings.useHeroku === true),
+                    isLocal: (configData.settings.useHeroku !== true),
+                },
+                json: true
             })
-            .catch(function(err) {
+            .then((resp) => {
+                // console.log('getCookiesFromEndpoint resp: ', resp);
+                if (resp && Object.keys(resp).length >= 2) {
+                    isCookieValid(resp)
+                        .then((valid) => {
+                            if (valid) {
+                                logger.info(`** Retrieved Alexa Cookie Data from ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
+                                resolve(resp);
+                            } else {
+                                logger.error(`ERROR** We Received an Invalid Alexa Cookie Data from ${configData.settings.hubPlatform} Cloud Endpoint!!! **`);
+                                resolve(undefined);
+                            }
+                        });
+                }
+                resolve(false);
+            })
+            .catch((err) => {
                 logger.error(`ERROR: Unable to retrieve Alexa Cookie Data from ${configData.settings.hubPlatform}: ` + err.message);
                 resolve({});
             });
@@ -648,36 +690,36 @@ function getIPAddress() {
     return '0.0.0.0';
 }
 
-function getServiceUptime() {
-    let now = Date.now();
-    let diff = (now - runTimeData.serviceStartTime) / 1000;
-    //logger.debug("diff: "+ diff);
-    return getHostUptimeStr(diff);
-}
+// function getServiceUptime() {
+//     let now = Date.now();
+//     let diff = (now - runTimeData.serviceStartTime) / 1000;
+//     //logger.debug("diff: "+ diff);
+//     return getHostUptimeStr(diff);
+// }
 
-function getHostUptimeStr(time) {
-    let years = Math.floor(time / 31536000);
-    time -= years * 31536000;
-    let months = Math.floor(time / 31536000);
-    time -= months * 2592000;
-    let days = Math.floor(time / 86400);
-    time -= days * 86400;
-    let hours = Math.floor(time / 3600);
-    time -= hours * 3600;
-    let minutes = Math.floor(time / 60);
-    time -= minutes * 60;
-    let seconds = parseInt(time % 60, 10);
-    return {
-        'y': years,
-        'mn': months,
-        'd': days,
-        'h': hours,
-        'm': minutes,
-        's': seconds
-    };
-}
+// function getHostUptimeStr(time) {
+//     let years = Math.floor(time / 31536000);
+//     time -= years * 31536000;
+//     let months = Math.floor(time / 31536000);
+//     time -= months * 2592000;
+//     let days = Math.floor(time / 86400);
+//     time -= days * 86400;
+//     let hours = Math.floor(time / 3600);
+//     time -= hours * 3600;
+//     let minutes = Math.floor(time / 60);
+//     time -= minutes * 60;
+//     let seconds = parseInt(time % 60, 10);
+//     return {
+//         'y': years,
+//         'mn': months,
+//         'd': days,
+//         'h': hours,
+//         'm': minutes,
+//         's': seconds
+//     };
+// }
 
-const loginSuccessHtml = function() {
+const loginSuccessHtml = () => {
     let html = '';
     let redirUrl = (configData.settings.useHeroku) ? 'https://' + configData.settings.hostUrl + '/config' : 'http://' + getIPAddress() + ':' + configData.settings.serverPort + '/config';
     html += '<!DOCTYPE html>';
@@ -712,6 +754,34 @@ const loginSuccessHtml = function() {
     return html;
 };
 
+function checkVersion() {
+    logger.info("Checking Package Version for Updates...");
+    try {
+        childProcess.exec(`npm view ${packageFile.name} version`, (error, stdout) => {
+            const newVer = stdout && stdout.trim();
+            if (newVer && compareVersions(stdout.trim(), packageFile.version) > 0) {
+                logger.warn(`---------------------------------------------------------------`);
+                logger.warn(`NOTICE: New version of ${packageFile.name} available: ${newVer}`);
+                logger.warn(`---------------------------------------------------------------`);
+                return {
+                    update: true,
+                    version: newVer
+                };
+            } else {
+                logger.info(`INFO: Your plugin version is up-to-date`);
+                return {
+                    update: false,
+                    version: undefined
+                };
+            }
+        });
+    } catch (e) {
+        return {
+            update: false,
+            version: undefined
+        };
+    }
+}
 
 /*******************************************************************************
                             PROCESS EXIT FUNCTIONS

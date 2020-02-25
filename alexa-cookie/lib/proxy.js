@@ -1,3 +1,4 @@
+/* eslint-disable no-prototype-builtins */
 /* jshint -W097 */
 /* jshint -W030 */
 /* jshint strict: false */
@@ -14,46 +15,46 @@ const cookieTools = require('cookie');
 let webApp;
 
 function addCookies(Cookie, headers) {
-  if (!headers || !headers['set-cookie']) return Cookie;
-  const cookies = cookieTools.parse(Cookie);
-  for (let cookie of headers['set-cookie']) {
-    cookie = cookie.match(/^([^=]+)=([^;]+);.*/);
-    if (cookie && cookie.length === 3) {
-      if (cookie[1] === 'ap-fid' && cookie[2] === '""') continue;
-      cookies[cookie[1]] = cookie[2];
+    if (!headers || !headers['set-cookie']) return Cookie;
+    const cookies = cookieTools.parse(Cookie);
+    for (let cookie of headers['set-cookie']) {
+        cookie = cookie.match(/^([^=]+)=([^;]+);.*/);
+        if (cookie && cookie.length === 3) {
+            if (cookie[1] === 'ap-fid' && cookie[2] === '""') continue;
+            cookies[cookie[1]] = cookie[2];
+        }
     }
-  }
-  Cookie = '';
-  for (let name in cookies) {
-    if (!cookies.hasOwnProperty(name)) continue;
-    Cookie += name + '=' + cookies[name] + '; ';
-  }
-  Cookie = Cookie.replace(/[; ]*$/, '');
-  return Cookie;
+    Cookie = '';
+    for (let name in cookies) {
+        if (!cookies.hasOwnProperty(name)) continue;
+        Cookie += name + '=' + cookies[name] + '; ';
+    }
+    Cookie = Cookie.replace(/[; ]*$/, '');
+    return Cookie;
 }
 
 function customStringify(v, func, intent) {
-  const cache = new Map();
-  return JSON.stringify(v, function(key, value) {
-    if (typeof value === 'object' && value !== null) {
-      if (cache.get(value)) {
-        // Circular reference found, discard key
-        return;
-      }
-      // Store value in our map
-      cache.set(value, true);
-    }
-    return value;
-  }, intent);
+    const cache = new Map();
+    return JSON.stringify(v, (key, value) => {
+        if (typeof value === 'object' && value !== null) {
+            if (cache.get(value)) {
+                // Circular reference found, discard key
+                return;
+            }
+            // Store value in our map
+            cache.set(value, true);
+        }
+        return value;
+    }, intent);
 }
 
 function initAmazonProxy(_options, webapp, callbackCookie, callbackListening) {
-  if (webapp) {
-    webApp = webapp;
-  }
+    if (webapp) {
+        webApp = webapp;
+    }
 
-  const getLocalHost = function(noPort = false) {
-      return `${(_options.proxyHost || _options.proxyOwnIp)}${(noPort || _options.useHeroku) ? '' : `:${_options.proxyPort}`}`;
+    const getLocalHost = function(noPort = false) {
+            return `${(_options.proxyHost || _options.proxyOwnIp)}${(noPort || _options.useHeroku) ? '' : `:${_options.proxyPort}`}`;
     };
     const initialCookies = {};
     if (!_options.formerRegistrationData || !_options.formerRegistrationData.frc) {
@@ -88,6 +89,7 @@ function initAmazonProxy(_options, webapp, callbackCookie, callbackListening) {
 
     let proxyCookies = "";
 
+    // proxy middleware options
     const optionsAlexa = {
         target: `https://alexa.amazon.com`,
         changeOrigin: true,
@@ -113,7 +115,7 @@ function initAmazonProxy(_options, webapp, callbackCookie, callbackListening) {
     optionsAlexa.pathRewrite[`^/alexa.amazon.com`] = '';
     optionsAlexa.cookieDomainRewrite[`.amazon.com`] = getLocalHost(true);
     optionsAlexa.cookieDomainRewrite['amazon.com'] = getLocalHost(true);
-    if (_options.logger) optionsAlexa.logProvider = function logProvider(provider) {
+    if (_options.logger) optionsAlexa.logProvider = function logProvider() {
         return {
             log: _options.logger.log || _options.logger,
             debug: _options.logger.debug || _options.logger,
@@ -195,6 +197,7 @@ function initAmazonProxy(_options, webapp, callbackCookie, callbackListening) {
                 reqCookie = "";
             }
             for (var cookie in initialCookies) {
+                // eslint-disable-next-line no-prototype-builtins
                 if (!initialCookies.hasOwnProperty(cookie)) continue;
                 if (!reqCookie.includes(cookie + '=')) {
                     reqCookie += '; ' + cookie + '=' + initialCookies[cookie];
@@ -225,10 +228,11 @@ function initAmazonProxy(_options, webapp, callbackCookie, callbackListening) {
                 modified = true;
             }
 
-            let postBody = '';
-            req.on('data', chunk => {
-                postBody += chunk.toString(); // convert Buffer to string
-            });
+            // let postBody = '';
+            // req.on('data', chunk => {
+            //     postBody += chunk.toString(); // convert Buffer to string
+            // });
+
         }
         (!_options.debug && _options.trace) && console.log('Alexa-Cookie: Proxy-Request: (modified:' + modified + ')' + customStringify(proxyReq, null, 2));
         _options.debug && console.log('Alexa-Cookie: Proxy-Request: (modified:' + modified + ')');
