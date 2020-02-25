@@ -625,7 +625,7 @@ function isCookieValid(cookieData) {
             .then((resp) => {
                 if (resp && resp.authentication) {
                     let valid = (resp.authentication.authenticated !== false);
-                    logger.info(`** Alexa Cookie Valid (${valid}) **`);
+                    // logger.info(`** Alexa Cookie Valid (${valid}) **`);
                     resolve(valid);
                 }
                 resolve(false);
@@ -652,13 +652,14 @@ function getCookiesFromEndpoint(url) {
             .then((resp) => {
                 // console.log('getCookiesFromEndpoint resp: ', resp);
                 if (resp && Object.keys(resp).length >= 2) {
+                    logger.info(`** Retrieved Alexa Cookie Data from ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
                     isCookieValid(resp)
                         .then((valid) => {
                             if (valid) {
-                                logger.info(`** Retrieved Alexa Cookie Data from ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
+                                logger.info(`** Alexa Cookie Data Received from ${configData.settings.hubPlatform} Cloud Endpoint has been Confirmed to be Valid! **`);
                                 resolve(resp);
                             } else {
-                                logger.error(`ERROR** We Received an Invalid Alexa Cookie Data from ${configData.settings.hubPlatform} Cloud Endpoint!!! **`);
+                                logger.error(`** ERROR: We Received an Invalid Alexa Cookie from ${configData.settings.hubPlatform} Cloud Endpoint!!! **`);
                                 resolve(undefined);
                             }
                         });
