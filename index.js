@@ -84,7 +84,7 @@ function loadConfig() {
     return true;
 }
 
-const getLocalHost = function(noPort = false) {
+const getLocalHost = (noPort = false) => {
         return `${getIPAddress()}${(noPort || configData.settings.useHeroku) ? '' : `:${configData.settings.serverPort}`}`;
 };
 
@@ -186,7 +186,6 @@ function startWebConfig() {
                 logger.verbose('got request for to clear authentication');
                 clearAuth()
                     .then(function() {
-                        startWebServer();
                         res.send({
                             result: 'Clear Complete'
                         });
@@ -264,7 +263,7 @@ function startWebConfig() {
     });
 }
 
-let clearAuth = function() {
+let clearAuth = () => {
     return new Promise(resolve => {
         logger.verbose('got request for to clear authentication');
         let clearUrl = configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null;
@@ -278,6 +277,7 @@ let clearAuth = function() {
         configFile.unset('user');
         configFile.unset('password');
         configFile.save();
+        startWebServer();
         resolve(true);
     });
 };
@@ -659,7 +659,9 @@ function getCookiesFromEndpoint(url) {
                                 logger.info(`** Alexa Cookie Data Received from ${configData.settings.hubPlatform} Cloud Endpoint has been Confirmed to be Valid! **`);
                                 resolve(resp);
                             } else {
-                                logger.error(`** ERROR: We Received an Invalid Alexa Cookie from ${configData.settings.hubPlatform} Cloud Endpoint!!! **`);
+                                logger.error(`** ERROR: In an attempt to validate the Alexa Cookie from ${configData.settings.hubPlatform} it was found to be invalid/expired... **`);
+                                logger.warn(`** WARNING: We are clearing the Cookie from ${configData.settings.hubPlatform} to prevent further requests and server load... **`);
+
                                 resolve(undefined);
                             }
                         });
