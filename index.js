@@ -612,7 +612,7 @@ function isCookieValid(cookieData) {
         if (!(cookieData && cookieData.loginCookie && cookieData.csrf)) resolve(false);
         reqPromise({
                 method: 'GET',
-                uri: `${configData.settings.amazonDomain}/api/bootstrap`,
+                uri: `https://alexa.${configData.settings.amazonDomain}/api/bootstrap`,
                 query: {
                     "version": 0
                 },
