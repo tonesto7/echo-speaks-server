@@ -364,6 +364,33 @@ function sendServerDataToST() {
     });
 };
 
+function sendClearAuthToST() {
+    let url = (configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null);
+    return new Promise(resolve => {
+        if (url) {
+            let options = {
+                method: 'DELETE',
+                uri: url,
+                json: true
+            };
+            reqPromise(options)
+                .then(function(resp) {
+                    // console.log('resp:', resp);
+                    if (resp) {
+                        logger.info(`** Sent Request to ${configData.settings.hubPlatform} Cloud Endpoint to Remove All Auth Data Successfully! **`);
+                        resolve(true);
+                    } else {
+                        resolve(false);
+                    }
+                })
+                .catch(function(err) {
+                    logger.error(`ERROR: Unable to send Auth Data Reset to ${configData.settings.hubPlatform}: ` + err.message);
+                    resolve(false);
+                });
+        }
+    });
+};
+
 function getGuardDataSupport() {
     return new Promise(resolve => {
         if (runTimeData.alexaUrl && sessionData.cookieData) {
@@ -661,8 +688,11 @@ function getCookiesFromEndpoint(url) {
                             } else {
                                 logger.error(`** ERROR: In an attempt to validate the Alexa Cookie from ${configData.settings.hubPlatform} it was found to be invalid/expired... **`);
                                 logger.warn(`** WARNING: We are clearing the Cookie from ${configData.settings.hubPlatform} to prevent further requests and server load... **`);
-                                clearAuth().then((done) => {
-                                    resolve(undefined);
+                                sendClearAuthToST().then(() => {
+                                    clearAuth()
+                                        .then(() => {
+                                            resolve(undefined);
+                                        });
                                 });
                             }
                         });
