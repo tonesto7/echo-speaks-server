@@ -661,8 +661,9 @@ function getCookiesFromEndpoint(url) {
                             } else {
                                 logger.error(`** ERROR: In an attempt to validate the Alexa Cookie from ${configData.settings.hubPlatform} it was found to be invalid/expired... **`);
                                 logger.warn(`** WARNING: We are clearing the Cookie from ${configData.settings.hubPlatform} to prevent further requests and server load... **`);
-
-                                resolve(undefined);
+                                clearAuth().then((done) => {
+                                    resolve(undefined);
+                                });
                             }
                         });
                 }
