@@ -97,8 +97,9 @@ function startWebConfig() {
         try {
             webApp.listen(configData.settings.serverPort, function() {
                 logger.info(`** Echo Speaks Config Service (v${appVer}) is Running at (IP: ${getIPAddress()} | Port: ${configData.settings.serverPort}) | ProcessId: ${process.pid} **`);
-                logger.info(`** To Signin to Amazon please open your browser to: (${getProtoPrefix()}://${getLocalHost()}) **`);
+                // logger.info(`** To Signin to Amazon please open your browser to: (${getProtoPrefix()}://${getLocalHost()}) **`);
                 logger.info(`** On Heroku: (${configData.settings.useHeroku}) **`);
+                checkVersion();
             });
             //   }
             webApp.use(function(req, res, next) {
@@ -688,12 +689,13 @@ function getCookiesFromEndpoint(url) {
                             } else {
                                 logger.error(`** ERROR: In an attempt to validate the Alexa Cookie from ${configData.settings.hubPlatform} it was found to be invalid/expired... **`);
                                 logger.warn(`** WARNING: We are clearing the Cookie from ${configData.settings.hubPlatform} to prevent further requests and server load... **`);
-                                sendClearAuthToST().then(() => {
-                                    clearAuth()
-                                        .then(() => {
-                                            resolve(undefined);
-                                        });
-                                });
+                                sendClearAuthToST()
+                                    .then(() => {
+                                        clearAuth()
+                                            .then(() => {
+                                                resolve(undefined);
+                                            });
+                                    });
                             }
                         });
                 }
