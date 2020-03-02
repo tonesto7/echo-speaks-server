@@ -411,7 +411,7 @@ function getGuardDataSupport() {
             };
             reqPromise(options)
                 .then(function(resp) {
-                    // console.log('guardresp:', resp);
+                    console.log('guardresp:', resp);
                     if (resp && resp.networkDetail) {
                         let details = JSON.parse(resp.networkDetail);
                         let locDetails = details.locationDetails.locationDetails.Default_Location.amazonBridgeDetails.amazonBridgeDetails["LambdaBridge_AAA/OnGuardSmartHomeBridgeService"] || undefined;
