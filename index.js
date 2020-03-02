@@ -301,7 +301,7 @@ function startWebServer(checkForCookie = false) {
         setupProxy: true,
         proxyOwnIp: getIPAddress(),
         proxyListenBind: '0.0.0.0',
-        protocolPrefix: isHeroku ? 'https' : 'http',
+        protocolPrefix: getProtoPrefix(),
         useHeroku: isHeroku,
         proxyHost: configData.settings.hostUrl,
         proxyPort: configData.settings.serverPort,
