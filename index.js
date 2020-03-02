@@ -22,6 +22,7 @@ const packageFile = require('./package.json'),
     });
 // process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 sessionFile.save();
+
 // These the config variables
 let configData = {};
 let sessionData = sessionFile.get() || {};
@@ -147,6 +148,10 @@ function startWebConfig() {
             webApp.get('/cookieData', function(req, res) {
                 // console.log(configData)
                 res.send(JSON.stringify(sessionFile.get() || {}));
+            });
+            webApp.get('/checkVersion', function(req, res) {
+                // console.log(configData)
+                res.send(JSON.stringify(checkVersion()));
             });
             webApp.get('/agsData', async function(req, res) {
                 logger.info('Requesting Guard Support Data...');
@@ -726,35 +731,6 @@ function getIPAddress() {
     }
     return '0.0.0.0';
 }
-
-// function getServiceUptime() {
-//     let now = Date.now();
-//     let diff = (now - runTimeData.serviceStartTime) / 1000;
-//     //logger.debug("diff: "+ diff);
-//     return getHostUptimeStr(diff);
-// }
-
-// function getHostUptimeStr(time) {
-//     let years = Math.floor(time / 31536000);
-//     time -= years * 31536000;
-//     let months = Math.floor(time / 31536000);
-//     time -= months * 2592000;
-//     let days = Math.floor(time / 86400);
-//     time -= days * 86400;
-//     let hours = Math.floor(time / 3600);
-//     time -= hours * 3600;
-//     let minutes = Math.floor(time / 60);
-//     time -= minutes * 60;
-//     let seconds = parseInt(time % 60, 10);
-//     return {
-//         'y': years,
-//         'mn': months,
-//         'd': days,
-//         'h': hours,
-//         'm': minutes,
-//         's': seconds
-//     };
-// }
 
 const loginSuccessHtml = () => {
     let html = '';
