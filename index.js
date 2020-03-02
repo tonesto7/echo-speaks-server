@@ -518,7 +518,7 @@ function alexaLogin(username, password, alexaOptions, callback) {
 
     getRemoteCookie(alexaOptions)
         .then((remoteCookies) => {
-            logger.debug(`remoteCookies: ${remoteCookies || undefined} | keys: ${Object.keys(remoteCookies) || {}}`);
+            runTimeData.serviceDebug && logger.debug(`remoteCookies: ${JSON.stringify(remoteCookies) || undefined} | keys: ${Object.keys(remoteCookies) || {}}`);
             if (remoteCookies !== undefined && Object.keys(remoteCookies).length > 0 && remoteCookies.cookieData && remoteCookies.cookieData.localCookie && remoteCookies.cookieData.csrf) {
                 updSessionItem('cookieData', remoteCookies.cookieData);
                 config.cookieData = remoteCookies.cookieData;
@@ -783,7 +783,7 @@ const loginSuccessHtml = () => {
 };
 
 function checkVersion() {
-    logger.info("Checking Package Version for Updates...");
+    logger.info("Checking for Server Version Updates...");
     try {
         childProcess.exec(`npm view ${packageFile.name} version`, (error, stdout) => {
             const newVer = stdout && stdout.trim();
@@ -796,7 +796,7 @@ function checkVersion() {
                     version: newVer
                 };
             } else {
-                logger.info(`INFO: Your plugin version is up-to-date`);
+                logger.info(`Server Version is Up-to-Date.`);
                 return {
                     update: false,
                     version: undefined
