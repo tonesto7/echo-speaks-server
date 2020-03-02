@@ -1,4 +1,3 @@
-"use strict";
 const packageFile = require('./package.json'),
     appVer = packageFile.version,
     alexaCookie = require('./alexa-cookie/alexa-cookie'),
@@ -44,7 +43,7 @@ runTimeData.echoDevices = {};
 runTimeData.guardData = {};
 
 function initConfig() {
-    return new Promise(function(resolve) {
+    return new Promise((resolve) => {
         // logger.debug('dataFolder: ' + dataFolder);
         // Create the log directory if it does not exist
         if (!fs.existsSync(dataFolder)) {
@@ -90,27 +89,27 @@ const getLocalHost = (noPort = false) => {
         return `${getIPAddress()}${(noPort || configData.settings.useHeroku) ? '' : `:${configData.settings.serverPort}`}`;
 };
 
-const getProtoPrefix = function() {
+const getProtoPrefix = () => {
     return `${configData.settings.useHeroku ? 'https' : 'http'}`;
 };
 
 function startWebConfig() {
-    return new Promise(function(resolve, reject) {
+    return new Promise((resolve, reject) => {
         try {
-            webApp.listen(configData.settings.serverPort, function() {
+            webApp.listen(configData.settings.serverPort, () => {
                 logger.info(`** Echo Speaks Config Service (v${appVer}) is Running at (IP: ${getIPAddress()} | Port: ${configData.settings.serverPort}) | ProcessId: ${process.pid} **`);
                 // logger.info(`** To Signin to Amazon please open your browser to: (${getProtoPrefix()}://${getLocalHost()}) **`);
                 logger.info(`** On Heroku: (${configData.settings.useHeroku}) **`);
                 checkVersion();
             });
             //   }
-            webApp.use(function(req, res, next) {
+            webApp.use((req, res, next) => {
                 res.header("Access-Control-Allow-Origin", "*");
                 res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
                 next();
             });
 
-            webApp.get('/', function(req, res) {
+            webApp.get('/', (req, res) => {
                 if (req.hostname) {
                     if (configData.settings.hostUrl === undefined || configData.settings.hostUrl !== req.hostname) {
                         logger.debug(`set host url: ${req.hostname}`);
@@ -126,7 +125,7 @@ function startWebConfig() {
                 res.sendFile(__dirname + '/public/index.html');
             });
 
-            webApp.get('/config', function(req, res) {
+            webApp.get('/config', (req, res) => {
                 if (req.hostname) {
                     if (configData.settings.hostUrl === undefined || configData.settings.hostUrl !== req.hostname) {
                         logger.debug(`set host url: ${req.hostname}`);
@@ -141,27 +140,27 @@ function startWebConfig() {
                 logger.debug('/config page requested');
                 res.sendFile(__dirname + '/public/index.html');
             });
-            webApp.get('/manualCookie', function(req, res) {
+            webApp.get('/manualCookie', (req, res) => {
                 logger.debug('/manualCookie page requested');
                 res.sendFile(__dirname + '/public/manual_cookie.html');
             });
 
-            webApp.get('/cookieData', function(req, res) {
+            webApp.get('/cookieData', (req, res) => {
                 // console.log(configData)
                 res.send(JSON.stringify(sessionFile.get() || {}));
             });
-            webApp.get('/checkVersion', function(req, res) {
+            webApp.get('/checkVersion', (req, res) => {
                 // console.log(configData)
                 res.send(JSON.stringify(checkVersion()));
             });
-            webApp.get('/agsData', async function(req, res) {
+            webApp.get('/agsData', async (req, res) => {
                 logger.info('Requesting Guard Support Data...');
                 let resp = await getGuardDataSupport();
                 res.send(JSON.stringify({
                     guardData: resp || null
                 }));
             });
-            webApp.post('/cookieData', function(req, res) {
+            webApp.post('/cookieData', (req, res) => {
                 let saveFile = false;
                 if (req.headers.cookiedata) {
                     let cData = JSON.parse(req.headers.cookiedata);
@@ -177,7 +176,7 @@ function startWebConfig() {
                     sessionData = sessionFile.get();
                     logger.debug('** Cookie Settings File Updated via Manual Entry **');
                     sendCookiesToEndpoint((configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null), sessionData.cookieData)
-                        .then(function(sendResp) {
+                        .then((sendResp) => {
                             if (sendResp) {
                                 res.send('done');
                             } else {
@@ -190,16 +189,16 @@ function startWebConfig() {
                 }
             });
 
-            webApp.get('/clearAuth', urlencodedParser, function(req, res) {
+            webApp.get('/clearAuth', urlencodedParser, (req, res) => {
                 logger.verbose('got request for to clear authentication');
                 clearAuth()
-                    .then(function() {
+                    .then(() => {
                         res.send({
                             result: 'Clear Complete'
                         });
                     });
             });
-            webApp.get('/refreshCookie', urlencodedParser, function(req, res) {
+            webApp.get('/refreshCookie', urlencodedParser, (req, res) => {
                 logger.verbose('refreshCookie request received');
                 console.log("cookieData: ", runTimeData.savedConfig || null);
                 alexaCookie.refreshAlexaCookie({
@@ -215,12 +214,12 @@ function startWebConfig() {
                     }
                 });
             });
-            webApp.get('/configData', function(req, res) {
+            webApp.get('/configData', (req, res) => {
                 // console.log(configData)
                 res.send(JSON.stringify(configData));
             });
 
-            webApp.post('/configData', function(req, res) {
+            webApp.post('/configData', (req, res) => {
                 let saveFile = false;
                 if (req.headers.user) {
                     configFile.set('settings.user', req.headers.user);
@@ -248,7 +247,7 @@ function startWebConfig() {
                     loadConfig();
                     res.send('done');
                     configCheckOk()
-                        .then(function(res) {
+                        .then((res) => {
                             if (res) {
                                 // console.log('configData(set): ', configData);
                                 logger.debug('** Settings File Updated via Web Config **');
@@ -261,7 +260,7 @@ function startWebConfig() {
                     res.send('failed');
                 }
             });
-            webApp.get('/cookie-success', function(req, res) {
+            webApp.get('/cookie-success', (req, res) => {
                 res.send(loginSuccessHtml());
             });
             resolve(true);
@@ -316,7 +315,7 @@ function startWebServer(checkForCookie = false) {
     configFile.save();
     configData = configFile.get();
     runTimeData.loginProxyActive = true;
-    alexaLogin(undefined, undefined, alexaOptions, async function(error, response, config) {
+    alexaLogin(undefined, undefined, alexaOptions, async (error, response, config) => {
         runTimeData.alexaUrl = `https://alexa.${configData.settings.amazonDomain}`;
         if (config) {
             runTimeData.savedConfig = config;
@@ -355,7 +354,7 @@ function sendServerDataToST() {
                 json: true
             };
             reqPromise(options)
-                .then(function(resp) {
+                .then((resp) => {
                     // console.log('resp:', resp);
                     if (resp) {
                         logger.info(`** ServerVersion Sent to ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
@@ -364,7 +363,7 @@ function sendServerDataToST() {
                         resolve(false);
                     }
                 })
-                .catch(function(err) {
+                .catch((err) => {
                     logger.error(`ERROR: Unable to send Server Version to ${configData.settings.hubPlatform}: ` + err.message);
                     resolve(false);
                 });
@@ -382,7 +381,7 @@ function sendClearAuthToST() {
                 json: true
             };
             reqPromise(options)
-                .then(function(resp) {
+                .then((resp) => {
                     // console.log('resp:', resp);
                     if (resp) {
                         logger.info(`** Sent Request to ${configData.settings.hubPlatform} Cloud Endpoint to Remove All Auth Data Successfully! **`);
@@ -391,7 +390,7 @@ function sendClearAuthToST() {
                         resolve(false);
                     }
                 })
-                .catch(function(err) {
+                .catch((err) => {
                     logger.error(`ERROR: Unable to send Auth Data Reset to ${configData.settings.hubPlatform}: ` + err.message);
                     resolve(false);
                 });
@@ -420,7 +419,7 @@ function getGuardDataSupport() {
                     },
                     json: true
                 })
-                .then(function(resp) {
+                .then((resp) => {
                     console.log('guardresp:', resp);
                     if (resp && resp.networkDetail) {
                         let details = JSON.parse(resp.networkDetail);
@@ -464,7 +463,7 @@ function getGuardDataSupport() {
                         resolve(undefined);
                     }
                 })
-                .catch(function(err) {
+                .catch((err) => {
                     logger.error(`ERROR: Unable to send Alexa Guard Data to ${configData.settings.hubPlatform}: ` + err.message);
                     resolve(undefined);
                 });
@@ -476,19 +475,19 @@ function getGuardDataSupport() {
 }
 
 function configCheckOk() {
-    return new Promise(function(resolve) {
+    return new Promise((resolve) => {
         let res = (((configData.settings.useHeroku === true && !configData.settings.appCallbackUrl) || !configData.settings.amazonDomain || (!configData.settings.useHeroku && !configData.settings.appCallbackUrl)) !== true);
         resolve(res);
     });
 };
 
 initConfig()
-    .then(function(res) {
+    .then((res) => {
         if (res) {
             startWebConfig()
-                .then(function() {
+                .then(() => {
                     configCheckOk()
-                        .then(function(res) {
+                        .then((res) => {
                             if (res === true) {
                                 if (configData.state.loginComplete === true || (configData.settings.hostUrl && configData.settings.appCallbackUrl)) {
                                     logger.info('-- Echo Speaks Web Service Starting Up! Takes about 10 seconds before it\'s available... --');
@@ -501,12 +500,12 @@ initConfig()
                             }
                         });
                 })
-                .catch(function(err) {
+                .catch((err) => {
                     logger.error("## Start Web Config Error: " + err.message);
                 });
         }
     })
-    .catch(function(err) {
+    .catch((err) => {
         logger.error("## InitConfig Error: " + err.message);
     });
 
@@ -517,7 +516,7 @@ function alexaLogin(username, password, alexaOptions, callback) {
     config.alexaURL = alexaOptions.amazonPage;
 
     getRemoteCookie(alexaOptions)
-        .then(async function(remoteCookies) {
+        .then(async (remoteCookies) => {
             // console.log('remoteCookies: ', remoteCookies || undefined, 'keys: ', Object.keys(remoteCookies) || {});
             if (remoteCookies !== undefined && Object.keys(remoteCookies).length > 0 && remoteCookies.cookieData && remoteCookies.cookieData.localCookie && remoteCookies.cookieData.csrf) {
                 updSessionItem('cookieData', remoteCookies.cookieData);
@@ -574,7 +573,7 @@ let remSessionItem = (key) => {
     sessionData = sessionFile.get();
 };
 
-var clearSession = function(url) {
+var clearSession = (url) => {
     remSessionItem('csrf');
     remSessionItem('cookie');
     remSessionItem('cookieData');
@@ -586,13 +585,13 @@ var clearSession = function(url) {
             json: true
         };
         reqPromise(options)
-            .then(function(resp) {
+            .then((resp) => {
                 // console.log('resp:', resp);
                 if (resp) {
                     logger.info(`** Sent Remove Alexa Cookie Data Request to ${configData.settings.hubPlatform} Successfully! **`);
                 }
             })
-            .catch(function(err) {
+            .catch((err) => {
                 logger.error(`ERROR: Unable to send Alexa Cookie Data to ${configData.settings.hubPlatform}: ` + err.message);
             });
     }
@@ -606,7 +605,7 @@ function getRemoteCookie(alexaOptions) {
         let config = {};
         if (alexaOptions.callbackEndpoint) {
             getCookiesFromEndpoint(alexaOptions.callbackEndpoint)
-                .then(function(data) {
+                .then((data) => {
                     if (data) {
                         updSessionItem('cookieData', data);
                         config.cookieData = data;
@@ -635,7 +634,7 @@ function sendCookiesToEndpoint(url, cookieData) {
                 json: true
             };
             reqPromise(options)
-                .then(function(resp) {
+                .then((resp) => {
                     // console.log('resp:', resp);
                     if (resp) {
                         logger.info(`** Alexa Cookie Data sent to ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
@@ -644,7 +643,7 @@ function sendCookiesToEndpoint(url, cookieData) {
                         resolve(false);
                     }
                 })
-                .catch(function(err) {
+                .catch((err) => {
                     logger.error(`ERROR: Unable to send Alexa Cookie Data to ${configData.settings.hubPlatform}: ` + err.message);
                     resolve(false);
                 });
@@ -807,6 +806,7 @@ function checkVersion() {
     }
 }
 
+
 /*******************************************************************************
                             PROCESS EXIT FUNCTIONS
 ********************************************************************************/
@@ -848,7 +848,7 @@ function exitHandler(options, exitCode) {
         process.exit();
     }
     console.log('graceful setting timeout for PID: ' + process.pid);
-    setTimeout(function() {
+    setTimeout(() => {
         console.error("Could not close connections in time, forcefully shutting down");
         process.exit(1);
     }, 2 * 1000);
