@@ -52,7 +52,7 @@
     "scripts": {
         "start": "npm index.js"
     },
-    "main": "index.js",
+    "main": "./index.js",
     "readmeFilename": "readme.md",
     "license": "MIT",
     "private": true

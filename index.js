@@ -73,9 +73,9 @@ function loadConfig() {
     configFile.set('settings.serviceDebug', (process.env.serviceDebug === true || process.env.serviceDebug === 'true'));
     configFile.set('settings.serviceTrace', (process.env.serviceTrace === true || process.env.serviceTrace === 'true'));
     configFile.set('settings.regionLocale', (process.env.regionLocale || (configData.settings.regionLocale || 'en-US'))),
-        configFile.set('settings.serviceDebug', true);
-    //   configFile.set('settings.serviceTrace', true);
-    configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
+        //   configFile.set('settings.serviceDebug', true);
+        //   configFile.set('settings.serviceTrace', true);
+        configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
     if (!configData.state) {
         configData.state = {};
     }
@@ -200,14 +200,15 @@ function startWebConfig() {
             });
             webApp.get('/refreshCookie', urlencodedParser, (req, res) => {
                 logger.verbose('refreshCookie request received');
-                console.log("cookieData: ", runTimeData.savedConfig || null);
+                logger.debug(`cookieData: ${runTimeData.savedConfig || null}`);
                 alexaCookie.refreshAlexaCookie({
                     formerRegistrationData: runTimeData.savedConfig.cookieData
                 }, (err, result) => {
                     if (result && Object.keys(result).length >= 2) {
                         sendCookiesToEndpoint((configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null), result);
                         runTimeData.savedConfig.cookieData = result;
-                        console.log('RESULT: ' + err + ' / ' + JSON.stringify(result));
+                        // console.log('RESULT: ' + err + ' / ' + JSON.stringify(result));
+                        logger.info('Successfully Refreshed Alexa Cookie...');
                         res.send({
                             result: JSON.stringify(result)
                         });
@@ -325,7 +326,7 @@ function startWebServer(checkForCookie = false) {
             logger.debug('Alexa Login Status: ' + response);
         }
         sendServerDataToST();
-        console.log('response: ', response);
+        // console.log('response: ', response);
         if (response.startsWith('Login Successful') && config.devicesArray) {
             configFile.set('state.loginProxyActive', false);
             configData.state.loginProxyActive = false;
@@ -403,9 +404,9 @@ function getGuardDataSupport() {
         if (runTimeData.guardData && Object.keys(runTimeData.guardData)) {
             resolve(runTimeData.guardData);
         }
-        console.log('alexaUrl: ', runTimeData.alexaUrl);
-        console.log('cookieData: ', sessionData.cookieData);
-        if (runTimeData.alexaUrl && sessionData.cookieData) {
+        // console.log('alexaUrl: ', runTimeData.alexaUrl);
+        // console.log('cookieData: ', runTimeData.savedConfig.cookieData);
+        if (runTimeData.alexaUrl && runTimeData.savedConfig.cookieData) {
             reqPromise({
                     method: 'GET',
                     uri: `${runTimeData.alexaUrl}/api/phoenix`,
@@ -414,13 +415,13 @@ function getGuardDataSupport() {
                         '_': new Date().getTime()
                     },
                     headers: {
-                        cookie: sessionData.cookieData.localCookie,
-                        csrf: sessionData.cookieData.csrf
+                        cookie: runTimeData.savedConfig.cookieData.localCookie,
+                        csrf: runTimeData.savedConfig.cookieData.csrf
                     },
                     json: true
                 })
                 .then((resp) => {
-                    console.log('guardresp:', resp);
+                    // console.log('guardresp:', resp);
                     if (resp && resp.networkDetail) {
                         let details = JSON.parse(resp.networkDetail);
                         let locDetails = details.locationDetails.locationDetails.Default_Location.amazonBridgeDetails.amazonBridgeDetails["LambdaBridge_AAA/OnGuardSmartHomeBridgeService"] || undefined;
@@ -438,7 +439,7 @@ function getGuardDataSupport() {
                                         friendlyName: guardData.friendlyName,
                                         supported: true
                                     };
-                                    console.log(JSON.stringify(gData));
+                                    // console.log(JSON.stringify(gData));
                                     runTimeData.guardData = gData;
                                     resolve(gData);
                                 } else {
@@ -516,8 +517,8 @@ function alexaLogin(username, password, alexaOptions, callback) {
     config.alexaURL = alexaOptions.amazonPage;
 
     getRemoteCookie(alexaOptions)
-        .then(async (remoteCookies) => {
-            console.log('remoteCookies: ', remoteCookies || undefined, 'keys: ', Object.keys(remoteCookies) || {});
+        .then((remoteCookies) => {
+            logger.debug(`remoteCookies: ${remoteCookies || undefined} | keys: ${Object.keys(remoteCookies) || {}}`);
             if (remoteCookies !== undefined && Object.keys(remoteCookies).length > 0 && remoteCookies.cookieData && remoteCookies.cookieData.localCookie && remoteCookies.cookieData.csrf) {
                 updSessionItem('cookieData', remoteCookies.cookieData);
                 config.cookieData = remoteCookies.cookieData;
@@ -526,7 +527,7 @@ function alexaLogin(username, password, alexaOptions, callback) {
                 config.cookieData = sessionData.cookieData || {};
                 callback(null, 'Login Successful (Stored Session)', config);
             } else {
-                alexaCookie.generateAlexaCookie(username, password, alexaOptions, webApp, async (err, result) => {
+                alexaCookie.generateAlexaCookie(username, password, alexaOptions, webApp, (err, result) => {
                     //   console.log('generateAlexaCookie error: ', err);
                     //   console.log('generateAlexaCookie result: ', result);
                     if (err && (err.message.startsWith('Login unsuccessful') || err.message.startsWith('Amazon-Login-Error:') || err.message.startsWith(' You can try to get the cookie manually by opening'))) {
@@ -541,7 +542,7 @@ function alexaLogin(username, password, alexaOptions, callback) {
                         runTimeData.serviceDebug && logger.debug('csrf: ' + result.csrf || undefined);
 
                         if (result && result.csrf && (result.cookie || result.localCookie)) {
-                            console.log('result: ', result);
+                            logger.debug(`result: ${result}`);
                             updSessionItem('cookieData', result);
                             config.cookieData = result;
                             sendCookiesToEndpoint(alexaOptions.callbackEndpoint, result);
@@ -598,6 +599,7 @@ var clearSession = (url) => {
 };
 
 function getRemoteCookie(alexaOptions) {
+    console.log('getRemoteCookie...');
     return new Promise(resolve => {
         // if (alexaOptions.checkForCookie === false) {
         //     resolve(undefined);
@@ -611,6 +613,7 @@ function getRemoteCookie(alexaOptions) {
                         config.cookieData = data;
                         resolve(config);
                     }
+                    resolve(config);
                 });
         } else {
             resolve(config);
@@ -671,8 +674,9 @@ function isCookieValid(cookieData) {
                     let valid = (resp.authentication.authenticated !== false);
                     // logger.info(`** Alexa Cookie Valid (${valid}) **`);
                     resolve(valid);
+                } else {
+                    resolve(false);
                 }
-                resolve(false);
             })
             .catch((err) => {
                 logger.error(`ERROR: Unable to validate Alexa Cookie Data: ` + err.message);
@@ -714,8 +718,9 @@ function getCookiesFromEndpoint(url) {
                                     });
                             }
                         });
+                } else {
+                    resolve(false);
                 }
-                resolve(false);
             })
             .catch((err) => {
                 logger.error(`ERROR: Unable to retrieve Alexa Cookie Data from ${configData.settings.hubPlatform}: ` + err.message);
