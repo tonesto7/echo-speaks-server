@@ -149,6 +149,7 @@ function startWebConfig() {
                 res.send(JSON.stringify(sessionFile.get() || {}));
             });
             webApp.get('/agsData', async function(req, res) {
+                logger.info('Requesting Guard Support Data...');
                 let resp = await getGuardDataSupport();
                 res.send(JSON.stringify({
                     guardData: resp || null
