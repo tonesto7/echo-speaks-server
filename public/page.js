@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 // Get Root Page URL for Callback to Send Settings
 console.log('host: ' + window.location.host);
 let rootUrl = window.location.host;
@@ -35,7 +36,6 @@ $(document).ready(function() {
 $('form').submit(function(e) {
     e.preventDefault();
     var config = $(this).serializeFormJSON();
-    var url = "http://10.0.0.173:8092/configSave";
     if (Object.keys(config).length) {
         console.log(config);
         // $.post(url, {

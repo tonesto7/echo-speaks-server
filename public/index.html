@@ -280,10 +280,13 @@
                 } else {
                     $('#noticesList').html('<li class="font-small">All is well... No Issues to report...</li>')
                 }
-                if (noticeData && serverVer && noticeData.versions && noticeData.versions.server && serverVer !== noticeData.versions.server) {
-                    $('#verStatus').text(`(Update Available: v${noticeData.versions.server})`)
-                }
             });
+
+            $.getJSON(rootOrigin + '/checkVersion', (verData) => {
+                if (verData && (verData.update === true) && verData.version) {
+                    $('#verStatus').text(`(Update Available: v${verData.version})`)
+                }
+            })
         });
 
         $("#amazonDomain").change(function() {
