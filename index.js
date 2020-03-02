@@ -674,8 +674,6 @@ function isCookieValid(cookieData) {
                     let valid = (resp.authentication.authenticated !== false);
                     // logger.info(`** Alexa Cookie Valid (${valid}) **`);
                     resolve(valid);
-                } else {
-                    resolve(false);
                 }
             })
             .catch((err) => {
