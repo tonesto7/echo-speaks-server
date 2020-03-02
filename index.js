@@ -41,6 +41,7 @@ runTimeData.serviceTrace = false;
 runTimeData.serviceStartTime = Date.now(); //Returns time in millis
 runTimeData.eventCount = 0;
 runTimeData.echoDevices = {};
+runTimeData.guardData = {};
 
 function initConfig() {
     return new Promise(function(resolve) {
@@ -333,7 +334,7 @@ function startWebServer(checkForCookie = false) {
             configData.state.loginComplete = true;
             configFile.save();
             logger.silly('Echo Speaks Alexa API is Actively Running at (IP: ' + getIPAddress() + ' | Port: ' + configData.settings.serverPort + ') | ProcessId: ' + process.pid);
-            //await getGuardDataSupport();
+            runTimeData.guardData = await getGuardDataSupport();
         }
     });
 }
@@ -400,21 +401,25 @@ function sendClearAuthToST() {
 
 function getGuardDataSupport() {
     return new Promise(resolve => {
+        if (runTimeData.guardData && Object.keys(runTimeData.guardData)) {
+            resolve(runTimeData.guardData);
+        }
+        console.log('alexaUrl: ', runTimeData.alexaUrl);
+        console.log('cookieData: ', sessionData.cookieData);
         if (runTimeData.alexaUrl && sessionData.cookieData) {
-            let options = {
-                method: 'GET',
-                uri: `${runTimeData.alexaUrl}/api/phoenix`,
-                query: {
-                    'cached': true,
-                    '_': new Date().getTime()
-                },
-                headers: {
-                    cookie: sessionData.cookieData.localCookie,
-                    csrf: sessionData.cookieData.csrf
-                },
-                json: true
-            };
-            reqPromise(options)
+            reqPromise({
+                    method: 'GET',
+                    uri: `${runTimeData.alexaUrl}/api/phoenix`,
+                    query: {
+                        'cached': true,
+                        '_': new Date().getTime()
+                    },
+                    headers: {
+                        cookie: sessionData.cookieData.localCookie,
+                        csrf: sessionData.cookieData.csrf
+                    },
+                    json: true
+                })
                 .then(function(resp) {
                     console.log('guardresp:', resp);
                     if (resp && resp.networkDetail) {
@@ -435,22 +440,27 @@ function getGuardDataSupport() {
                                         supported: true
                                     };
                                     console.log(JSON.stringify(gData));
+                                    runTimeData.guardData = gData;
                                     resolve(gData);
                                 } else {
                                     logger.error("getGuardDataSupport Error | No Guard Appliance Data found...");
+                                    runTimeData.guardData = undefined;
                                     resolve(undefined);
                                 }
                             } else {
                                 logger.error("getGuardDataSupport Error | No Guard Appliance Details found...");
+                                runTimeData.guardData = undefined;
                                 resolve(undefined);
                             }
                         } else {
                             logger.error("getGuardDataSupport Error | No Guard Appliance Location Data found...");
+                            runTimeData.guardData = undefined;
                             resolve(undefined);
                         }
 
                     } else {
                         logger.error("getGuardDataSupport Error | No Guard Response Data Received...");
+                        runTimeData.guardData = undefined;
                         resolve(undefined);
                     }
                 })
@@ -459,6 +469,7 @@ function getGuardDataSupport() {
                     resolve(undefined);
                 });
         } else {
+            runTimeData.guardData = undefined;
             resolve(undefined);
         }
     });
