@@ -35,7 +35,7 @@ function addCookies(Cookie, headers) {
 
 function customStringify(v, func, intent) {
     const cache = new Map();
-    return JSON.stringify(v, (key, value) => {
+    return JSON.stringify(v, function(key, value) {
         if (typeof value === 'object' && value !== null) {
             if (cache.get(value)) {
                 // Circular reference found, discard key
@@ -89,7 +89,6 @@ function initAmazonProxy(_options, webapp, callbackCookie, callbackListening) {
 
     let proxyCookies = "";
 
-    // proxy middleware options
     const optionsAlexa = {
         target: `https://alexa.amazon.com`,
         changeOrigin: true,
@@ -115,7 +114,7 @@ function initAmazonProxy(_options, webapp, callbackCookie, callbackListening) {
     optionsAlexa.pathRewrite[`^/alexa.amazon.com`] = '';
     optionsAlexa.cookieDomainRewrite[`.amazon.com`] = getLocalHost(true);
     optionsAlexa.cookieDomainRewrite['amazon.com'] = getLocalHost(true);
-    if (_options.logger) optionsAlexa.logProvider = function logProvider() {
+    if (_options.logger) optionsAlexa.logProvider = function logProvider(provider) {
         return {
             log: _options.logger.log || _options.logger,
             debug: _options.logger.debug || _options.logger,
@@ -197,7 +196,6 @@ function initAmazonProxy(_options, webapp, callbackCookie, callbackListening) {
                 reqCookie = "";
             }
             for (var cookie in initialCookies) {
-                // eslint-disable-next-line no-prototype-builtins
                 if (!initialCookies.hasOwnProperty(cookie)) continue;
                 if (!reqCookie.includes(cookie + '=')) {
                     reqCookie += '; ' + cookie + '=' + initialCookies[cookie];
@@ -228,11 +226,10 @@ function initAmazonProxy(_options, webapp, callbackCookie, callbackListening) {
                 modified = true;
             }
 
-            // let postBody = '';
-            // req.on('data', chunk => {
-            //     postBody += chunk.toString(); // convert Buffer to string
-            // });
-
+            let postBody = '';
+            req.on('data', chunk => {
+                postBody += chunk.toString(); // convert Buffer to string
+            });
         }
         (!_options.debug && _options.trace) && console.log('Alexa-Cookie: Proxy-Request: (modified:' + modified + ')' + customStringify(proxyReq, null, 2));
         _options.debug && console.log('Alexa-Cookie: Proxy-Request: (modified:' + modified + ')');
