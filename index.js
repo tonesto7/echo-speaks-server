@@ -73,9 +73,9 @@ function loadConfig() {
     configFile.set('settings.serviceDebug', (process.env.serviceDebug === true || process.env.serviceDebug === 'true'));
     configFile.set('settings.serviceTrace', (process.env.serviceTrace === true || process.env.serviceTrace === 'true'));
     configFile.set('settings.regionLocale', (process.env.regionLocale || (configData.settings.regionLocale || 'en-US'))),
-        //     configFile.set('settings.serviceDebug', true);
-        //   configFile.set('settings.serviceTrace', true);
-        configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
+        configFile.set('settings.serviceDebug', true);
+    //   configFile.set('settings.serviceTrace', true);
+    configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
     if (!configData.state) {
         configData.state = {};
     }
@@ -325,7 +325,7 @@ function startWebServer(checkForCookie = false) {
             logger.debug('Alexa Login Status: ' + response);
         }
         sendServerDataToST();
-        // console.log('response: ', response);
+        console.log('response: ', response);
         if (response.startsWith('Login Successful') && config.devicesArray) {
             configFile.set('state.loginProxyActive', false);
             configData.state.loginProxyActive = false;
@@ -517,7 +517,7 @@ function alexaLogin(username, password, alexaOptions, callback) {
 
     getRemoteCookie(alexaOptions)
         .then(async (remoteCookies) => {
-            // console.log('remoteCookies: ', remoteCookies || undefined, 'keys: ', Object.keys(remoteCookies) || {});
+            console.log('remoteCookies: ', remoteCookies || undefined, 'keys: ', Object.keys(remoteCookies) || {});
             if (remoteCookies !== undefined && Object.keys(remoteCookies).length > 0 && remoteCookies.cookieData && remoteCookies.cookieData.localCookie && remoteCookies.cookieData.csrf) {
                 updSessionItem('cookieData', remoteCookies.cookieData);
                 config.cookieData = remoteCookies.cookieData;
