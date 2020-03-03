@@ -1,6 +1,6 @@
 {
     "name": "echo-speaks-server",
-    "version": "2.3.1",
+    "version": "2.4.0",
     "author": "Anthony Santilli",
     "contributors": [
         {
@@ -28,12 +28,19 @@
         "os": "^0.1.1",
         "extend": "^3.0.2",
         "querystring": "^0.2.0",
-        "request": "^2.88.0",
+        "request": "^2.88.2",
         "request-promise": "^4.2.5",
         "underscore": "^1.9.2",
         "winston": "^3.2.1",
-        "winston-daily-rotate-file": "^4.4.1",
-        "compare-versions": "^3.5.1"
+        "winston-daily-rotate-file": "^4.4.2",
+        "compare-versions": "^3.6.0"
+    },
+    "devDependencies": {
+        "eslint": "^6.8.0",
+        "eslint-config-prettier": "^6.10.0",
+        "eslint-plugin-prettier": "^3.1.2",
+        "lint-staged": "^10.0.8",
+        "prettier": "^1.19.1"
     },
     "repository": {
         "type": "git",
@@ -45,7 +52,7 @@
     "scripts": {
         "start": "npm index.js"
     },
-    "main": "index.js",
+    "main": "./index.js",
     "readmeFilename": "readme.md",
     "license": "MIT",
     "private": true

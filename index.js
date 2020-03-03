@@ -1,6 +1,5 @@
-"use strict";
-
-const appVer = require('./package.json').version,
+const packageFile = require('./package.json'),
+    appVer = packageFile.version,
     alexaCookie = require('./alexa-cookie/alexa-cookie'),
     reqPromise = require("request-promise"),
     logger = require('./logger'),
@@ -41,9 +40,10 @@ runTimeData.serviceTrace = false;
 runTimeData.serviceStartTime = Date.now(); //Returns time in millis
 runTimeData.eventCount = 0;
 runTimeData.echoDevices = {};
+runTimeData.guardData = {};
 
 function initConfig() {
-    return new Promise(function(resolve, reject) {
+    return new Promise((resolve) => {
         // logger.debug('dataFolder: ' + dataFolder);
         // Create the log directory if it does not exist
         if (!fs.existsSync(dataFolder)) {
@@ -73,7 +73,7 @@ function loadConfig() {
     configFile.set('settings.serviceDebug', (process.env.serviceDebug === true || process.env.serviceDebug === 'true'));
     configFile.set('settings.serviceTrace', (process.env.serviceTrace === true || process.env.serviceTrace === 'true'));
     configFile.set('settings.regionLocale', (process.env.regionLocale || (configData.settings.regionLocale || 'en-US'))),
-        //     configFile.set('settings.serviceDebug', true);
+        //   configFile.set('settings.serviceDebug', true);
         //   configFile.set('settings.serviceTrace', true);
         configFile.set('settings.serverPort', process.env.PORT || (configData.settings.serverPort || 8091));
     if (!configData.state) {
@@ -85,30 +85,31 @@ function loadConfig() {
     return true;
 }
 
-const getLocalHost = function(noPort = false) {
+const getLocalHost = (noPort = false) => {
         return `${getIPAddress()}${(noPort || configData.settings.useHeroku) ? '' : `:${configData.settings.serverPort}`}`;
 };
 
-const getProtoPrefix = function() {
+const getProtoPrefix = () => {
     return `${configData.settings.useHeroku ? 'https' : 'http'}`;
 };
 
 function startWebConfig() {
-    return new Promise(function(resolve, reject) {
+    return new Promise((resolve, reject) => {
         try {
-            webApp.listen(configData.settings.serverPort, function() {
+            webApp.listen(configData.settings.serverPort, () => {
                 logger.info(`** Echo Speaks Config Service (v${appVer}) is Running at (IP: ${getIPAddress()} | Port: ${configData.settings.serverPort}) | ProcessId: ${process.pid} **`);
-                logger.info(`** To Signin to Amazon please open your browser to: (${getProtoPrefix()}://${getLocalHost()}) **`);
+                // logger.info(`** To Signin to Amazon please open your browser to: (${getProtoPrefix()}://${getLocalHost()}) **`);
                 logger.info(`** On Heroku: (${configData.settings.useHeroku}) **`);
+                checkVersion();
             });
             //   }
-            webApp.use(function(req, res, next) {
+            webApp.use((req, res, next) => {
                 res.header("Access-Control-Allow-Origin", "*");
                 res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
                 next();
             });
 
-            webApp.get('/', function(req, res) {
+            webApp.get('/', (req, res) => {
                 if (req.hostname) {
                     if (configData.settings.hostUrl === undefined || configData.settings.hostUrl !== req.hostname) {
                         logger.debug(`set host url: ${req.hostname}`);
@@ -124,7 +125,7 @@ function startWebConfig() {
                 res.sendFile(__dirname + '/public/index.html');
             });
 
-            webApp.get('/config', function(req, res) {
+            webApp.get('/config', (req, res) => {
                 if (req.hostname) {
                     if (configData.settings.hostUrl === undefined || configData.settings.hostUrl !== req.hostname) {
                         logger.debug(`set host url: ${req.hostname}`);
@@ -139,24 +140,27 @@ function startWebConfig() {
                 logger.debug('/config page requested');
                 res.sendFile(__dirname + '/public/index.html');
             });
-            webApp.get('/manualCookie', function(req, res) {
+            webApp.get('/manualCookie', (req, res) => {
                 logger.debug('/manualCookie page requested');
                 res.sendFile(__dirname + '/public/manual_cookie.html');
             });
 
-            webApp.get('/cookieData', function(req, res) {
+            webApp.get('/cookieData', (req, res) => {
                 // console.log(configData)
                 res.send(JSON.stringify(sessionFile.get() || {}));
             });
-            webApp.get('/checkVersion', function(req, res) {
+            webApp.get('/checkVersion', (req, res) => {
                 // console.log(configData)
                 res.send(JSON.stringify(checkVersion()));
             });
-            webApp.get('/agsData', async function(req, res) {
-                let resp = await getGuardDataSupport()
-                res.send(JSON.stringify({ guardData: resp || null }));
+            webApp.get('/agsData', async (req, res) => {
+                logger.info('Requesting Guard Support Data...');
+                let resp = await getGuardDataSupport();
+                res.send(JSON.stringify({
+                    guardData: resp || null
+                }));
             });
-            webApp.post('/cookieData', function(req, res) {
+            webApp.post('/cookieData', (req, res) => {
                 let saveFile = false;
                 if (req.headers.cookiedata) {
                     let cData = JSON.parse(req.headers.cookiedata);
@@ -172,7 +176,7 @@ function startWebConfig() {
                     sessionData = sessionFile.get();
                     logger.debug('** Cookie Settings File Updated via Manual Entry **');
                     sendCookiesToEndpoint((configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null), sessionData.cookieData)
-                        .then(function(sendResp) {
+                        .then((sendResp) => {
                             if (sendResp) {
                                 res.send('done');
                             } else {
@@ -185,38 +189,38 @@ function startWebConfig() {
                 }
             });
 
-            webApp.get('/clearAuth', urlencodedParser, function(req, res) {
+            webApp.get('/clearAuth', urlencodedParser, (req, res) => {
                 logger.verbose('got request for to clear authentication');
                 clearAuth()
-                    .then(function() {
-                        startWebServer();
+                    .then(() => {
                         res.send({
                             result: 'Clear Complete'
                         });
                     });
             });
-            webApp.get('/refreshCookie', urlencodedParser, function(req, res) {
+            webApp.get('/refreshCookie', urlencodedParser, (req, res) => {
                 logger.verbose('refreshCookie request received');
-                console.log("cookieData: ", runTimeData.savedConfig || null);
+                logger.debug(`cookieData: ${runTimeData.savedConfig || null}`);
                 alexaCookie.refreshAlexaCookie({
                     formerRegistrationData: runTimeData.savedConfig.cookieData
                 }, (err, result) => {
                     if (result && Object.keys(result).length >= 2) {
                         sendCookiesToEndpoint((configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null), result);
                         runTimeData.savedConfig.cookieData = result;
-                        console.log('RESULT: ' + err + ' / ' + JSON.stringify(result));
+                        // console.log('RESULT: ' + err + ' / ' + JSON.stringify(result));
+                        logger.info('Successfully Refreshed Alexa Cookie...');
                         res.send({
                             result: JSON.stringify(result)
                         });
                     }
                 });
             });
-            webApp.get('/configData', function(req, res) {
+            webApp.get('/configData', (req, res) => {
                 // console.log(configData)
                 res.send(JSON.stringify(configData));
             });
 
-            webApp.post('/configData', function(req, res) {
+            webApp.post('/configData', (req, res) => {
                 let saveFile = false;
                 if (req.headers.user) {
                     configFile.set('settings.user', req.headers.user);
@@ -241,10 +245,10 @@ function startWebConfig() {
                 };
                 if (saveFile) {
                     configFile.save();
-                    const ls = loadConfig();
+                    loadConfig();
                     res.send('done');
                     configCheckOk()
-                        .then(function(res) {
+                        .then((res) => {
                             if (res) {
                                 // console.log('configData(set): ', configData);
                                 logger.debug('** Settings File Updated via Web Config **');
@@ -257,7 +261,7 @@ function startWebConfig() {
                     res.send('failed');
                 }
             });
-            webApp.get('/cookie-success', function(req, res) {
+            webApp.get('/cookie-success', (req, res) => {
                 res.send(loginSuccessHtml());
             });
             resolve(true);
@@ -267,7 +271,7 @@ function startWebConfig() {
     });
 }
 
-let clearAuth = function() {
+let clearAuth = () => {
     return new Promise(resolve => {
         logger.verbose('got request for to clear authentication');
         let clearUrl = configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null;
@@ -281,6 +285,7 @@ let clearAuth = function() {
         configFile.unset('user');
         configFile.unset('password');
         configFile.save();
+        startWebServer();
         resolve(true);
     });
 };
@@ -297,7 +302,7 @@ function startWebServer(checkForCookie = false) {
         setupProxy: true,
         proxyOwnIp: getIPAddress(),
         proxyListenBind: '0.0.0.0',
-        protocolPrefix: isHeroku ? 'https' : 'http',
+        protocolPrefix: getProtoPrefix(),
         useHeroku: isHeroku,
         proxyHost: configData.settings.hostUrl,
         proxyPort: configData.settings.serverPort,
@@ -311,7 +316,7 @@ function startWebServer(checkForCookie = false) {
     configFile.save();
     configData = configFile.get();
     runTimeData.loginProxyActive = true;
-    alexaLogin(undefined, undefined, alexaOptions, async function(error, response, config) {
+    alexaLogin(undefined, undefined, alexaOptions, async (error, response, config) => {
         runTimeData.alexaUrl = `https://alexa.${configData.settings.amazonDomain}`;
         if (config) {
             runTimeData.savedConfig = config;
@@ -329,7 +334,7 @@ function startWebServer(checkForCookie = false) {
             configData.state.loginComplete = true;
             configFile.save();
             logger.silly('Echo Speaks Alexa API is Actively Running at (IP: ' + getIPAddress() + ' | Port: ' + configData.settings.serverPort + ') | ProcessId: ' + process.pid);
-            //await getGuardDataSupport();
+            runTimeData.guardData = await getGuardDataSupport();
         }
     });
 }
@@ -350,7 +355,7 @@ function sendServerDataToST() {
                 json: true
             };
             reqPromise(options)
-                .then(function(resp) {
+                .then((resp) => {
                     // console.log('resp:', resp);
                     if (resp) {
                         logger.info(`** ServerVersion Sent to ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
@@ -359,8 +364,35 @@ function sendServerDataToST() {
                         resolve(false);
                     }
                 })
-                .catch(function(err) {
+                .catch((err) => {
                     logger.error(`ERROR: Unable to send Server Version to ${configData.settings.hubPlatform}: ` + err.message);
+                    resolve(false);
+                });
+        }
+    });
+};
+
+function sendClearAuthToST() {
+    let url = (configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null);
+    return new Promise(resolve => {
+        if (url) {
+            let options = {
+                method: 'DELETE',
+                uri: url,
+                json: true
+            };
+            reqPromise(options)
+                .then((resp) => {
+                    // console.log('resp:', resp);
+                    if (resp) {
+                        logger.info(`** Sent Request to ${configData.settings.hubPlatform} Cloud Endpoint to Remove All Auth Data Successfully! **`);
+                        resolve(true);
+                    } else {
+                        resolve(false);
+                    }
+                })
+                .catch((err) => {
+                    logger.error(`ERROR: Unable to send Auth Data Reset to ${configData.settings.hubPlatform}: ` + err.message);
                     resolve(false);
                 });
         }
@@ -369,22 +401,26 @@ function sendServerDataToST() {
 
 function getGuardDataSupport() {
     return new Promise(resolve => {
-        if (runTimeData.alexaUrl && sessionData.cookieData) {
-            let options = {
-                method: 'GET',
-                uri: `${runTimeData.alexaUrl}/api/phoenix`,
-                query: {
-                    'cached': true,
-                    '_': new Date().getTime()
-                },
-                headers: {
-                    cookie: sessionData.cookieData.localCookie,
-                    csrf: sessionData.cookieData.csrf
-                },
-                json: true
-            };
-            reqPromise(options)
-                .then(function(resp) {
+        if (runTimeData.guardData && Object.keys(runTimeData.guardData)) {
+            resolve(runTimeData.guardData);
+        }
+        // console.log('alexaUrl: ', runTimeData.alexaUrl);
+        // console.log('cookieData: ', runTimeData.savedConfig.cookieData);
+        if (runTimeData.alexaUrl && runTimeData.savedConfig.cookieData) {
+            reqPromise({
+                    method: 'GET',
+                    uri: `${runTimeData.alexaUrl}/api/phoenix`,
+                    query: {
+                        'cached': true,
+                        '_': new Date().getTime()
+                    },
+                    headers: {
+                        cookie: runTimeData.savedConfig.cookieData.localCookie,
+                        csrf: runTimeData.savedConfig.cookieData.csrf
+                    },
+                    json: true
+                })
+                .then((resp) => {
                     // console.log('guardresp:', resp);
                     if (resp && resp.networkDetail) {
                         let details = JSON.parse(resp.networkDetail);
@@ -394,7 +430,7 @@ function getGuardDataSupport() {
                                 return i.includes("AAA_OnGuardSmartHomeBridgeService_");
                             });
                             if (Object.keys(applKey).length >= 1) {
-                                let guardData = locDetails.applianceDetails.applianceDetails[applKey[0]]
+                                let guardData = locDetails.applianceDetails.applianceDetails[applKey[0]];
                                 // console.log('guardData: ', guardData);
                                 if (guardData.modelName === "REDROCK_GUARD_PANEL") {
                                     let gData = {
@@ -403,50 +439,56 @@ function getGuardDataSupport() {
                                         friendlyName: guardData.friendlyName,
                                         supported: true
                                     };
-                                    console.log(JSON.stringify(gData));
+                                    // console.log(JSON.stringify(gData));
+                                    runTimeData.guardData = gData;
                                     resolve(gData);
                                 } else {
-                                    logger.error("getGuardDataSupport Error | No Guard Appliance Data found...")
+                                    logger.error("getGuardDataSupport Error | No Guard Appliance Data found...");
+                                    runTimeData.guardData = undefined;
                                     resolve(undefined);
                                 }
                             } else {
-                                logger.error("getGuardDataSupport Error | No Guard Appliance Details found...")
+                                logger.error("getGuardDataSupport Error | No Guard Appliance Details found...");
+                                runTimeData.guardData = undefined;
                                 resolve(undefined);
                             }
                         } else {
-                            logger.error("getGuardDataSupport Error | No Guard Appliance Location Data found...")
+                            logger.error("getGuardDataSupport Error | No Guard Appliance Location Data found...");
+                            runTimeData.guardData = undefined;
                             resolve(undefined);
                         }
 
                     } else {
-                        logger.error("getGuardDataSupport Error | No Guard Response Data Received...")
+                        logger.error("getGuardDataSupport Error | No Guard Response Data Received...");
+                        runTimeData.guardData = undefined;
                         resolve(undefined);
                     }
                 })
-                .catch(function(err) {
+                .catch((err) => {
                     logger.error(`ERROR: Unable to send Alexa Guard Data to ${configData.settings.hubPlatform}: ` + err.message);
                     resolve(undefined);
                 });
         } else {
+            runTimeData.guardData = undefined;
             resolve(undefined);
         }
     });
 }
 
 function configCheckOk() {
-    return new Promise(function(resolve) {
+    return new Promise((resolve) => {
         let res = (((configData.settings.useHeroku === true && !configData.settings.appCallbackUrl) || !configData.settings.amazonDomain || (!configData.settings.useHeroku && !configData.settings.appCallbackUrl)) !== true);
         resolve(res);
     });
 };
 
 initConfig()
-    .then(function(res) {
+    .then((res) => {
         if (res) {
             startWebConfig()
-                .then(function() {
+                .then(() => {
                     configCheckOk()
-                        .then(function(res) {
+                        .then((res) => {
                             if (res === true) {
                                 if (configData.state.loginComplete === true || (configData.settings.hostUrl && configData.settings.appCallbackUrl)) {
                                     logger.info('-- Echo Speaks Web Service Starting Up! Takes about 10 seconds before it\'s available... --');
@@ -459,12 +501,12 @@ initConfig()
                             }
                         });
                 })
-                .catch(function(err) {
+                .catch((err) => {
                     logger.error("## Start Web Config Error: " + err.message);
                 });
         }
     })
-    .catch(function(err) {
+    .catch((err) => {
         logger.error("## InitConfig Error: " + err.message);
     });
 
@@ -475,8 +517,8 @@ function alexaLogin(username, password, alexaOptions, callback) {
     config.alexaURL = alexaOptions.amazonPage;
 
     getRemoteCookie(alexaOptions)
-        .then(async function(remoteCookies) {
-            // console.log('remoteCookies: ', remoteCookies || undefined, 'keys: ', Object.keys(remoteCookies) || {});
+        .then((remoteCookies) => {
+            runTimeData.serviceDebug && logger.debug(`remoteCookies: ${JSON.stringify(remoteCookies) || undefined} | keys: ${Object.keys(remoteCookies) || {}}`);
             if (remoteCookies !== undefined && Object.keys(remoteCookies).length > 0 && remoteCookies.cookieData && remoteCookies.cookieData.localCookie && remoteCookies.cookieData.csrf) {
                 updSessionItem('cookieData', remoteCookies.cookieData);
                 config.cookieData = remoteCookies.cookieData;
@@ -485,7 +527,7 @@ function alexaLogin(username, password, alexaOptions, callback) {
                 config.cookieData = sessionData.cookieData || {};
                 callback(null, 'Login Successful (Stored Session)', config);
             } else {
-                alexaCookie.generateAlexaCookie(username, password, alexaOptions, webApp, async (err, result) => {
+                alexaCookie.generateAlexaCookie(username, password, alexaOptions, webApp, (err, result) => {
                     //   console.log('generateAlexaCookie error: ', err);
                     //   console.log('generateAlexaCookie result: ', result);
                     if (err && (err.message.startsWith('Login unsuccessful') || err.message.startsWith('Amazon-Login-Error:') || err.message.startsWith(' You can try to get the cookie manually by opening'))) {
@@ -500,7 +542,7 @@ function alexaLogin(username, password, alexaOptions, callback) {
                         runTimeData.serviceDebug && logger.debug('csrf: ' + result.csrf || undefined);
 
                         if (result && result.csrf && (result.cookie || result.localCookie)) {
-                            console.log('result: ', result);
+                            logger.debug(`result: ${result}`);
                             updSessionItem('cookieData', result);
                             config.cookieData = result;
                             sendCookiesToEndpoint(alexaOptions.callbackEndpoint, result);
@@ -527,12 +569,12 @@ let updSessionItem = (key, value) => {
 };
 
 let remSessionItem = (key) => {
-    sessionFile.unset('csrf');
+    sessionFile.unset(key);
     sessionFile.save();
     sessionData = sessionFile.get();
 };
 
-var clearSession = function(url) {
+var clearSession = (url) => {
     remSessionItem('csrf');
     remSessionItem('cookie');
     remSessionItem('cookieData');
@@ -544,19 +586,20 @@ var clearSession = function(url) {
             json: true
         };
         reqPromise(options)
-            .then(function(resp) {
+            .then((resp) => {
                 // console.log('resp:', resp);
                 if (resp) {
                     logger.info(`** Sent Remove Alexa Cookie Data Request to ${configData.settings.hubPlatform} Successfully! **`);
                 }
             })
-            .catch(function(err) {
+            .catch((err) => {
                 logger.error(`ERROR: Unable to send Alexa Cookie Data to ${configData.settings.hubPlatform}: ` + err.message);
             });
     }
 };
 
 function getRemoteCookie(alexaOptions) {
+    console.log('getRemoteCookie...');
     return new Promise(resolve => {
         // if (alexaOptions.checkForCookie === false) {
         //     resolve(undefined);
@@ -564,12 +607,13 @@ function getRemoteCookie(alexaOptions) {
         let config = {};
         if (alexaOptions.callbackEndpoint) {
             getCookiesFromEndpoint(alexaOptions.callbackEndpoint)
-                .then(function(data) {
+                .then((data) => {
                     if (data) {
                         updSessionItem('cookieData', data);
                         config.cookieData = data;
                         resolve(config);
                     }
+                    resolve(config);
                 });
         } else {
             resolve(config);
@@ -579,7 +623,7 @@ function getRemoteCookie(alexaOptions) {
 
 function sendCookiesToEndpoint(url, cookieData) {
     return new Promise(resolve => {
-        if (url && cookieData) {
+        if (url && cookieData && Object.keys(cookieData).length >= 2) {
             let options = {
                 method: 'POST',
                 uri: url,
@@ -593,7 +637,7 @@ function sendCookiesToEndpoint(url, cookieData) {
                 json: true
             };
             reqPromise(options)
-                .then(function(resp) {
+                .then((resp) => {
                     // console.log('resp:', resp);
                     if (resp) {
                         logger.info(`** Alexa Cookie Data sent to ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
@@ -602,7 +646,7 @@ function sendCookiesToEndpoint(url, cookieData) {
                         resolve(false);
                     }
                 })
-                .catch(function(err) {
+                .catch((err) => {
                     logger.error(`ERROR: Unable to send Alexa Cookie Data to ${configData.settings.hubPlatform}: ` + err.message);
                     resolve(false);
                 });
@@ -610,25 +654,73 @@ function sendCookiesToEndpoint(url, cookieData) {
     });
 };
 
+function isCookieValid(cookieData) {
+    return new Promise(resolve => {
+        if (!(cookieData && cookieData.loginCookie && cookieData.csrf)) resolve(false);
+        reqPromise({
+                method: 'GET',
+                uri: `https://alexa.${configData.settings.amazonDomain}/api/bootstrap`,
+                query: {
+                    "version": 0
+                },
+                headers: {
+                    Cookie: cookieData.loginCookie,
+                    csrf: cookieData.csrf
+                },
+                json: true
+            })
+            .then((resp) => {
+                if (resp && resp.authentication) {
+                    let valid = (resp.authentication.authenticated !== false);
+                    // logger.info(`** Alexa Cookie Valid (${valid}) **`);
+                    resolve(valid);
+                }
+            })
+            .catch((err) => {
+                logger.error(`ERROR: Unable to validate Alexa Cookie Data: ` + err.message);
+                resolve(false);
+            });
+    });
+}
+
 function getCookiesFromEndpoint(url) {
     return new Promise(resolve => {
         reqPromise({
-            method: 'GET',
-            uri: url,
-            headers: {
-                serverVersion: appVer,
-                onHeroku: (configData.settings.useHeroku === true),
-                isLocal: (configData.settings.useHeroku !== true),
-            },
-            json: true
-        })
-            .then(function(resp) {
-                // console.log('getCookiesFromEndpoint resp: ', resp);
-                if (resp && Object.keys(resp).length >= 2)
-                    logger.info(`** Retrieved Alexa Cookie Data from ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
-                resolve(resp);
+                method: 'GET',
+                uri: url,
+                headers: {
+                    serverVersion: appVer,
+                    onHeroku: (configData.settings.useHeroku === true),
+                    isLocal: (configData.settings.useHeroku !== true),
+                },
+                json: true
             })
-            .catch(function(err) {
+            .then((resp) => {
+                // console.log('getCookiesFromEndpoint resp: ', resp);
+                if (resp && Object.keys(resp).length >= 2) {
+                    logger.info(`** Retrieved Alexa Cookie Data from ${configData.settings.hubPlatform} Cloud Endpoint Successfully! **`);
+                    isCookieValid(resp)
+                        .then((valid) => {
+                            if (valid) {
+                                logger.info(`** Alexa Cookie Data Received from ${configData.settings.hubPlatform} Cloud Endpoint has been Confirmed to be Valid! **`);
+                                resolve(resp);
+                            } else {
+                                logger.error(`** ERROR: In an attempt to validate the Alexa Cookie from ${configData.settings.hubPlatform} it was found to be invalid/expired... **`);
+                                logger.warn(`** WARNING: We are clearing the Cookie from ${configData.settings.hubPlatform} to prevent further requests and server load... **`);
+                                sendClearAuthToST()
+                                    .then(() => {
+                                        clearAuth()
+                                            .then(() => {
+                                                resolve(undefined);
+                                            });
+                                    });
+                            }
+                        });
+                } else {
+                    resolve(false);
+                }
+            })
+            .catch((err) => {
                 logger.error(`ERROR: Unable to retrieve Alexa Cookie Data from ${configData.settings.hubPlatform}: ` + err.message);
                 resolve({});
             });
@@ -653,36 +745,7 @@ function getIPAddress() {
     return '0.0.0.0';
 }
 
-function getServiceUptime() {
-    let now = Date.now();
-    let diff = (now - runTimeData.serviceStartTime) / 1000;
-    //logger.debug("diff: "+ diff);
-    return getHostUptimeStr(diff);
-}
-
-function getHostUptimeStr(time) {
-    let years = Math.floor(time / 31536000);
-    time -= years * 31536000;
-    let months = Math.floor(time / 31536000);
-    time -= months * 2592000;
-    let days = Math.floor(time / 86400);
-    time -= days * 86400;
-    let hours = Math.floor(time / 3600);
-    time -= hours * 3600;
-    let minutes = Math.floor(time / 60);
-    time -= minutes * 60;
-    let seconds = parseInt(time % 60, 10);
-    return {
-        'y': years,
-        'mn': months,
-        'd': days,
-        'h': hours,
-        'm': minutes,
-        's': seconds
-    };
-}
-
-const loginSuccessHtml = function() {
+const loginSuccessHtml = () => {
     let html = '';
     let redirUrl = (configData.settings.useHeroku) ? 'https://' + configData.settings.hostUrl + '/config' : 'http://' + getIPAddress() + ':' + configData.settings.serverPort + '/config';
     html += '<!DOCTYPE html>';
@@ -718,23 +781,31 @@ const loginSuccessHtml = function() {
 };
 
 function checkVersion() {
-    logger.info("Checking Package Version for Updates...");
+    logger.info("Checking for Server Version Updates...");
     try {
-    childProcess.exec(`npm view ${packageFile.name} version`, (error, stdout) => {
+        childProcess.exec(`npm view ${packageFile.name} version`, (error, stdout) => {
             const newVer = stdout && stdout.trim();
             if (newVer && compareVersions(stdout.trim(), packageFile.version) > 0) {
                 logger.warn(`---------------------------------------------------------------`);
                 logger.warn(`NOTICE: New version of ${packageFile.name} available: ${newVer}`);
                 logger.warn(`---------------------------------------------------------------`);
-                return { update: true, version: newVer };
+                return {
+                    update: true,
+                    version: newVer
+                };
             } else {
-                logger.info(`INFO: Your plugin version is up-to-date`);
-                return { update: false, version: undefined };
+                logger.info(`Server Version is Up-to-Date.`);
+                return {
+                    update: false,
+                    version: undefined
+                };
             }
-        }
-    );
+        });
     } catch (e) {
-        return { update: false, version: undefined };
+        return {
+            update: false,
+            version: undefined
+        };
     }
 }
 
@@ -780,7 +851,7 @@ function exitHandler(options, exitCode) {
         process.exit();
     }
     console.log('graceful setting timeout for PID: ' + process.pid);
-    setTimeout(function() {
+    setTimeout(() => {
         console.error("Could not close connections in time, forcefully shutting down");
         process.exit(1);
     }, 2 * 1000);
