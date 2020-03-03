@@ -443,23 +443,23 @@ function getGuardDataSupport() {
                                     runTimeData.guardData = gData;
                                     resolve(gData);
                                 } else {
-                                    logger.error("getGuardDataSupport Error | No Guard Appliance Data found...");
+                                    logger.error("AlexaGuardDataSupport | No Alexa Guard Appliance Data found...");
                                     runTimeData.guardData = undefined;
                                     resolve(undefined);
                                 }
                             } else {
-                                logger.error("getGuardDataSupport Error | No Guard Appliance Details found...");
+                                logger.error("AlexaGuardDataSupport | No Alexa Guard Appliance Data found...");
                                 runTimeData.guardData = undefined;
                                 resolve(undefined);
                             }
                         } else {
-                            logger.error("getGuardDataSupport Error | No Guard Appliance Location Data found...");
+                            logger.error("AlexaGuardDataSupport | No Alexa Guard Appliance Data found...");
                             runTimeData.guardData = undefined;
                             resolve(undefined);
                         }
 
                     } else {
-                        logger.error("getGuardDataSupport Error | No Guard Response Data Received...");
+                        logger.error("AlexaGuardDataSupport | No Alexa Guard Appliance Data found...");
                         runTimeData.guardData = undefined;
                         resolve(undefined);
                     }
