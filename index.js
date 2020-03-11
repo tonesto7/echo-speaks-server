@@ -579,28 +579,12 @@ let remSessionItem = (key) => {
     sessionData = sessionFile.get();
 };
 
-var clearSession = (url) => {
+var clearSession = () => {
     remSessionItem('csrf');
     remSessionItem('cookie');
     remSessionItem('cookieData');
     if (runTimeData.savedConfig.cookieData) delete runTimeData.savedConfig.cookieData;
-    if (url) {
-        let options = {
-            method: 'DELETE',
-            uri: url,
-            json: true
-        };
-        reqPromise(options)
-            .then((resp) => {
-                // console.log('resp:', resp);
-                if (resp) {
-                    logger.info(`** Sent Remove Alexa Cookie Data Request to ${configData.settings.hubPlatform} Successfully! **`);
-                }
-            })
-            .catch((err) => {
-                logger.error(`ERROR: Unable to send Alexa Cookie Data to ${configData.settings.hubPlatform}: ` + err.message);
-            });
-    }
+    sendClearAuthToST();
 };
 
 function getRemoteCookie(alexaOptions) {
