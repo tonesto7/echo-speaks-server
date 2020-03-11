@@ -150,8 +150,8 @@ function startWebConfig() {
                 res.send(JSON.stringify(sessionFile.get() || {}));
             });
             webApp.post('/wakeup', (req, res) => {
-                console.log('req: ', req.headers);
-                // logger.info(`Server Wakeup Received | Reason: (${JSON.parse(req.headers.wakesrc)})`);
+                // console.log('req: ', req.headers);
+                logger.info(`Server Wakeup Received | Reason: (${req.headers.wakesrc})`);
                 res.send("OK");
             });
             webApp.get('/checkVersion', (req, res) => {
