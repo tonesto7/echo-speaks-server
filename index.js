@@ -149,6 +149,10 @@ function startWebConfig() {
                 // console.log(configData)
                 res.send(JSON.stringify(sessionFile.get() || {}));
             });
+            webApp.post('/wakeup', (req, res) => {
+                logger.info(`Server Wakeup Received | Reason: (${JSON.parse(req.headers.cookiedata)})`);
+                res.send("OK");
+            });
             webApp.get('/checkVersion', (req, res) => {
                 // console.log(configData)
                 res.send(JSON.stringify(checkVersion()));
@@ -656,7 +660,10 @@ function sendCookiesToEndpoint(url, cookieData) {
 
 function isCookieValid(cookieData) {
     return new Promise(resolve => {
-        if (!(cookieData && cookieData.loginCookie && cookieData.csrf)) resolve(false);
+        if (!(cookieData && cookieData.loginCookie && cookieData.csrf)) {
+            logger.error(`isCookieValid ERROR | Cookie or CSRF value not received!!!`);
+            resolve(false);
+        }
         reqPromise({
                 method: 'GET',
                 uri: `https://alexa.${configData.settings.amazonDomain}/api/bootstrap`,
@@ -678,7 +685,7 @@ function isCookieValid(cookieData) {
             })
             .catch((err) => {
                 logger.error(`ERROR: Unable to validate Alexa Cookie Data: ` + err.message);
-                resolve(false);
+                resolve(true);
             });
     });
 }
