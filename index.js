@@ -150,7 +150,7 @@ function startWebConfig() {
                 res.send(JSON.stringify(sessionFile.get() || {}));
             });
             webApp.post('/wakeup', (req, res) => {
-                logger.info(`Server Wakeup Received | Reason: (${JSON.parse(req.headers.cookiedata)})`);
+                logger.info(`Server Wakeup Received | Reason: (${JSON.parse(req.headers.wakesrc)})`);
                 res.send("OK");
             });
             webApp.get('/checkVersion', (req, res) => {
