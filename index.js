@@ -683,6 +683,7 @@ function isCookieValid(cookieData) {
                     // logger.info(`** Alexa Cookie Valid (${valid}) **`);
                     resolve(valid);
                 }
+                resolve(true);
             })
             .catch((err) => {
                 logger.error(`ERROR: Unable to validate Alexa Cookie Data: ` + err.message);
