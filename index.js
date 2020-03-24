@@ -149,6 +149,11 @@ function startWebConfig() {
                 // console.log(configData)
                 res.send(JSON.stringify(sessionFile.get() || {}));
             });
+            webApp.post('/wakeup', (req, res) => {
+                // console.log('req: ', req.headers);
+                logger.info(`Server Wakeup Received | Reason: (${req.headers.wakesrc})`);
+                res.send("OK");
+            });
             webApp.get('/checkVersion', (req, res) => {
                 // console.log(configData)
                 res.send(JSON.stringify(checkVersion()));
@@ -574,28 +579,12 @@ let remSessionItem = (key) => {
     sessionData = sessionFile.get();
 };
 
-var clearSession = (url) => {
+var clearSession = () => {
     remSessionItem('csrf');
     remSessionItem('cookie');
     remSessionItem('cookieData');
     if (runTimeData.savedConfig.cookieData) delete runTimeData.savedConfig.cookieData;
-    if (url) {
-        let options = {
-            method: 'DELETE',
-            uri: url,
-            json: true
-        };
-        reqPromise(options)
-            .then((resp) => {
-                // console.log('resp:', resp);
-                if (resp) {
-                    logger.info(`** Sent Remove Alexa Cookie Data Request to ${configData.settings.hubPlatform} Successfully! **`);
-                }
-            })
-            .catch((err) => {
-                logger.error(`ERROR: Unable to send Alexa Cookie Data to ${configData.settings.hubPlatform}: ` + err.message);
-            });
-    }
+    sendClearAuthToST();
 };
 
 function getRemoteCookie(alexaOptions) {
@@ -656,7 +645,10 @@ function sendCookiesToEndpoint(url, cookieData) {
 
 function isCookieValid(cookieData) {
     return new Promise(resolve => {
-        if (!(cookieData && cookieData.loginCookie && cookieData.csrf)) resolve(false);
+        if (!(cookieData && cookieData.loginCookie && cookieData.csrf)) {
+            logger.error(`isCookieValid ERROR | Cookie or CSRF value not received!!!`);
+            resolve(false);
+        }
         reqPromise({
                 method: 'GET',
                 uri: `https://alexa.${configData.settings.amazonDomain}/api/bootstrap`,
@@ -675,10 +667,11 @@ function isCookieValid(cookieData) {
                     // logger.info(`** Alexa Cookie Valid (${valid}) **`);
                     resolve(valid);
                 }
+                resolve(true);
             })
             .catch((err) => {
                 logger.error(`ERROR: Unable to validate Alexa Cookie Data: ` + err.message);
-                resolve(false);
+                resolve(true);
             });
     });
 }
