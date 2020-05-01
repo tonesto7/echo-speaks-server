@@ -1,52 +1,56 @@
 {
-    "name": "alexa-cookie2",
-    "version": "2.1.0",
-    "description": "Generate Cookie and CSRF for Alexa Remote",
-    "author": {
-        "name": "Apollon77",
-        "email": "ingo@fischer-ka.de"
+  "name": "alexa-cookie2",
+  "version": "2.1.0",
+  "description": "Generate Cookie and CSRF for Alexa Remote",
+  "author": {
+    "name": "Apollon77",
+    "email": "ingo@fischer-ka.de"
+  },
+  "contributors": [
+    {
+      "name": "Apollon77",
+      "email": "ingo@fischer-ka.de"
     },
-    "contributors": [
-        {
-            "name": "Apollon77",
-            "email": "ingo@fischer-ka.de"
-        },
-        {
-            "name": "tonesto7",
-            "email": "tonesto7@gmail.com"
-        }
-    ],
-    "homepage": "https://github.com/Apollon77/alexa-cookie",
-    "license": "MIT",
-    "keywords": [
-        "alexa",
-        "echo",
-        "alexa remote",
-        "layla.amazon.de"
-    ],
-    "dependencies": {
-        "cookie": "^0.4.0",
-        "express": "^4.17.1",
-        "http-proxy-middleware": "^0.20.0",
-        "http-proxy-response-rewrite": "^0.0.1",
-        "https": "^1.0.0",
-        "querystring": "^0.2.0"
-    },
-    "devDependencies": {
-        "mocha": "^7.1.0",
-        "chai": "^4.2.0",
-        "@types/node": "^13.7.7"
-    },
-    "scripts": {
-        "test": "node node_modules/mocha/bin/mocha"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/Apollon77/alexa-cookie.git"
-    },
-    "bugs": {
-        "url": "https://github.com/Apollon77/alexa-cookie/issues"
-    },
-    "main": "alexa-cookie.js",
-    "readmeFilename": "readme.md"
+    {
+      "name": "tonesto7",
+      "email": "tonesto7@gmail.com"
+    }
+  ],
+  "homepage": "https://github.com/Apollon77/alexa-cookie",
+  "license": "MIT",
+  "keywords": [
+    "alexa",
+    "echo",
+    "alexa remote",
+    "layla.amazon.de"
+  ],
+  "dependencies": {
+    "cookie": "^0.4.0",
+    "express": "^4.17.1",
+    "http-proxy-middleware": "^0.20.0",
+    "http-proxy-response-rewrite": "^0.0.1",
+    "https": "^1.0.0",
+    "querystring": "^0.2.0",
+    "snyk": "^1.316.1"
+  },
+  "devDependencies": {
+    "mocha": "^7.1.0",
+    "chai": "^4.2.0",
+    "@types/node": "^13.7.7"
+  },
+  "scripts": {
+    "test": "node node_modules/mocha/bin/mocha",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Apollon77/alexa-cookie.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Apollon77/alexa-cookie/issues"
+  },
+  "main": "alexa-cookie.js",
+  "readmeFilename": "readme.md",
+  "snyk": true
 }
