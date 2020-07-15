@@ -1,6 +1,6 @@
 {
     "name": "Echo Speaks",
-    "description": "Amazon Login Proxy for the Echo Speaks SmartApp",
+    "description": "Amazon Login Proxy for Echo Speaks Integration on Hubitat and SmartThings",
     "repository": "https://github.com/tonesto7/echo-speaks-server",
     "success_url": "/config",
     "logo": "https://raw.githubusercontent.com/tonesto7/echo-speaks/master/resources/icons/echo_speaks.1x.png",

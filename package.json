@@ -1,6 +1,6 @@
 {
     "name": "echo-speaks-server",
-    "version": "2.4.1",
+    "version": "2.5.0",
     "author": "Anthony Santilli",
     "contributors": [
         {
@@ -12,18 +12,18 @@
         "node": "12.9.1"
     },
     "dependencies": {
-        "@types/underscore": "^1.9.4",
+        "@types/underscore": "^1.10.7",
         "body-parser": "^1.19.0",
         "dateformat": "^3.0.3",
         "edit-json-file": "^1.4.0",
         "express": "^4.17.1",
         "express-remove-route": "1.0.0",
         "find-free-port": "^2.0.0",
-        "getos": "^3.1.4",
-        "http-proxy-middleware": "^0.21.0",
+        "getos": "^3.2.1",
+        "http-proxy-middleware": "^1.0.5",
         "http-proxy-response-rewrite": "^0.0.1",
         "https": "^1.0.0",
-        "moment": "^2.24.0",
+        "moment": "^2.27.0",
         "node-datetime": "^2.1.2",
         "os": "^0.1.1",
         "extend": "^3.0.2",
@@ -31,15 +31,16 @@
         "request": "^2.88.2",
         "request-promise": "^4.2.5",
         "underscore": "^1.10.2",
-        "winston": "^3.2.1",
-        "winston-daily-rotate-file": "^4.4.2",
+        "winston": "^3.3.3",
+        "winston-daily-rotate-file": "^4.5.0",
+        "alexa-cookie2": "^3.3.2",
         "compare-versions": "^3.6.0"
     },
     "devDependencies": {
         "eslint": "^6.8.0",
-        "eslint-config-prettier": "^6.10.0",
-        "eslint-plugin-prettier": "^3.1.2",
-        "lint-staged": "^10.0.8",
+        "eslint-config-prettier": "^6.11.0",
+        "eslint-plugin-prettier": "^3.1.4",
+        "lint-staged": "^10.2.11",
         "prettier": "^1.19.1"
     },
     "repository": {
@@ -52,7 +53,7 @@
     "scripts": {
         "start": "npm index.js"
     },
-    "main": "./index.js",
+    "main": "index.js",
     "readmeFilename": "readme.md",
     "license": "MIT",
     "private": true
