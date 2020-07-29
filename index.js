@@ -1,6 +1,6 @@
 const packageFile = require('./package.json'),
     appVer = packageFile.version,
-    alexaCookie = require('./alexa-cookie/alexa-cookie'),
+    alexaCookie = require('./libs/alexa-cookie/alexa-cookie'),
     reqPromise = require("request-promise"),
     logger = require('./logger'),
     express = require('express'),

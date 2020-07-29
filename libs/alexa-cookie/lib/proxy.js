@@ -13,8 +13,9 @@ const querystring = require('querystring');
 const cookieTools = require('cookie');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
-const FORMERDATA_STORE_VERSION = 2;
+const FORMERDATA_STORE_VERSION = 3;
 
 function addCookies(Cookie, headers) {
     if (!headers || !headers['set-cookie']) return Cookie;
@@ -98,10 +99,10 @@ function initAmazonProxy(_options, callbackCookie, callbackListening) {
 
     let deviceId = '';
     if (!_options.formerRegistrationData || !_options.formerRegistrationData.deviceId) {
-        for (let i = 0; i < 3; i++) {
-            deviceId += Math.floor(Math.random() * 9).toString();
-        }
-        deviceId += '34c4643374c3541464b';
+        const buf = Buffer.alloc(16); // 16 random bytes
+        const bufHex = crypto.randomFillSync(buf).toString('hex').toUpperCase(); // convert into hex = 32x 0-9A-F
+        deviceId = Buffer.from(bufHex).toString('hex'); // convert into hex = 64 chars that are hex of hex id
+        deviceId += '23413249564c5635564d32573831';
     } else {
         _options.logger && _options.logger('Proxy Init: reuse deviceId from former data');
         deviceId = _options.formerRegistrationData.deviceId;
