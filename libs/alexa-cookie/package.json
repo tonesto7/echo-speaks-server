@@ -1,12 +1,13 @@
 {
     "name": "alexa-cookie2",
-    "version": "3.2.3",
+    "version": "3.4.1",
     "description": "Generate Cookie and CSRF for Alexa Remote",
     "author": {
         "name": "Apollon77",
         "email": "ingo@fischer-ka.de"
     },
-    "contributors": [{
+    "contributors": [
+        {
             "name": "Apollon77",
             "email": "ingo@fischer-ka.de"
         },
