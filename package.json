@@ -1,6 +1,6 @@
 {
     "name": "echo-speaks-server",
-    "version": "2.5.2",
+    "version": "2.6.0",
     "author": "Anthony Santilli",
     "contributors": [
         {
@@ -12,7 +12,7 @@
         "node": "12.9.1"
     },
     "dependencies": {
-        "@types/underscore": "^1.10.9",
+        "@types/underscore": "^1.10.16",
         "body-parser": "^1.19.0",
         "dateformat": "^3.0.3",
         "edit-json-file": "^1.4.0",
@@ -30,7 +30,7 @@
         "extend": "^3.0.2",
         "querystring": "^0.2.0",
         "request": "^2.88.2",
-        "request-promise": "^4.2.5",
+        "request-promise": "^4.2.6",
         "underscore": "^1.10.2",
         "winston": "^3.3.3",
         "winston-daily-rotate-file": "^4.5.0",

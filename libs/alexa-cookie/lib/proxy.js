@@ -15,7 +15,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const FORMERDATA_STORE_VERSION = 3;
+const FORMERDATA_STORE_VERSION = 4;
 
 function addCookies(Cookie, headers) {
     if (!headers || !headers['set-cookie']) return Cookie;
@@ -61,16 +61,19 @@ function initAmazonProxy(_options, callbackCookie, callbackListening) {
     };
     const initialCookies = {};
 
+    const formerDataStorePath = _options.formerDataStorePath || path.join(__dirname, 'formerDataStore.json');
+    let formerDataStoreValid = false;
     if (!_options.formerRegistrationData) {
         try {
-            if (fs.existsSync(path.join(__dirname, 'formerDataStore.json'))) {
+            if (fs.existsSync(formerDataStorePath)) {
                 const formerDataStore = JSON.parse(fs.readFileSync(path.join(__dirname, 'formerDataStore.json'), 'utf8'));
                 if (typeof formerDataStore === 'object' && formerDataStore.storeVersion === FORMERDATA_STORE_VERSION) {
                     _options.formerRegistrationData = _options.formerRegistrationData || {};
                     _options.formerRegistrationData.frc = _options.formerRegistrationData.frc || formerDataStore.frc;
                     _options.formerRegistrationData['map-md'] = _options.formerRegistrationData['map-md'] || formerDataStore['map-md'];
                     _options.formerRegistrationData.deviceId = _options.formerRegistrationData.deviceId || formerDataStore.deviceId;
-                    _options.logger && _options.logger('Proxy Init: loaded temp data store as fallback former data');
+                    _options.logger && _options.logger('Proxy Init: loaded temp data store ass fallback former data');
+                    formerDataStoreValid = true;
                 }
             }
         } catch (_err) {
@@ -98,7 +101,7 @@ function initAmazonProxy(_options, callbackCookie, callbackListening) {
     }
 
     let deviceId = '';
-    if (!_options.formerRegistrationData || !_options.formerRegistrationData.deviceId) {
+    if (!_options.formerRegistrationData || !_options.formerRegistrationData.deviceId || !formerDataStoreValid) {
         const buf = Buffer.alloc(16); // 16 random bytes
         const bufHex = crypto.randomFillSync(buf).toString('hex').toUpperCase(); // convert into hex = 32x 0-9A-F
         deviceId = Buffer.from(bufHex).toString('hex'); // convert into hex = 64 chars that are hex of hex id
@@ -115,7 +118,7 @@ function initAmazonProxy(_options, callbackCookie, callbackListening) {
             'map-md': initialCookies['map-md'],
             'frc': initialCookies.frc
         };
-        fs.writeFileSync(path.join(__dirname, 'formerDataStore.json'), JSON.stringify(formerDataStore), 'utf8');
+        fs.writeFileSync(formerDataStorePath, JSON.stringify(formerDataStore), 'utf8');
     } catch (_err) {
         // ignore
     }
