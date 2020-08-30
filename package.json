@@ -15,7 +15,7 @@
         "@types/underscore": "^1.10.16",
         "body-parser": "^1.19.0",
         "dateformat": "^3.0.3",
-        "edit-json-file": "^1.4.0",
+        "edit-json-file": "^1.4.1",
         "express": "^4.17.1",
         "express-remove-route": "1.0.0",
         "cookie": "^0.4.1",
