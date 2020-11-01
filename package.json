@@ -21,7 +21,7 @@
         "cookie": "^0.4.1",
         "find-free-port": "^2.0.0",
         "getos": "^3.2.1",
-        "http-proxy-middleware": "^1.0.5",
+        "http-proxy-middleware": "^1.0.6",
         "http-proxy-response-rewrite": "^0.0.1",
         "https": "^1.0.0",
         "moment": "^2.27.0",
