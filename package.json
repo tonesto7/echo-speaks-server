@@ -24,7 +24,7 @@
         "http-proxy-middleware": "^1.0.5",
         "http-proxy-response-rewrite": "^0.0.1",
         "https": "^1.0.0",
-        "moment": "^2.27.0",
+        "moment": "^2.29.1",
         "node-datetime": "^2.1.2",
         "os": "^0.1.1",
         "extend": "^3.0.2",
