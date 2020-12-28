@@ -1,48 +1,46 @@
 {
     "name": "echo-speaks-server",
-    "version": "2.6.0",
+    "version": "2.7.0",
     "author": "Anthony Santilli",
-    "contributors": [
-        {
-            "name": "Apollon77",
-            "email": "ingo@fischer-ka.de"
-        }
-    ],
+    "contributors": [{
+        "name": "Apollon77",
+        "email": "ingo@fischer-ka.de"
+    }],
     "engines": {
-        "node": "12.9.1"
+        "node": ">=12.9.1"
     },
     "dependencies": {
-        "@types/underscore": "^1.10.16",
+        "@types/underscore": "^1.10.24",
         "body-parser": "^1.19.0",
         "dateformat": "^3.0.3",
-        "edit-json-file": "^1.4.0",
+        "edit-json-file": "^1.5.0",
         "express": "^4.17.1",
         "express-remove-route": "1.0.0",
         "cookie": "^0.4.1",
         "find-free-port": "^2.0.0",
         "getos": "^3.2.1",
-        "http-proxy-middleware": "^1.0.5",
+        "http-proxy-middleware": "^1.0.6",
         "http-proxy-response-rewrite": "^0.0.1",
         "https": "^1.0.0",
-        "moment": "^2.27.0",
+        "moment": "^2.29.1",
         "node-datetime": "^2.1.2",
         "os": "^0.1.1",
         "extend": "^3.0.2",
         "querystring": "^0.2.0",
         "request": "^2.88.2",
         "request-promise": "^4.2.6",
-        "underscore": "^1.10.2",
+        "underscore": "^1.12.0",
         "winston": "^3.3.3",
         "winston-daily-rotate-file": "^4.5.0",
         "compare-versions": "^3.6.0"
     },
     "devDependencies": {
-        "eslint": "^7.5.0",
-        "eslint-config-prettier": "^6.11.0",
-        "eslint-plugin-prettier": "^3.1.4",
-        "lint-staged": "^10.2.11",
-        "prettier": "^2.0.5",
-        "@alcalzone/release-script": "^1.6.0"
+        "eslint": "^7.16.0",
+        "eslint-config-prettier": "^6.15.0",
+        "eslint-plugin-prettier": "^3.3.0",
+        "lint-staged": "^10.5.3",
+        "prettier": "^2.2.1",
+        "@alcalzone/release-script": "^1.8.1"
     },
     "repository": {
         "type": "git",
