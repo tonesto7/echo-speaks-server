@@ -1,6 +1,6 @@
 const packageFile = require('./package.json'),
     appVer = packageFile.version,
-    alexaCookie = require('./alexa-cookie/alexa-cookie'),
+    alexaCookie = require('./libs/alexa-cookie/alexa-cookie'),
     reqPromise = require("request-promise"),
     logger = require('./logger'),
     express = require('express'),
@@ -149,6 +149,11 @@ function startWebConfig() {
                 // console.log(configData)
                 res.send(JSON.stringify(sessionFile.get() || {}));
             });
+            webApp.post('/wakeup', (req, res) => {
+                // console.log('req: ', req.headers);
+                logger.info(`Server Wakeup Received | Reason: (${req.headers.wakesrc})`);
+                res.send("OK");
+            });
             webApp.get('/checkVersion', (req, res) => {
                 // console.log(configData)
                 res.send(JSON.stringify(checkVersion()));
@@ -205,14 +210,33 @@ function startWebConfig() {
                     formerRegistrationData: runTimeData.savedConfig.cookieData
                 }, (err, result) => {
                     if (result && Object.keys(result).length >= 2) {
-                        sendCookiesToEndpoint((configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null), result);
-                        runTimeData.savedConfig.cookieData = result;
-                        // console.log('RESULT: ' + err + ' / ' + JSON.stringify(result));
-                        logger.info('Successfully Refreshed Alexa Cookie...');
-                        res.send({
-                            result: JSON.stringify(result)
+                      isCookieValid(result)
+                        .then((valid) => {
+                            if (valid) {
+                                sendCookiesToEndpoint((configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null), result);
+                                runTimeData.savedConfig.cookieData = result;
+                                // console.log('RESULT: ' + err + ' / ' + JSON.stringify(result));
+                                logger.info('Successfully Refreshed Alexa Cookie...');
+                                res.send({
+                                    result: JSON.stringify(result)
+                                });
+                            } else {
+                                logger.error(`** ERROR: Unsuccessfully refreshed Alexa Cookie it was found to be invalid/expired... **`);
+                                logger.error('RESULT: ' + err + ' / ' + JSON.stringify(result));
+                                logger.warn(`** WARNING: We are clearing the Cookie from ${configData.settings.hubPlatform} to prevent further requests and server load... **`);
+                                sendClearAuthToST()
+                            }
                         });
+                    } else {
+                        logger.error(`** ERROR: Unsuccessfully refreshed Alexa Cookie it was found to be invalid/expired... **`);
+                        logger.error('RESULT: ' + err + ' / ' + JSON.stringify(result));
+                        logger.warn(`** WARNING: We are clearing the Cookie from ${configData.settings.hubPlatform} to prevent further requests and server load... **`);
+                        sendClearAuthToST()
                     }
+                    setTimeout(() => {
+                        logger.warn("Restarting after cookie refresh attempt");
+                        process.exit(1);
+                    }, 25 * 1000);
                 });
             });
             webApp.get('/configData', (req, res) => {
@@ -297,17 +321,23 @@ function startWebServer(checkForCookie = false) {
         trace: (configData.settings.serviceTrace === true),
         checkForCookie: checkForCookie,
         serverPort: configData.settings.serverPort,
-        amazonPage: configData.settings.amazonDomain,
+        amazonPage: (configData.settings.amazonDomain === 'amazon.co.jp') ? configData.settings.amazonDomain : undefined,
+        logger: console.log,
+        baseAmazonPage: (configData.settings.amazonDomain === 'amazon.co.jp') ? configData.settings.amazonDomain : undefined,
         // alexaServiceHost: ((configData.settings.amazonDomain === 'amazon.de' || configData.settings.amazonDomain === 'amazon.co.uk') ? 'layla.' : 'pitangui.') + configData.settings.amazonDomain,
         setupProxy: true,
         proxyOwnIp: getIPAddress(),
         proxyListenBind: '0.0.0.0',
+        // proxyLogLevel: 'info', // optional: Loglevel of Proxy, default 'warn'
         protocolPrefix: getProtoPrefix(),
+        regDataAppName: "Echo Speaks",
         useHeroku: isHeroku,
         proxyHost: configData.settings.hostUrl,
         proxyPort: configData.settings.serverPort,
         proxyRootPath: isHeroku ? '/proxy' : '/proxy',
         acceptLanguage: configData.settings.regionLocale,
+        formerRegistrationData: runTimeData.savedConfig.cookieData,
+        expressInstance: webApp,
         callbackEndpoint: configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null
     };
 
@@ -527,7 +557,7 @@ function alexaLogin(username, password, alexaOptions, callback) {
                 config.cookieData = sessionData.cookieData || {};
                 callback(null, 'Login Successful (Stored Session)', config);
             } else {
-                alexaCookie.generateAlexaCookie(username, password, alexaOptions, webApp, (err, result) => {
+                alexaCookie.generateAlexaCookie(username, password, alexaOptions, (err, result) => {
                     //   console.log('generateAlexaCookie error: ', err);
                     //   console.log('generateAlexaCookie result: ', result);
                     if (err && (err.message.startsWith('Login unsuccessful') || err.message.startsWith('Amazon-Login-Error:') || err.message.startsWith(' You can try to get the cookie manually by opening'))) {
@@ -574,28 +604,12 @@ let remSessionItem = (key) => {
     sessionData = sessionFile.get();
 };
 
-var clearSession = (url) => {
+var clearSession = () => {
     remSessionItem('csrf');
     remSessionItem('cookie');
     remSessionItem('cookieData');
     if (runTimeData.savedConfig.cookieData) delete runTimeData.savedConfig.cookieData;
-    if (url) {
-        let options = {
-            method: 'DELETE',
-            uri: url,
-            json: true
-        };
-        reqPromise(options)
-            .then((resp) => {
-                // console.log('resp:', resp);
-                if (resp) {
-                    logger.info(`** Sent Remove Alexa Cookie Data Request to ${configData.settings.hubPlatform} Successfully! **`);
-                }
-            })
-            .catch((err) => {
-                logger.error(`ERROR: Unable to send Alexa Cookie Data to ${configData.settings.hubPlatform}: ` + err.message);
-            });
-    }
+    sendClearAuthToST();
 };
 
 function getRemoteCookie(alexaOptions) {
@@ -656,7 +670,10 @@ function sendCookiesToEndpoint(url, cookieData) {
 
 function isCookieValid(cookieData) {
     return new Promise(resolve => {
-        if (!(cookieData && cookieData.loginCookie && cookieData.csrf)) resolve(false);
+        if (!(cookieData && cookieData.loginCookie && cookieData.csrf)) {
+            logger.error(`isCookieValid ERROR | Cookie or CSRF value not received!!!`);
+            resolve(false);
+        }
         reqPromise({
                 method: 'GET',
                 uri: `https://alexa.${configData.settings.amazonDomain}/api/bootstrap`,
@@ -675,10 +692,11 @@ function isCookieValid(cookieData) {
                     // logger.info(`** Alexa Cookie Valid (${valid}) **`);
                     resolve(valid);
                 }
+                resolve(true);
             })
             .catch((err) => {
                 logger.error(`ERROR: Unable to validate Alexa Cookie Data: ` + err.message);
-                resolve(false);
+                resolve(true);
             });
     });
 }

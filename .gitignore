@@ -96,3 +96,5 @@ website/
 
 
 /icons/senseRaw.png
+alexa-cookie/lib/formerDataStore.json
+libs/alexa-cookie/lib/formerDataStore.json
