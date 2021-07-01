@@ -224,14 +224,14 @@ function startWebConfig() {
                                 logger.error(`** ERROR: Unsuccessfully refreshed Alexa Cookie it was found to be invalid/expired... **`);
                                 logger.error('RESULT: ' + err + ' / ' + JSON.stringify(result));
                                 logger.warn(`** WARNING: We are clearing the Cookie from ${configData.settings.hubPlatform} to prevent further requests and server load... **`);
-                                sendClearAuthToST()
+                                sendClearAuthToST();
                             }
                         });
                     } else {
                         logger.error(`** ERROR: Unsuccessfully refreshed Alexa Cookie it was found to be invalid/expired... **`);
                         logger.error('RESULT: ' + err + ' / ' + JSON.stringify(result));
                         logger.warn(`** WARNING: We are clearing the Cookie from ${configData.settings.hubPlatform} to prevent further requests and server load... **`);
-                        sendClearAuthToST()
+                        sendClearAuthToST();
                     }
                     setTimeout(() => {
                         logger.warn("Restarting after cookie refresh attempt");
