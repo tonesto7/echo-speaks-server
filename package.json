@@ -12,7 +12,7 @@
     "dependencies": {
         "@types/underscore": "^1.11.3",
         "body-parser": "^1.19.0",
-        "dateformat": "^4.5.1",
+        "dateformat": "^4.6.3",
         "edit-json-file": "^1.6.0",
         "express": "^4.17.1",
         "express-remove-route": "1.0.0",
@@ -35,11 +35,11 @@
         "compare-versions": "^3.6.0"
     },
     "devDependencies": {
-        "eslint": "^7.29.0",
+        "eslint": "^7.32.0",
         "eslint-config-prettier": "^6.15.0",
-        "eslint-plugin-prettier": "^3.4.0",
+        "eslint-plugin-prettier": "^3.4.1",
         "lint-staged": "^10.5.4",
-        "prettier": "^2.3.2",
+        "prettier": "^2.4.1",
         "@alcalzone/release-script": "^1.10.0"
     },
     "repository": {
