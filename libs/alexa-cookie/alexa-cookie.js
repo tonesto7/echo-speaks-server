@@ -401,7 +401,7 @@ function AlexaCookie() {
         }
 
         function prepareResult(err, data) {
-            if (err || !data.accessToken) {
+            if (err || !data.authorization_code) {
                 callback && callback(err, data.loginCookie);
                 return;
             }
@@ -449,17 +449,17 @@ function AlexaCookie() {
             },
             "registration_data": {
                 "domain": "Device",
-                "app_version": "2.2.223830.0",
+                "app_version": "2.2.443692.0",
                 "device_type": "A2IVLV5VM2W81",
                 "device_name": `%FIRST_NAME%\u0027s%DUPE_STRATEGY_1ST%Echo Speaks`,
-                "os_version": "11.4.1",
+                "os_version": "14.8",
                 "device_serial": deviceSerial,
                 "device_model": "iPhone",
                 "app_name": "Echo Speaks",
                 "software_version": "1"
             },
             "auth_data": {
-                "access_token": loginData.accessToken
+                // Filled below
             },
             "user_context_map": {
                 "frc": cookies.frc
@@ -470,6 +470,19 @@ function AlexaCookie() {
                 "website_cookies"
             ]
         };
+        if (loginData.accessToken) {
+            registerData.auth_data = {
+                "access_token": loginData.accessToken
+            };
+        } else if (loginData.authorization_code && loginData.verifier) {
+            registerData.auth_data = {
+                "client_id" : loginData.deviceId,
+                "authorization_code" : loginData.authorization_code,
+                "code_verifier" : loginData.verifier,
+                "code_algorithm" : "SHA-256",
+                "client_domain" : "DeviceLegacy"
+            };
+        }
         for (let key in cookies) {
             if (!cookies.hasOwnProperty(key)) continue;
             registerData.cookies.website_cookies.push({
@@ -483,13 +496,13 @@ function AlexaCookie() {
             path: '/auth/register',
             method: 'POST',
             headers: {
-                'User-Agent': 'AmazonWebView/Amazon Alexa/2.2.223830.0/iOS/11.4.1/iPhone',
+                'User-Agent': 'AmazonWebView/Amazon Alexa/2.2.443692.0/iOS/14.8/iPhone',
                 'Accept-Language': _options.acceptLanguage,
                 'Accept-Charset': 'utf-8',
                 'Connection': 'keep-alive',
                 'Content-Type': 'application/json',
                 'Cookie': loginData.loginCookie,
-                'Accept': '*/*',
+                'Accept': 'application/json',
                 'x-amzn-identity-auth-domain': 'api.' + _options.baseAmazonPage
             },
             body: JSON.stringify(registerData)
@@ -517,7 +530,7 @@ function AlexaCookie() {
             Cookie = addCookies(Cookie, response.headers);
             loginData.refreshToken = body.response.success.tokens.bearer.refresh_token;
             loginData.tokenDate = Date.now();
-
+            loginData.macDms = body.response.success.tokens.mac_dms;
 
             /*
                 Get Amazon Marketplace Country
@@ -525,10 +538,10 @@ function AlexaCookie() {
 
             let options = {
                 host: 'alexa.' + _options.baseAmazonPage,
-                path: '/api/users/me?platform=ios&version=2.2.223830.0',
+                path: '/api/users/me?platform=ios&version=2.2.443692.0',
                 method: 'GET',
                 headers: {
-                    'User-Agent': 'AmazonWebView/Amazon Alexa/2.2.223830.0/iOS/11.4.1/iPhone',
+                    'User-Agent': 'AmazonWebView/Amazon Alexa/2.2.443692.0/iOS/14.8/iPhone',
                     'Accept-Language': _options.acceptLanguage,
                     'Accept-Charset': 'utf-8',
                     'Connection': 'keep-alive',
@@ -581,6 +594,8 @@ function AlexaCookie() {
                         loginData.localCookie = resData.cookie;
                         loginData.csrf = resData.csrf;
                         delete loginData.accessToken;
+                        delete loginData.authorization_code;
+                        delete loginData.verifier;
                         _options.logger && _options.logger('Final Registraton Result: ' + JSON.stringify(loginData));
                         callback && callback(null, loginData);
                     });
@@ -597,7 +612,7 @@ function AlexaCookie() {
 
         const exchangeParams = {
             'di.os.name': 'iOS',
-            'app_version': '2.2.223830.0',
+            'app_version': '2.2.443692.0',
             'domain': '.' + amazonPage,
             'source_token': refreshToken,
             'requested_token_type': 'auth_cookies',
@@ -613,7 +628,7 @@ function AlexaCookie() {
             path: '/ap/exchangetoken',
             method: 'POST',
             headers: {
-                'User-Agent': 'AmazonWebView/Amazon Alexa/2.2.223830.0/iOS/11.4.1/iPhone',
+                'User-Agent': 'AmazonWebView/Amazon Alexa/2.2.443692.0/iOS/14.8/iPhone',
                 'Accept-Language': _options.acceptLanguage,
                 'Accept-Charset': 'utf-8',
                 'Connection': 'keep-alive',
@@ -691,7 +706,7 @@ function AlexaCookie() {
 
         const refreshData = {
             "app_name": "Echo Speaks",
-            "app_version": "2.2.223830.0",
+            "app_version": "2.2.443692.0",
             "di.sdk.version": "6.10.0",
             "source_token": _options.formerRegistrationData.refreshToken,
             "package_name": "com.amazon.echo",
@@ -700,7 +715,7 @@ function AlexaCookie() {
             "requested_token_type": "access_token",
             "source_token_type": "refresh_token",
             "di.os.name": "iOS",
-            "di.os.version": "11.4.1",
+            "di.os.version": "14.8",
             "current_version": "6.10.0"
         };
 
@@ -709,7 +724,7 @@ function AlexaCookie() {
             path: '/auth/token',
             method: 'POST',
             headers: {
-                'User-Agent': 'AmazonWebView/Amazon Alexa/2.2.223830.0/iOS/11.4.1/iPhone',
+                'User-Agent': 'AmazonWebView/Amazon Alexa/2.2.443692.0/iOS/14.8/iPhone',
                 'Accept-Language': _options.acceptLanguage,
                 'Accept-Charset': 'utf-8',
                 'Connection': 'keep-alive',

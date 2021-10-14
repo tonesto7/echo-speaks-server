@@ -123,6 +123,18 @@ function initAmazonProxy(_options, callbackCookie, callbackListening) {
         // ignore
     }
 
+    function base64URLEncode(str) {
+		return str.toString('base64')
+			.replace(/\+/g, '-')
+			.replace(/\//g, '_')
+			.replace(/=/g, '');
+	}
+	function sha256(buffer) {
+		return crypto.createHash('sha256').update(buffer).digest();
+	}
+	const code_verifier = base64URLEncode(crypto.randomBytes(32));
+	const code_challenge = base64URLEncode(sha256(code_verifier));
+
     let proxyCookies = "";
 
     // proxy middleware options
@@ -192,10 +204,14 @@ function initAmazonProxy(_options, callbackCookie, callbackListening) {
 
     function onError(err, req, res) {
         _options.logger && _options.logger('ERROR: ' + err);
-        res.writeHead(500, {
-            'Content-Type': 'text/plain'
-        });
-        res.end('Proxy-Error: ' + err);
+        try {
+            res.writeHead(500, {
+                'Content-Type': 'text/plain'
+            });
+            res.end('Proxy-Error: ' + err);
+        } catch (err) {
+            // ignore
+        }
     }
 
     function replaceHosts(data) {
@@ -257,9 +273,11 @@ function initAmazonProxy(_options, callbackCookie, callbackListening) {
         if (req.method === 'POST') {
             if (typeof proxyReq.getHeader === 'function' && proxyReq.getHeader('referer')) {
                 let fixedReferer = replaceHostsBack(proxyReq.getHeader('referer'));
-                proxyReq.setHeader('referer', fixedReferer);
-                _options.logger && _options.logger('Alexa-Cookie: Modify headers: Changed Referer: ' + fixedReferer);
-                modified = true;
+                if (fixedReferer) {
+                    proxyReq.setHeader('referer', fixedReferer);
+                    _options.logger && _options.logger('Alexa-Cookie: Modify headers: Changed Referer: ' + fixedReferer);
+                    modified = true;
+                }
             }
             if (typeof proxyReq.getHeader === 'function' && proxyReq.getHeader('origin') !== 'https://' + proxyReq.getHeader('host')) {
                 proxyReq.setHeader('origin', `https://www.${_options.baseAmazonPage}`);
@@ -315,10 +333,11 @@ function initAmazonProxy(_options, callbackCookie, callbackListening) {
 
             callbackCookie && callbackCookie(null, {
                 "loginCookie": proxyCookies,
-                "accessToken": queryParams['openid.oa2.access_token'],
+                "authorization_code": queryParams['openid.oa2.authorization_code'],
                 "frc": initialCookies.frc,
                 "map-md": initialCookies['map-md'],
-                "deviceId": deviceId
+                "deviceId": deviceId,
+                "verifier": code_verifier
             });
             return;
         }
@@ -334,7 +353,7 @@ function initAmazonProxy(_options, callbackCookie, callbackListening) {
             return;
         }
 
-        modifyResponse(res, (proxyRes && proxyRes.headers ? proxyRes.headers['content-encoding'] || '' : ''), function (body) {
+        modifyResponse(res, (proxyRes && proxyRes.headers ? proxyRes.headers['content-encoding'] || '' : ''), function(body) {
             if (body) {
                 const bodyOrig = body;
                 body = replaceHosts(body);

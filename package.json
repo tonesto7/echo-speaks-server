@@ -1,6 +1,6 @@
 {
     "name": "echo-speaks-server",
-    "version": "2.7.1",
+    "version": "3.0.0",
     "author": "Anthony Santilli",
     "contributors": [{
         "name": "Apollon77",
@@ -10,21 +10,21 @@
         "node": ">=12.9.1"
     },
     "dependencies": {
-        "@types/underscore": "^1.11.2",
+        "@types/underscore": "^1.11.3",
         "body-parser": "^1.19.0",
-        "dateformat": "^4.5.1",
+        "dateformat": "^4.6.3",
         "edit-json-file": "^1.6.0",
         "express": "^4.17.1",
         "express-remove-route": "1.0.0",
         "cookie": "^0.4.1",
         "find-free-port": "^2.0.0",
         "getos": "^3.2.1",
-        "http-proxy-middleware": "^2.0.0",
+        "http-proxy-middleware": "^2.0.1",
         "http-proxy-response-rewrite": "^0.0.1",
         "https": "^1.0.0",
         "moment": "^2.29.1",
         "node-datetime": "^2.1.2",
-        "os": "^0.1.1",
+        "os": "^0.1.2",
         "extend": "^3.0.2",
         "querystring": "^0.2.1",
         "request": "^2.88.2",
@@ -35,12 +35,12 @@
         "compare-versions": "^3.6.0"
     },
     "devDependencies": {
-        "eslint": "^7.29.0",
+        "eslint": "^7.32.0",
         "eslint-config-prettier": "^6.15.0",
-        "eslint-plugin-prettier": "^3.4.0",
+        "eslint-plugin-prettier": "^3.4.1",
         "lint-staged": "^10.5.4",
         "prettier": "^2.3.2",
-        "@alcalzone/release-script": "^1.10.0"
+        "@alcalzone/release-script": "^3.4.0"
     },
     "repository": {
         "type": "git",
