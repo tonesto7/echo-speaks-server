@@ -48,7 +48,7 @@
 
 <body>
     <!-- Settings Form -->
-    <div style="margin: 0 auto; max-width: 500px;">
+    <div style="margin: 0 auto; max-width: 550px;">
         <form class="p-5">
             <p class="h4 mb-0 text-center">Echo Speaks Service</p>
             <div class="mt-0 mb-2 text-center">
@@ -77,8 +77,9 @@
                 </div>
                 <div id="clearLoginDiv" class="w-100">
                     <div class="text-center">
-                        <h5 class="my-2">Authentication Good!</h5>
-                        <button id="clearLoginBtn" class="btn btn-amber btn-rounded mt-0 mb-4" type="button"><i class="fas fa-times mr-1"></i>Clear Login Info</button>
+                        <h5 class="my-2" style="font-weight: bold;">Authentication Good!</h5>
+                        <button id="clearLoginBtn" class="btn btn-amber btn-sm btn-rounded mt-0 mb-0" type="button"><i class="fas fa-refresh mr-1"></i>Clear Login Data</button>
+                        <div class="my-2" style="size: smallest;">NOTICE: Clearing all login data will remove data from Hubitat and require re-login to resume operation!</div>
                     </div>
                 </div>
                 <div id="proxyLoginDiv" class="w-100">
@@ -93,18 +94,18 @@
                 <div class="card-body w-100 py-2">
                     <div class="form-check">
                         <input type="checkbox" class="form-check-input" id="useHeroku" disabled>
-                        <label class="form-check-label" for="useHeroku">Running on Heroku?</label>
+                        <label class="form-check-label font-small" for="useHeroku">Running on Heroku?</label>
                     </div>
                     <div class="form-check">
                         <input type="checkbox" class="form-check-input" id="serviceDebug" disabled>
-                        <label class="form-check-label" for="serviceDebug">Service Debug?</label>
+                        <label class="form-check-label font-small" for="serviceDebug">Service Debug?</label>
                     </div>
                     <div class="form-check">
                         <input type="checkbox" class="form-check-input" id="serviceTrace" disabled>
-                        <label class="form-check-label" for="serviceTrace">Service Trace?</label>
+                        <label class="form-check-label font-small" for="serviceTrace">Service Trace?</label>
                     </div>
                     <div id="localServerUrlDiv">
-                        <p id="localServerUrl"></p>
+                        <p class="font-small" id="localServerUrl"></p>
                     </div>
                 </div>
             </div>
@@ -140,17 +141,18 @@
                             Enter the IP Address xxx.xxx.xxx.xxx
                         </small>
                     </div> -->
-                    <div class="md-form my-2">
+                    <div class="md-form mt-2 mb-4">
+                        <small id="hubPlatformHelpBlockMD" style="font-size: small" class="form-text text-muted">
+                            Smart Hub Platform
+                        </small>
                         <select id="hubPlatform" class="browser-default custom-select">
                             <option value="Hubitat" selected>Hubitat</option>
                             <option value="SmartThings">SmartThings</option>
                         </select>
-                        <small id="hubPlatformHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
-                            Select the hub platform
-                        </small>
+
                     </div>
-                    <div class="md-form my-2" id="localDivHubPort">
-                        <i class="fa fa-info prefix"></i>
+                    <div class="md-form mt-2 mb-4" id="localDivHubPort">
+                        <!-- <i class="fa fa-info prefix"></i> -->
                         <input type="text" id="serverPort" name="serverPort" class="form-control" aria-describedby="serverPortHelpBlockMD">
                         <label for="serverPort" data-error="wrong" data-success="right">Server Port</label>
                         <small id="serverPortHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
@@ -158,8 +160,8 @@
                         </small>
                     </div>
 
-                    <div class="md-form my-2" id="callbackDivUrl">
-                        <i class="fa fa-at prefix"></i>
+                    <div class="md-form mt-2 mb-4" id="callbackDivUrl">
+                        <!-- <i class="fa fa-at prefix"></i> -->
                         <input type="text" id="appCallbackUrl" name="appCallbackUrl" class="form-control" aria-describedby="appCallbackUrlHelpBlockMD">
                         <label for="appCallbackUrl" data-error="wrong" data-success="right">App Callback Url</label>
                         <small id="appCallbackUrlHelpBlockMD" style="font-size: xx-small" class="form-text text-muted">
@@ -238,6 +240,8 @@
                             $('#hubPlatform').val(val);
                         } else if (key === 'appCallbackUrl') {
                             $('#appCallbackUrl').val(val);
+                            // $('#appCallbackUrl').select();
+                            $('#appCallbackUrl').focus()
                         } else if (key === 'useHeroku') {
                             console.log('useHeroku: ' + val);
                             useHeroku = (val === true || val === 'true')
@@ -354,6 +358,7 @@
                 }
             });
         });
+
         (function($) {
             $.fn.serializeFormJSON = function() {
                 var o = {};
