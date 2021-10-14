@@ -190,6 +190,7 @@
         let rootOrigin = window.location.origin;
         let rootHost = window.location.hostname;
         let serverVer;
+        let debugMode = true
 
         function getChecked(name) {
             return ($(`#${name}`).prop("checked") === true);
@@ -199,7 +200,6 @@
         let serviceTrace = getChecked('serviceTrace');
         console.log('rootOrigin: ' + rootOrigin);
         console.log('rootHost: ' + rootHost);
-
         $('#proxyLoginDiv').hide();
         $('#loginInputDiv').hide();
         $('#clearLoginDiv').hide();
@@ -214,7 +214,8 @@
         $(document).ready(function() {
             let url = rootOrigin + '/configData';
             $.getJSON(url, function(data) {
-                console.log('configData: ', data);
+                if (data.settings && data.settings.webDebug === true) debugMode = true
+                if (debugMode) console.log('configData: ', data);
                 configData = data;
                 $.each(data.state, function(key, val) {
                     if (key === 'loginProxyActive' && val === true) {
@@ -243,7 +244,7 @@
                             // $('#appCallbackUrl').select();
                             $('#appCallbackUrl').focus()
                         } else if (key === 'useHeroku') {
-                            console.log('useHeroku: ' + val);
+                            if (debugMode) console.log('useHeroku: ' + val);
                             useHeroku = (val === true || val === 'true')
                             $('#useHeroku').prop('checked', useHeroku);
                             useHeroku ? $('[id^="localDiv"]').hide() : $('[id^="localDiv"]').show();
@@ -257,11 +258,11 @@
                                 $('#localServerUrl').text(`Local Server URL: ${rootOrigin}`);
                             }
                         } else if (key === 'serviceDebug') {
-                            console.log('serviceDebug: ' + val);
+                            if (debugMode) console.log('serviceDebug: ' + val);
                             serviceDebug = (val === true || val === 'true')
                             $('#serviceDebug').prop('checked', serviceDebug);
                         } else if (key === 'serviceTrace') {
-                            console.log('serviceTrace: ' + val);
+                            if (debugMode) console.log('serviceTrace: ' + val);
                             serviceTrace = (val === true || val === 'true')
                             $('#serviceTrace').prop('checked', serviceTrace);
                         } else {
@@ -273,7 +274,7 @@
             });
 
             $.getJSON(esGithubNotices, function(noticeData) {
-                console.log(noticeData)
+                if (debugMode) console.log(noticeData)
                 if (noticeData && noticeData.notices && Object.keys(noticeData.notices).length) {
                     let html = ''
                     for (const i in noticeData.notices) {
@@ -294,41 +295,41 @@
         });
 
         $("#amazonDomain").change(function() {
-            console.log($(this).val());
+            if (debugMode) console.log($(this).val());
             configData.settings.amazonDomain = $(this).val();
         });
 
         $("#hubPlatform").change(function() {
-            console.log($(this).val());
+            if (debugMode) console.log($(this).val());
             configData.settings.hubPlatform = $(this).val();
         });
         $("#useHeroku").change(function() {
             configData.settings.useHeroku = getChecked('useHeroku');
             useHeroku = configData.settings.useHeroku;
-            console.log(`useHeroku: ${useHeroku}`)
+            if (debugMode) console.log(`useHeroku: ${useHeroku}`)
             useHeroku ? $('[id^="localDiv"]').hide() : $('[id^="localDiv"]').show();
             useHeroku ? $('[id^="cloudDiv"]').show() : $('[id^="cloudDiv"]').hide();
         });
         $("#serviceDebug").change(function() {
             configData.settings.serviceDebug = getChecked('serviceDebug');
             serviceDebug = configData.settings.serviceDebug;
-            console.log(`serviceDebug: ${serviceDebug}`)
+            if (debugMode) console.log(`serviceDebug: ${serviceDebug}`)
         });
         $("#serviceTrace").change(function() {
             configData.settings.serviceTrace = getChecked('serviceTrace');
             serviceDebug = configData.settings.serviceTrace;
-            console.log(`serviceTrace: ${serviceTrace}`)
+            if (debugMode) console.log(`serviceTrace: ${serviceTrace}`)
         });
 
         $("#proxyLoginLink").click(function() {
             let pUrl = useHeroku ? `https://${rootHost}/proxy` : `http://${rootHost}:${configData.settings.serverPort}/proxy`;
-            console.log('Proxy Url: ' + pUrl)
+            if (debugMode) console.log('Proxy Url: ' + pUrl)
             window.location.href = pUrl;
         });
 
         $("#manualCookieLink").click(function() {
             let pUrl = useHeroku ? `https://${rootHost}/manualCookie` : `http://${rootHost}:${configData.settings.serverPort}/manualCookie`;
-            console.log('Manual Cookie Url: ' + pUrl)
+            if (debugMode) console.log('Manual Cookie Url: ' + pUrl)
             window.location.href = pUrl;
         });
 
@@ -382,8 +383,8 @@
             var config = $(this).serializeFormJSON();
             var url = rootOrigin + '/configData';
             if (Object.keys(config).length) {
-                // console.log(config);
-                // console.log(configData.state.loginComplete);
+                if (debugMode) console.log(config);
+                if (debugMode) console.log(configData.state.loginComplete);
                 if (configData.state.loginComplete === true) {
                     delete configData.settings.user;
                     delete configData.settings.password;
@@ -424,7 +425,7 @@
                 }
                 xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
                 for (const h in config) {
-                    console.log('config item: ' + config[h] || undefined);
+                    if (debugMode) console.log('config item: ' + config[h] || undefined);
                     xmlhttp.setRequestHeader(h.toString(), config[h].toString())
                 }
                 xmlhttp.send(JSON.stringify(config));

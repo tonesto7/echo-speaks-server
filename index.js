@@ -73,6 +73,7 @@ function loadConfig() {
     configFile.set("settings.serviceDebug", process.env.serviceDebug === true || process.env.serviceDebug === "true");
     configFile.set("settings.serviceTrace", process.env.serviceTrace === true || process.env.serviceTrace === "true");
     configFile.set("settings.regionLocale", process.env.regionLocale || configData.settings.regionLocale || "en-US");
+    configFile.set("settings.webDebug", process.env.webDebug || process.env.webDebug === "true");
     //   configFile.set('settings.serviceDebug', true);
     //   configFile.set('settings.serviceTrace', true);
     configFile.set("settings.serverPort", process.env.PORT || configData.settings.serverPort || 8091);
