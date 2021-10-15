@@ -162,9 +162,13 @@ async function startWebConfig() {
                 // console.log('req: ', req.headers);
                 let macDms = req.headers && req.headers.macdms !== undefined ? JSON.parse(JSON.stringify(req.headers.macdms)) : undefined;
                 console.log("macDms: ", macDms);
+                console.log("device_private_key:", macDms.device_private_key);
+                console.log("adp_token:", macDms.adp_token);
+
                 logger.info(`CreateRS Request Received`);
-                if (macDms) {
-                    res.send(createRS(macDms));
+                if (macDms && macDms.device_private_key && macDms.adp_token) {
+                    let rs = await createRS(macDms);
+                    res.send(rs);
                 } else {
                     res.send("Missing Token or PK");
                 }
@@ -391,18 +395,18 @@ async function startWebServer(checkForCookie = false) {
  */
 async function createRS(macDms) {
     const now = new Date().toISOString();
-
+    const method = "GET";
+    const body = "";
+    const path = "/tcomm/";
     const sign = crypto.createSign("SHA256");
-    sign.write("GET" + "\n");
-    sign.write("/tcomm/" + "\n");
+    sign.write(method + "\n");
+    sign.write(path + "\n");
     sign.write(now + "\n");
-    sign.write("".toString("utf-8") + "\n");
+    sign.write(body.toString("utf-8") + "\n");
     sign.write(macDms.adp_token);
     sign.end();
 
     const privateKey = "-----BEGIN PRIVATE KEY-----\n" + macDms.device_private_key + "\n-----END PRIVATE KEY-----";
-    let signature = sign.sign(privateKey, "base64");
-    console.log(`RS: ${signature}:${now}`);
     return `${sign.sign(privateKey, "base64")}:${now}`;
 }
 
