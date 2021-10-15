@@ -167,7 +167,7 @@ async function startWebConfig() {
                 // console.log("adp_token:", adpTkn);
                 if (devPK && adpTkn) {
                     createRS(devPK, adpTkn).then((rs) => {
-                        console.log("rs:", rs);
+                        // console.log("rs:", rs);
                         res.setHeader("Content-Type", "text/plain");
                         res.send({ rs: rs });
                     });
@@ -409,9 +409,7 @@ async function createRS(devPk, adpTkn) {
     sign.end();
 
     const privateKey = "-----BEGIN PRIVATE KEY-----\n" + devPk + "\n-----END PRIVATE KEY-----";
-    let output = `${sign.sign(privateKey, "base64")}:${now}`;
-    console.log("createRS Output: ", output);
-    return output;
+    return `${sign.sign(privateKey, "base64")}:${now}`;
 }
 
 function sendServerDataToHE() {
