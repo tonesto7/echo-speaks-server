@@ -160,14 +160,14 @@ async function startWebConfig() {
 
             webApp.post("/createRS", async (req, res) => {
                 // console.log('req: ', req.headers);
-                let macDms = req.headers && req.headers.macdms !== undefined ? JSON.parse(JSON.stringify(req.headers.macdms)) : undefined;
-                console.log("macDms: ", macDms);
-                console.log("device_private_key:", macDms.device_private_key);
-                console.log("adp_token:", macDms.adp_token);
+                let adpTkn = req.headers && req.headers.adptkn !== undefined ? JSON.parse(JSON.stringify(req.headers.adptkn)) : undefined;
+                let devPK = req.headers && req.headers.devpk !== undefined ? JSON.parse(JSON.stringify(req.headers.devpk)) : undefined;
+                console.log("device_private_key:", devPK);
+                console.log("adp_token:", adpTkn);
 
                 logger.info(`CreateRS Request Received`);
-                if (macDms && macDms.device_private_key && macDms.adp_token) {
-                    let rs = await createRS(macDms);
+                if (devPK && adpTkn) {
+                    let rs = await createRS(devPK, adpTkn);
                     res.send(rs);
                 } else {
                     res.send("Missing Token or PK");
@@ -393,7 +393,7 @@ async function startWebServer(checkForCookie = false) {
  * @param body The http message body.
  * @return {string}
  */
-async function createRS(macDms) {
+async function createRS(devPk, adpTkn) {
     const now = new Date().toISOString();
     const method = "GET";
     const body = "";
@@ -403,10 +403,10 @@ async function createRS(macDms) {
     sign.write(path + "\n");
     sign.write(now + "\n");
     sign.write(body.toString("utf-8") + "\n");
-    sign.write(macDms.adp_token);
+    sign.write(adpTkn);
     sign.end();
 
-    const privateKey = "-----BEGIN PRIVATE KEY-----\n" + macDms.device_private_key + "\n-----END PRIVATE KEY-----";
+    const privateKey = "-----BEGIN PRIVATE KEY-----\n" + devPk + "\n-----END PRIVATE KEY-----";
     return `${sign.sign(privateKey, "base64")}:${now}`;
 }
 
