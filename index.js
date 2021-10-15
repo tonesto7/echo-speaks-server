@@ -166,9 +166,11 @@ async function startWebConfig() {
                 // console.log("device_private_key:", devPK);
                 // console.log("adp_token:", adpTkn);
                 if (devPK && adpTkn) {
-                    const rs = createRS(devPK, adpTkn).toString();
-                    console.log("rs:", rs);
-                    res.send({ rs: rs });
+                    createRS(devPK, adpTkn).then((rs) => {
+                        console.log("rs:", rs);
+                        res.setHeader("Content-Type", "text/plain");
+                        res.send({ rs: rs });
+                    });
                 } else {
                     res.send("Missing Token or PK");
                 }
@@ -408,8 +410,8 @@ async function createRS(devPk, adpTkn) {
 
     const privateKey = "-----BEGIN PRIVATE KEY-----\n" + devPk + "\n-----END PRIVATE KEY-----";
     let output = `${sign.sign(privateKey, "base64")}:${now}`;
-    console.log("createRS Output: ", output.toString());
-    return output.toString();
+    console.log("createRS Output: ", output);
+    return output;
 }
 
 function sendServerDataToHE() {
