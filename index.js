@@ -16,6 +16,7 @@ const packageFile = require("./package.json"),
     sessionFile = editJsonFile(dataFolder + "/session.json"),
     fs = require("fs"),
     webApp = express(),
+    crypto = require("crypto"),
     urlencodedParser = bodyParser.urlencoded({
         extended: false,
     });
@@ -156,6 +157,19 @@ async function startWebConfig() {
                 logger.info(`Server Wakeup Received | Reason: (${reason})`);
                 res.send("OK");
             });
+
+            webApp.post("/createRS", async (req, res) => {
+                // console.log('req: ', req.headers);
+                let macDms = req.headers && req.headers.macdms !== undefined ? JSON.parse(JSON.stringify(req.headers.macdms)) : undefined;
+                console.log("macDms: ", macDms);
+                logger.info(`CreateRS Request Received`);
+                if (macDms) {
+                    res.send(createRS(macDms));
+                } else {
+                    res.send("Missing Token or PK");
+                }
+            });
+
             webApp.get("/checkVersion", (req, res) => {
                 // console.log(configData)
                 res.send(JSON.stringify(checkVersion()));
@@ -367,6 +381,29 @@ async function startWebServer(checkForCookie = false) {
             runTimeData.guardData = await getGuardDataSupport();
         }
     });
+}
+
+/**
+ * @param method The http request method (GET, POST, DELETE, ...).
+ * @param path The requested http url path and query.
+ * @param body The http message body.
+ * @return {string}
+ */
+async function createRS(macDms) {
+    const now = new Date().toISOString();
+
+    const sign = crypto.createSign("SHA256");
+    sign.write("GET" + "\n");
+    sign.write("/tcomm/" + "\n");
+    sign.write(now + "\n");
+    sign.write("".toString("utf-8") + "\n");
+    sign.write(macDms.adp_token);
+    sign.end();
+
+    const privateKey = "-----BEGIN PRIVATE KEY-----\n" + macDms.device_private_key + "\n-----END PRIVATE KEY-----";
+    let signature = sign.sign(privateKey, "base64");
+    console.log(`${signature}:${now}`);
+    return `${sign.sign(privateKey, "base64")}:${now}`;
 }
 
 function sendServerDataToHE() {
