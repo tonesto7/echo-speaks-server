@@ -167,7 +167,8 @@ async function startWebConfig() {
 
                 logger.info(`CreateRS Request Received`);
                 if (devPK && adpTkn) {
-                    let rs = await createRS(devPK, adpTkn);
+                    let rs = createRS(devPK, adpTkn);
+                    console.log("rs:", rs.toString());
                     res.send(rs);
                 } else {
                     res.send("Missing Token or PK");
