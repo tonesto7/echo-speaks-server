@@ -507,7 +507,7 @@ function AlexaCookie() {
             Cookie = addCookies(Cookie, response.headers);
             loginData.refreshToken = body.response.success.tokens.bearer.refresh_token;
             loginData.tokenDate = Date.now();
-            loginData.macDms = body.response.success.tokens.mac_dms;
+            loginData.macDms = JSON.stringify(body.response.success.tokens.mac_dms);
 
             /*
                 Get Amazon Marketplace Country
