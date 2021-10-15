@@ -160,12 +160,11 @@ async function startWebConfig() {
 
             webApp.post("/createRS", async (req, res) => {
                 // console.log('req: ', req.headers);
+                logger.info(`CreateRS Request Received`);
                 let adpTkn = req.headers && req.headers.adptkn !== undefined ? JSON.parse(JSON.stringify(req.headers.adptkn)) : undefined;
                 let devPK = req.headers && req.headers.devpk !== undefined ? JSON.parse(JSON.stringify(req.headers.devpk)) : undefined;
                 // console.log("device_private_key:", devPK);
                 // console.log("adp_token:", adpTkn);
-
-                logger.info(`CreateRS Request Received`);
                 if (devPK && adpTkn) {
                     const rs = createRS(devPK, adpTkn).toString();
                     console.log("rs:", rs);
@@ -409,8 +408,8 @@ async function createRS(devPk, adpTkn) {
 
     const privateKey = "-----BEGIN PRIVATE KEY-----\n" + devPk + "\n-----END PRIVATE KEY-----";
     let output = `${sign.sign(privateKey, "base64")}:${now}`;
-    console.log("createRS Output: ", output);
-    return output;
+    console.log("createRS Output: ", output.toString());
+    return output.toString();
 }
 
 function sendServerDataToHE() {
