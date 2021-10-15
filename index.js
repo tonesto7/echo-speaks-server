@@ -402,7 +402,7 @@ async function createRS(macDms) {
 
     const privateKey = "-----BEGIN PRIVATE KEY-----\n" + macDms.device_private_key + "\n-----END PRIVATE KEY-----";
     let signature = sign.sign(privateKey, "base64");
-    console.log(`${signature}:${now}`);
+    console.log(`RS: ${signature}:${now}`);
     return `${sign.sign(privateKey, "base64")}:${now}`;
 }
 
