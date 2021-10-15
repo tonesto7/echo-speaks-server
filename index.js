@@ -168,9 +168,9 @@ async function startWebConfig() {
                 if (devPK && adpTkn) {
                     createRS(devPK, adpTkn).then((rs) => {
                         // console.log("rs:", rs);
-                        res.setHeader("Content-Type", "text/plain");
-                        res.send(rs);
-                        // res.json(JSON.parse(JSON.stringify({ rs: rs })));
+                        // res.setHeader("Content-Type", "text/plain");
+                        // res.send(rs);
+                        res.json(JSON.parse(JSON.stringify({ rs: rs })));
                     });
                 } else {
                     res.send("Missing Token or PK");
