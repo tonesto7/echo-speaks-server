@@ -10,7 +10,7 @@
         "node": ">=12.9.1"
     },
     "dependencies": {
-        "@types/underscore": "^1.11.3",
+        "@types/underscore": "^1.11.4",
         "body-parser": "^1.19.0",
         "dateformat": "^4.6.3",
         "edit-json-file": "^1.6.0",
