@@ -1,7 +1,7 @@
 services:
   echo-speaks-server:
     image: echo-speaks-server:2.7.2
-    build: 
+    build:
       context: ../
     container_name: echo-speaks-server
     restart: always
