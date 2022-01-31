@@ -1,0 +1,1 @@
+# Echo speaks server will use this directory for persistent data

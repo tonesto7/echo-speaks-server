@@ -750,6 +750,10 @@ function getCookiesFromEndpoint(url) {
 ********************************************************************************/
 
 function getIPAddress() {
+    if (process.env.IPAddressOverride) {
+        return process.env.IPAddressOverride;
+    }
+
     let interfaces = os.networkInterfaces();
     for (const devName in interfaces) {
         let iface = interfaces[devName];
