@@ -17,5 +17,6 @@ COPY . .
 
 EXPOSE 8091
 ENV hubPlatform="Hubitat"
+ENV useHeroku=false
 
 CMD [ "node", "index.js" ]
