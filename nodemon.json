@@ -1,0 +1,7 @@
+{
+    "name": "nodemon",
+    "host": "localhost",
+    "port": "8091",
+    "delay": 2500,
+    "watch": ["libs/alexa-cookie/alexa-cookie.js", "libs/alexa-cookie/lib/proxy.js", "package.json", "index.js"]
+}

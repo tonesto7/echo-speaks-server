@@ -42,6 +42,7 @@
         "eslint-plugin-prettier": "^4.2.1",
         "lint-staged": "^13.0.4",
         "prettier": "^2.8.0",
+        "nodemon": "3.0.1",
         "@alcalzone/release-script": "^1.10.1"
     },
     "repository": {
@@ -52,7 +53,7 @@
         "url": "https://github.com/tonesto7/echo-speaks-server/issues"
     },
     "scripts": {
-        "start": "node index.js"
+        "start": "nodemon"
     },
     "main": "./index.js",
     "readmeFilename": "readme.md",
