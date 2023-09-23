@@ -113,7 +113,9 @@ function startWebConfig() {
 
             webApp.get("/", (req, res) => {
                 if (req.hostname) {
+                    console.log("req.hostname: ", req.hostname);
                     if (configData.settings.hostUrl === undefined || configData.settings.hostUrl !== req.hostname) {
+                        console.log("set host url: ", req.hostname);
                         logger.debug(`set host url: ${req.hostname}`);
                         configFile.set("settings.hostUrl", req.hostname);
                         configFile.save();
