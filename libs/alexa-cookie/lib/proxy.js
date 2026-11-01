@@ -198,6 +198,23 @@ function initAmazonProxy(_options, callbackCookie, callbackListening) {
         res.end('Proxy-Error: ' + err);
     }
 
+    // ES-AX-PATCH 2: keep root-relative HTML navigation inside Echo Speaks' proxy.
+    function rewriteRootRelativeAttributes(html) {
+        const proxyPath = `${_options.proxyRootPath}/www.${_options.baseAmazonPage}`;
+        return html.replace(/\b(action|formaction|href|src)(\s*=\s*)(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi,
+            function (match, attribute, equals, doubleQuoted, singleQuoted, unquoted) {
+                const value = doubleQuoted !== undefined ? doubleQuoted :
+                    (singleQuoted !== undefined ? singleQuoted : unquoted);
+                if (!value.startsWith('/') || value.startsWith('//') ||
+                    value === _options.proxyRootPath || value.startsWith(`${_options.proxyRootPath}/`)) {
+                    return match;
+                }
+                const quote = doubleQuoted !== undefined ? '"' :
+                    (singleQuoted !== undefined ? "'" : '');
+                return `${attribute}${equals}${quote}${proxyPath}${value}${quote}`;
+            });
+    }
+
     function replaceHosts(data) {
         let localHost = getLocalHost();
         const amazonRegex = new RegExp(`https?://www.${_options.baseAmazonPage}:?[0-9]*/`.replace(/\./g, "\\."), 'g');
@@ -276,6 +293,11 @@ function initAmazonProxy(_options, callbackCookie, callbackListening) {
     }
 
     function onProxyRes(proxyRes, req, res) {
+        // ES-AX-PATCH 1: prevent upstream HSTS/CSP from escaping the local HTTP proxy.
+        if (proxyRes && proxyRes.headers) {
+            delete proxyRes.headers['content-security-policy'];
+            delete proxyRes.headers['strict-transport-security'];
+        }
         const url = req.originalUrl || req.url;
         if (url.endsWith('.ico') || url.endsWith('.js') || url.endsWith('.ttf') || url.endsWith('.svg') || url.endsWith('.png') || url.endsWith('.appcache')) return;
         if (url.startsWith('/ap/uedata')) return;
@@ -338,6 +360,11 @@ function initAmazonProxy(_options, callbackCookie, callbackListening) {
             if (body) {
                 const bodyOrig = body;
                 body = replaceHosts(body);
+                // ES-AX-PATCH 2: only rewrite attributes in HTML, not JSON or JavaScript.
+                const contentType = (proxyRes && proxyRes.headers && proxyRes.headers['content-type']) || '';
+                if (/^(?:text\/html|application\/xhtml\+xml)(?:\s*;|$)/i.test(contentType)) {
+                    body = rewriteRootRelativeAttributes(body);
+                }
                 if (body !== bodyOrig) {
                     _options.logger && _options.logger('Alexa-Cookie: MODIFIED Response Body to rewrite URLs');
                     _options.logger && _options.logger('');
@@ -351,12 +378,23 @@ function initAmazonProxy(_options, callbackCookie, callbackListening) {
 
     // create the proxy (without context)
     const myProxy = proxy(optionsAlexa);
+
+    // ES-AX-PATCH 3: catch root-relative Amazon auth/API paths that escape /proxy.
+    function redirectAmazonRootPaths(req, res, next) {
+        if (!/^\/(?:ax|ap|cvf|aaut|gp)(?:\/|$)/.test(req.path)) {
+            return next();
+        }
+        return res.redirect(307,
+            `${_options.proxyRootPath}/www.${_options.baseAmazonPage}${req.originalUrl}`);
+    }
     if (_options.expressInstance !== undefined) {
+        _options.expressInstance.use(redirectAmazonRootPaths);
         _options.expressInstance.use(`${_options.proxyRootPath}`, myProxy);
         callbackListening(_options.expressInstance);
     } else {
         const app = express();
 
+        app.use(redirectAmazonRootPaths);
         app.use(myProxy);
         let server = app.listen(parseInt(_options.proxyPort), _options.proxyListenBind, function () {
             _options.debug && console.log('Alexa-Cookie: Proxy-Server listening on port ' + server.address().port);
