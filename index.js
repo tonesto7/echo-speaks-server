@@ -371,33 +371,7 @@ function startWebServer(checkForCookie = false) {
                     ? 6 * 60 * 60 * 1000   // 6 hours on Heroku (safe margin under the 24h dyno cycle)
                     : 24 * 60 * 60 * 1000; // 24 hours locally
                 logger.info(`Starting scheduled cookie refresh (every ${configData.settings.useHeroku === true ? "6 hours (Heroku)" : "24 hours (local)"})...`);
-                runTimeData.cookieRefreshInterval = setInterval(() => {
-                    logger.info("Scheduled cookie refresh triggered...");
-                    if (!runTimeData.savedConfig || !runTimeData.savedConfig.cookieData) {
-                        logger.warn("Scheduled refresh skipped: no cookieData in memory.");
-                        return;
-                    }
-                    alexaCookie.refreshAlexaCookie(
-                        { formerRegistrationData: runTimeData.savedConfig.cookieData },
-                        (err, result) => {
-                            if (result && Object.keys(result).length >= 2) {
-                                isCookieValid(result).then((valid) => {
-                                    if (valid) {
-                                        runTimeData.savedConfig.cookieData = result;
-                                        updSessionItem("cookieData", result);
-                                        sendCookiesToEndpoint(configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null, result);
-                                        logger.info("Scheduled cookie refresh completed successfully.");
-                                    } else {
-                                        logger.error("Scheduled refresh: refreshed cookie failed validation. Clearing auth.");
-                                        sendClearAuthToHub();
-                                    }
-                                });
-                            } else {
-                                logger.error("Scheduled refresh: failed to obtain new tokens. Error: " + (err && err.message));
-                            }
-                        }
-                    );
-                }, REFRESH_INTERVAL_MS);
+                runTimeData.cookieRefreshInterval = setInterval(() => scheduledCookieRefresh(0), REFRESH_INTERVAL_MS);
                 runTimeData.scheduledUpdatesActive = true;
             }
         }
@@ -438,6 +412,41 @@ function sendServerDataToHub() {
     });
 }
 
+// david-fix: scheduled refresh with retry/backoff. NEVER clears hub auth on failure;
+// the existing cookie/refresh token is kept so a transient Amazon error can't log us out.
+const REFRESH_RETRY_DELAYS_MS = [5, 15, 60, 180].map((m) => m * 60 * 1000);
+function scheduledCookieRefresh(attempt) {
+    if (runTimeData.cookieRetryTimer) { clearTimeout(runTimeData.cookieRetryTimer); runTimeData.cookieRetryTimer = null; }
+    logger.info(`Scheduled cookie refresh triggered (attempt ${attempt + 1})...`);
+    if (!runTimeData.savedConfig || !runTimeData.savedConfig.cookieData) {
+        logger.warn("Scheduled refresh skipped: no cookieData in memory.");
+        return;
+    }
+    const retry = (why) => {
+        if (attempt < REFRESH_RETRY_DELAYS_MS.length) {
+            const d = REFRESH_RETRY_DELAYS_MS[attempt];
+            logger.warn(`Scheduled refresh failed (${why}); keeping existing cookie, retrying in ${d / 60000} min.`);
+            runTimeData.cookieRetryTimer = setTimeout(() => scheduledCookieRefresh(attempt + 1), d);
+        } else {
+            logger.error(`Scheduled refresh failed (${why}) after ${attempt + 1} attempts; keeping existing cookie until next scheduled run.`);
+        }
+    };
+    try {
+        alexaCookie.refreshAlexaCookie({ formerRegistrationData: runTimeData.savedConfig.cookieData }, (err, result) => {
+            if (result && Object.keys(result).length >= 2) {
+                isCookieValid(result).then((valid) => {
+                    if (valid) {
+                        runTimeData.savedConfig.cookieData = result;
+                        updSessionItem("cookieData", result);
+                        sendCookiesToEndpoint(configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null, result);
+                        logger.info("Scheduled cookie refresh completed successfully.");
+                    } else retry("refreshed cookie failed validation");
+                });
+            } else retry((err && err.message) || "no tokens returned");
+        });
+    } catch (e) { retry(e.message); }
+}
+
 function sendClearAuthToHub() {
     let url = configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null;
     return new Promise((resolve) => {
@@ -467,7 +476,7 @@ function sendClearAuthToHub() {
 
 function getGuardDataSupport() {
     return new Promise((resolve) => {
-        if (runTimeData.guardData && Object.keys(runTimeData.guardData)) {
+        if (runTimeData.guardData && Object.keys(runTimeData.guardData).length) {
             resolve(runTimeData.guardData);
         }
         // console.log('alexaUrl: ', runTimeData.alexaUrl);
@@ -907,6 +916,7 @@ function exitHandler(options, exitCode) {
     alexaCookie.stopProxyServer();
     if (runTimeData.scheduledUpdatesActive) {
         if (runTimeData.cookieRefreshInterval) clearInterval(runTimeData.cookieRefreshInterval);
+        if (runTimeData.cookieRetryTimer) clearTimeout(runTimeData.cookieRetryTimer);
         runTimeData.scheduledUpdatesActive = false;
     }
     if (options.cleanup) {
