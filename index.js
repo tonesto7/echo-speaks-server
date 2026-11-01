@@ -218,28 +218,21 @@ function startWebConfig() {
                                     sendCookiesToEndpoint(configData.settings.appCallbackUrl ? String(configData.settings.appCallbackUrl).replace("/receiveData?", "/cookie?") : null, result);
                                     runTimeData.savedConfig.cookieData = result;
                                     updSessionItem("cookieData", result);
-                                    // console.log('RESULT: ' + err + ' / ' + JSON.stringify(result));
                                     logger.info("Successfully Refreshed Alexa Cookie...");
                                     res.send({
                                         result: JSON.stringify(result),
                                     });
                                 } else {
-                                    logger.error(`** ERROR: Unsuccessfully refreshed Alexa Cookie it was found to be invalid/expired... **`);
-                                    logger.error("RESULT: " + err + " / " + JSON.stringify(result));
-                                    logger.warn(`** WARNING: We are clearing the Cookie from ${configData.settings.hubPlatform} to prevent further requests and server load... **`);
-                                    sendClearAuthToHub();
+                                    // Fail-safe: keep the existing session, do NOT clear auth or restart
+                                    logger.error(`** ERROR: Refreshed Alexa Cookie failed validation. Keeping existing session (no auth clear, no restart). **`);
+                                    res.status(200).send({ error: "refreshed cookie failed validation", kept_existing: true });
                                 }
                             });
                         } else {
-                            logger.error(`** ERROR: Unsuccessfully refreshed Alexa Cookie it was found to be invalid/expired... **`);
-                            logger.error("RESULT: " + err + " / " + JSON.stringify(result));
-                            logger.warn(`** WARNING: We are clearing the Cookie from ${configData.settings.hubPlatform} to prevent further requests and server load... **`);
-                            sendClearAuthToHub();
+                            // Fail-safe: keep the existing session, do NOT clear auth or restart
+                            logger.error(`** ERROR: Cookie refresh did not return tokens. Keeping existing session (no auth clear, no restart). **`);
+                            res.status(200).send({ error: (err && err.message) || "no tokens returned", kept_existing: true });
                         }
-                        setTimeout(() => {
-                            logger.warn("Restarting after cookie refresh attempt");
-                            process.exit(1);
-                        }, 25 * 1000);
                     },
                 );
             });
