@@ -510,13 +510,26 @@ function AlexaCookie() {
             }
             _options.logger && _options.logger('Register App Response: ' + JSON.stringify(body));
 
-            if (!body.response || !body.response.success || !body.response.success.tokens || !body.response.success.tokens.bearer) {
-                callback && callback(new Error('No tokens in Register response'), null);
-                return;
-            }
             Cookie = addCookies(Cookie, response.headers);
-            loginData.refreshToken = body.response.success.tokens.bearer.refresh_token;
-            loginData.tokenDate = Date.now();
+            const bearerTokens = body.response && body.response.success && body.response.success.tokens && body.response.success.tokens.bearer;
+            if (bearerTokens) {
+                loginData.refreshToken = bearerTokens.refresh_token;
+                loginData.tokenDate = Date.now();
+            } else {
+                // As of Amazon's mid-2026 change, /auth/register rejects re-registration during an
+                // unattended refresh with InvalidToken / "Auth time of the token is expired", because
+                // the access_token was derived from a refresh_token rather than a fresh interactive
+                // login. Re-registration only serves to mint a NEW refresh_token; the existing one is
+                // still valid (~90 days from last login) and the session cookies were already refreshed
+                // via /ap/exchangetoken above. So instead of aborting the whole refresh, keep the
+                // existing refresh token and continue to re-derive fresh cookies + csrf below.
+                if (!loginData.refreshToken) {
+                    callback && callback(new Error('No tokens in Register response and no existing refresh token to fall back on'), null);
+                    return;
+                }
+                const regErrMsg = (body.response && body.response.error && body.response.error.message) || 'no tokens in register response';
+                console.log('[alexa-cookie] register step skipped (' + regErrMsg + '); continuing with existing refresh token');
+            }
 
 
             /*
