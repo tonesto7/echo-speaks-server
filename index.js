@@ -1,7 +1,6 @@
 const packageFile = require("./package.json"),
     appVer = packageFile.version,
     alexaCookie = require("./libs/alexa-cookie/alexa-cookie"),
-    reqPromise = require("request-promise"),
     logger = require("./logger"),
     express = require("express"),
     bodyParser = require("body-parser"),
@@ -41,6 +40,44 @@ runTimeData.serviceStartTime = Date.now(); //Returns time in millis
 runTimeData.eventCount = 0;
 runTimeData.echoDevices = {};
 runTimeData.guardData = {};
+
+/**
+ * Small JSON HTTP helper on Node's built-in fetch (replaces the deprecated request-promise).
+ * Matches the request-promise behaviour the callers relied on:
+ *  - `body` objects are sent as JSON
+ *  - the response is parsed as JSON when possible, otherwise returned as text (undefined if empty)
+ *  - any non-2xx status rejects, so callers' .catch() still fires on hub/Amazon errors
+ */
+async function httpJson({ method = "GET", url, query, headers = {}, body, timeout = 30000 }) {
+    const target = new URL(url);
+    if (query) {
+        for (const [k, v] of Object.entries(query)) target.searchParams.set(k, String(v));
+    }
+    const reqHeaders = { accept: "application/json" };
+    for (const [k, v] of Object.entries(headers)) {
+        if (v !== undefined && v !== null) reqHeaders[k] = String(v);
+    }
+    const opts = { method, headers: reqHeaders, signal: AbortSignal.timeout(timeout) };
+    if (body !== undefined) {
+        reqHeaders["content-type"] = "application/json";
+        opts.body = JSON.stringify(body);
+    }
+    const res = await fetch(target, opts);
+    const text = await res.text();
+    let data;
+    try {
+        data = text ? JSON.parse(text) : undefined;
+    } catch (e) {
+        data = text;
+    }
+    if (!res.ok) {
+        const err = new Error(`${res.status} - ${typeof data === "string" ? data : JSON.stringify(data)}`.slice(0, 500));
+        err.statusCode = res.status;
+        err.response = data;
+        throw err;
+    }
+    return data;
+}
 
 function initConfig() {
     return new Promise((resolve) => {
@@ -210,6 +247,7 @@ function startWebConfig() {
                 alexaCookie.refreshAlexaCookie(
                     {
                         formerRegistrationData: runTimeData.savedConfig.cookieData,
+                        deviceAppName: "Echo Speaks",
                     },
                     (err, result) => {
                         if (result && Object.keys(result).length >= 2) {
@@ -333,7 +371,7 @@ function startWebServer(checkForCookie = false) {
         proxyListenBind: "0.0.0.0",
         // proxyLogLevel: 'info', // optional: Loglevel of Proxy, default 'warn'
         protocolPrefix: getProtoPrefix(),
-        regDataAppName: "Echo Speaks",
+        deviceAppName: "Echo Speaks",
         useHeroku: isHeroku,
         proxyHost: configData.settings.hostUrl,
         proxyPort: configData.settings.serverPort,
@@ -378,17 +416,16 @@ function sendServerDataToHub() {
         if (url) {
             const options = {
                 method: "POST",
-                uri: url,
+                url: url,
                 body: {
                     version: appVer,
                     onHeroku: configData.settings.useHeroku === true,
                     isLocal: configData.settings.useHeroku !== true,
                     serverUrl: configData.settings.useHeroku === true ? null : `http://${getLocalHost()}`,
                 },
-                json: true,
             };
             // console.log("Sending Server Data to Hub: ", options);
-            reqPromise(options)
+            httpJson(options)
                 .then((resp) => {
                     // console.log("resp:", resp);
                     if (resp) {
@@ -412,10 +449,9 @@ function sendClearAuthToHub() {
         if (url) {
             let options = {
                 method: "DELETE",
-                uri: url,
-                json: true,
+                url: url,
             };
-            reqPromise(options)
+            httpJson(options)
                 .then((resp) => {
                     // console.log('resp:', resp);
                     if (resp) {
@@ -441,9 +477,9 @@ function getGuardDataSupport() {
         // console.log('alexaUrl: ', runTimeData.alexaUrl);
         // console.log('cookieData: ', runTimeData.savedConfig.cookieData);
         if (runTimeData.alexaUrl && runTimeData.savedConfig.cookieData) {
-            reqPromise({
+            httpJson({
                 method: "GET",
-                uri: `${runTimeData.alexaUrl}/api/phoenix`,
+                url: `${runTimeData.alexaUrl}/api/phoenix`,
                 query: {
                     cached: true,
                     _: new Date().getTime(),
@@ -452,7 +488,6 @@ function getGuardDataSupport() {
                     cookie: runTimeData.savedConfig.cookieData.localCookie,
                     csrf: runTimeData.savedConfig.cookieData.csrf,
                 },
-                json: true,
             })
                 .then((resp) => {
                     // console.log('guardresp:', resp);
@@ -639,7 +674,7 @@ function sendCookiesToEndpoint(url, cookieData) {
         if (url && cookieData && Object.keys(cookieData).length >= 2) {
             let options = {
                 method: "POST",
-                uri: url,
+                url: url,
                 body: {
                     cookieData: cookieData,
                     version: appVer,
@@ -647,10 +682,9 @@ function sendCookiesToEndpoint(url, cookieData) {
                     isLocal: configData.settings.useHeroku !== true,
                     serverUrl: configData.settings.useHeroku === true ? null : `http://${getLocalHost()}`,
                 },
-                json: true,
             };
             // console.log("sendCookiesToEndpoint: ", options);
-            reqPromise(options)
+            httpJson(options)
                 .then((resp) => {
                     // console.log('resp:', resp);
                     if (resp) {
@@ -674,9 +708,9 @@ function isCookieValid(cookieData) {
             logger.error(`isCookieValid ERROR | Cookie or CSRF value not received!!!`);
             resolve(false);
         }
-        reqPromise({
+        httpJson({
             method: "GET",
-            uri: `https://alexa.${configData.settings.amazonDomain}/api/bootstrap`,
+            url: `https://alexa.${configData.settings.amazonDomain}/api/bootstrap`,
             query: {
                 version: 0,
             },
@@ -684,7 +718,6 @@ function isCookieValid(cookieData) {
                 Cookie: cookieData.loginCookie,
                 csrf: cookieData.csrf,
             },
-            json: true,
         })
             .then((resp) => {
                 if (resp && resp.authentication) {
@@ -703,15 +736,14 @@ function isCookieValid(cookieData) {
 
 function getCookiesFromEndpoint(url) {
     return new Promise((resolve) => {
-        reqPromise({
+        httpJson({
             method: "GET",
-            uri: url,
+            url: url,
             headers: {
                 serverVersion: appVer,
                 onHeroku: configData.settings.useHeroku === true,
                 isLocal: configData.settings.useHeroku !== true,
             },
-            json: true,
         })
             .then((resp) => {
                 // console.log('getCookiesFromEndpoint resp: ', resp);
@@ -756,7 +788,7 @@ function getIPAddress() {
             const cidr24 = cidr.indexOf("24");
             if (details.family === "IPv4" && details.internal === false && cidr24 !== -1) {
                 console.log("IP Address: ", details.address);
-                addr = details.address;
+                addr = addr == "0.0.0.0" ? details.address : addr;
             }
         });
     });
