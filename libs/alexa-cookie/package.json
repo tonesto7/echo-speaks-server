@@ -1,6 +1,6 @@
 {
     "name": "alexa-cookie2",
-    "version": "3.4.1",
+    "version": "5.0.6",
     "description": "Generate Cookie and CSRF for Alexa Remote",
     "author": {
         "name": "Apollon77",
@@ -25,9 +25,9 @@
         "layla.amazon.de"
     ],
     "dependencies": {
-        "cookie": "^0.4.2",
-        "express": "^4.18.2",
-        "http-proxy-middleware": "^2.0.6",
+        "cookie": "^0.6.0",
+        "express": "^4.22.2",
+        "http-proxy-middleware": "^2.0.10",
         "http-proxy-response-rewrite": "^0.0.1",
         "https": "^1.0.0",
         "querystring": "^0.2.1"
@@ -44,6 +44,9 @@
     },
     "scripts": {
         "release": "release-script"
+    },
+    "engines": {
+        "node": ">=16.0.0"
     },
     "main": "alexa-cookie.js",
     "readmeFilename": "readme.md"
